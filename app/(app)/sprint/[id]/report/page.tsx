@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { Check, Download } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
 import { BackLink } from "@/components/ui/BackLink";
-import { ScoreBadge } from "@/components/ScoreBadge";
-import { db, usdRange, usdShort } from "@/lib/data";
+import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { db, usdShort } from "@/lib/data";
 
 export default async function FinalReport({
   params,
@@ -119,32 +117,13 @@ export default async function FinalReport({
         <Section title="Opportunities, ranked">
           <div className="not-prose space-y-3">
             {opps.map((o, i) => (
-              <Link
+              <OpportunityCard
                 key={o.id}
+                opp={o}
                 href={`/sprint/${id}/opportunity/${o.id}`}
-                className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong"
-              >
-                <ScoreBadge score={o.compositeScore} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-semibold text-text-3">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="text-md font-semibold leading-snug">
-                      {o.title}
-                    </h3>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge tone="success">
-                      {usdRange(o.impactLow, o.impactHigh)}/yr
-                    </Badge>
-                    <Badge tone="outline">
-                      {o.timeToShipWeeksLow}–{o.timeToShipWeeksHigh} wks
-                    </Badge>
-                    <Badge tone="neutral">{o.category}</Badge>
-                  </div>
-                </div>
-              </Link>
+                rank={i + 1}
+                meta="category"
+              />
             ))}
           </div>
         </Section>

@@ -1,19 +1,13 @@
 import Link from "next/link";
-import {
-  Activity,
-  ArrowUpRight,
-  CircleDot,
-  FileText,
-  Users,
-} from "lucide-react";
+import { Activity, CircleDot, FileText, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
-import { ScoreBadge } from "@/components/ScoreBadge";
-import { db, usdRange } from "@/lib/data";
+import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { db } from "@/lib/data";
 import { participantStatusMeta } from "@/lib/ui-maps";
 
 export default async function ManagerDashboard({
@@ -214,32 +208,11 @@ export default async function ManagerDashboard({
           </div>
           <div className="space-y-2.5">
             {opps.map((o) => (
-              <Link key={o.id} href={`/sprint/${id}/opportunity/${o.id}`}>
-                <Card className="group p-4 transition-all hover:border-border-strong hover:shadow">
-                  <div className="flex items-start justify-between gap-3">
-                    <ScoreBadge score={o.compositeScore} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-md font-semibold leading-snug">
-                          {o.title}
-                        </h3>
-                        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-text-3 transition-colors group-hover:text-brand" />
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Badge tone="success">
-                          {usdRange(o.impactLow, o.impactHigh)}/yr
-                        </Badge>
-                        <Badge tone="outline">
-                          {o.timeToShipWeeksLow}–{o.timeToShipWeeksHigh} wks
-                        </Badge>
-                        <Badge tone="neutral">
-                          {o.contributorCount} voices
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+              <OpportunityCard
+                key={o.id}
+                opp={o}
+                href={`/sprint/${id}/opportunity/${o.id}`}
+              />
             ))}
           </div>
           <p className="mt-3 px-1 text-xs leading-relaxed text-text-3">
