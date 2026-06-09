@@ -1,199 +1,192 @@
-# Supabase Auth — tenant-user sign-in (auth slice, Part A) — design spec
+# Auth + onboarding — super admin → org → manager → members — design spec
 
 **Date:** 2026-06-09
-**Status:** Approved (design)
+**Status:** Approved (design) — onboarding scope
 **Owner:** fred@twistag.com
-**Decisions:** Supabase Auth (ADR-002); gate the app behind sign-in now; Part A
-(ic/manager/sponsor) first, Twistag-side is Part B (deferred to its own slice).
+**Goal flow:** log in as super admin → invite a new organization → log in as that
+org's manager → invite members → members log in.
+**Decisions:** Supabase Auth (ADR-002); gate the app behind sign-in; dev one-click
+sign-in so the whole chain is clickable without email.
 **Builds on:** the DB + RLS foundation (`db/`, `withTenantContext`, `auth.jwt()`).
 
 ---
 
-## 1. Context
+## 1. Context & scope
 
-Auth is currently faked: `lib/session.ts` returns a hard-coded demo IC and the app
-has no sign-in. This slice makes auth real — **Supabase Auth magic links**, a JWT
-that carries `tenant_id`/`role`/`user_id`, route gating, and a `getSession()` that
-reads the real session. The UI still renders `lib/data.ts` mock data (the tRPC swap
-is a later slice), so after sign-in you see a real session over mock content — the
-gate is real even though the data isn't yet.
+This slice makes auth + multi-tenant onboarding real. It supersedes the earlier
+"Part A only" framing — the goal flow needs the Twistag super-admin up front, so
+super-admin auth + organization creation + two levels of invitation are all in scope.
 
-**ADR-002** (written in this slice) records the decision to use Supabase Auth instead
-of Stytch for Wave 1: native magic links, `auth.jwt()` integrates with RLS out of the
-box, one fewer vendor/secret. Revisit Stytch only if v1.5 SSO/SCIM demands it.
+The app still renders `lib/data.ts` mock content for the sprint/opportunity pages
+(the tRPC data swap is a later slice). What becomes real here: **identity, roles,
+tenants, invitations, and gating.**
 
-## 2. Goals
+**ADR-002** (written in this slice): adopt Supabase Auth over Stytch for Wave 1.
 
-- Magic-link sign-in via `@supabase/ssr` (cookie sessions): `/sign-in`, `/auth/callback`,
-  middleware session refresh, sign-out.
-- A **Custom Access Token Hook** (Postgres function) that injects `tenant_id`, `role`,
-  `user_id` claims by matching the signed-in email to a `public.users` row.
-- **Route gating:** `/me`, `/sprint`, `/twistag`, `/dev` require a session; `/`,
-  `/pricing`, `/sign-in`, `/auth/*` are public.
-- `lib/session.ts` reads real claims (replacing the demo constant).
-- A **dev-only one-click sign-in** (persona shortcut) so the gated demo stays usable
-  without an email round-trip; production uses real magic-link emails.
-- A **demo seed** (`db/seed-demo.ts`): a real Northwind tenant + the demo users in
-  `public.users` and Supabase auth, so the gated app is navigable.
-- Tests: unit (claims parsing), integration (the hook function), and a proof script
-  against the real project.
+## 2. Goals (the clickable chain)
+
+1. **Super admin** (`twistag_admin`) signs in → `/admin`.
+2. Super admin **invites an organization**: creates a `tenant` + the org's **manager**
+   user + an invitation; surfaces a sign-in link (dev) / sends email (prod).
+3. **Manager** signs in → manager home → **invites members** (ICs) for their org.
+4. **Members** sign in → IC view.
+5. Throughout: routes gated by session; data scoped by `tenant_id` via the claims hook + RLS.
 
 ## 3. Non-goals (later slices)
 
-- Twistag-side auth: `twistag_users`, cross-tenant read, `?tenant=` impersonation
-  (Part B — next slice).
-- tRPC routers / replacing `lib/data.ts` (data stays mock; gate is real).
-- GDPR export/delete endpoints; per-tenant rate limits; email via Resend SMTP
-  (Supabase built-in email is fine for now).
+- tRPC routers / replacing `lib/data.ts` (sprint/opportunity pages stay mock).
+- `?tenant=` Twistag impersonation-write, cross-tenant cockpit reads beyond what the
+  claim-gated `*_twistag_read` policies already allow.
+- GDPR endpoints, per-tenant rate limits, Resend SMTP (Supabase built-in email is fine).
+- Sprint creation / member→session wiring (separate sprint-setup slice).
 - Multi-tenant-same-email + tenant switcher (v2). **Assumption: one app-user per email.**
 
-## 4. Architecture
+## 4. Data model additions (migration `0001_auth_onboarding.sql`)
 
-### 4.1 Supabase clients (`lib/supabase/`)
-- `server.ts` — `createServerClient` from `@supabase/ssr`, wired to Next 15 async
-  `cookies()`. Used in Server Components, Route Handlers, Server Actions.
-- `client.ts` — `createBrowserClient` for the `/sign-in` client component.
-- `admin.ts` — a service-role client (no session persistence) for the seed + the
-  dev sign-in shortcut + the proof script. **Server-only**; never imported by client code.
+- **`twistag_users`** (no RLS): `id, email UNIQUE, name, role, created_at`.
+  `role ∈ {twistag_admin, twistag_lead, twistag_account_manager}`. Seeded super admin.
+- **`invitations`** (RLS, tenant-scoped): `id, tenant_id, email, role, status
+  (pending|accepted|revoked), invited_by_kind (twistag|user), invited_by_id,
+  created_at, accepted_at`. UNIQUE `(tenant_id, email)`. Standard 4 tenant policies +
+  `invitations_twistag_read`. Index on `tenant_id`.
+- These reuse the slice-1 RLS pattern + adversarial test approach.
 
-### 4.2 Session refresh + gating (`middleware.ts`, repo root)
-Standard `@supabase/ssr` middleware: refresh the session cookie on every request, then:
-- If the path starts with a protected prefix (`/me`, `/sprint`, `/twistag`, `/dev`)
-  and there is no user → redirect to `/sign-in?next=<path>`.
-- Public paths pass through. Static assets / `_next` excluded via the matcher.
+## 5. Auth architecture
 
-### 4.3 Custom Access Token Hook (`db/migrations/0001_auth_hook.sql`)
-```sql
-public.custom_access_token_hook(event jsonb) returns jsonb
+### 5.1 Supabase clients (`lib/supabase/{server,client,admin}.ts`)
+`@supabase/ssr` server + browser clients (cookie sessions); a service-role `admin`
+client (server-only) for seeding, invites, and the dev sign-in shortcut.
+
+### 5.2 Custom Access Token Hook (`public.custom_access_token_hook(event jsonb)`)
+On token mint, read `event->'claims'->>'email'`:
+- If in `twistag_users` → add `twistag_role` (= their role). No `tenant_id` (cross-tenant).
+- Else if in `public.users` → add `tenant_id`, `role`, `user_id` (= users.id).
+- Else pass through unchanged (→ "no access" state).
+Granted to `supabase_auth_admin` only; that role gets `SELECT` on both tables.
+`db/bootstrap.sql` gains `supabase_auth_admin` (local shim). Enabling the hook is a
+dashboard step (documented).
+
+### 5.3 Session reader (`lib/session.ts`, `lib/auth-claims.ts`)
+- `getSession()` → `getUser()` to authenticate, decode the access token, return a
+  discriminated result: `{ kind:'twistag', twistagRole, userId } | { kind:'tenant',
+  tenantId, role, userId } | null`.
+- `getCurrentUser()` → loads the display profile (twistag_users or public.users row).
+- `lib/auth-claims.ts#parseClaims(payload)` — pure, unit-tested.
+
+### 5.4 Gating (`middleware.ts`)
+Refresh session; then:
+- `/admin/**` → require `twistag_role` (else `/sign-in` or 403 page).
+- `/me`, `/sprint`, `/twistag`, `/team`, `/dev` → require any session.
+- Public: `/`, `/pricing`, `/sign-in`, `/sign-in/dev`, `/auth/**`.
+
+### 5.5 Sign-in surfaces
+- `/sign-in` (client) — email → `signInWithOtp` (real magic link).
+- `/sign-in/dev` (server, **404 in prod**) — lists **all** identities (super admin +
+  every `twistag_users`/`public.users` row, grouped by org); each is a button posting
+  to a server action that `admin.generateLink`→`verifyOtp` to set the cookie session.
+  This is what makes the whole chain one-click in dev.
+- `/auth/callback` — `exchangeCodeForSession`.
+- Sign-out server action.
+
+## 6. Onboarding flows
+
+### 6.1 Super admin invites an organization (`/admin`)
+- `/admin` (gated to `twistag_role`): table of orgs (tenants) with member counts +
+  "Invite organization" button → sheet/form: org `name`, `slug`, `segment`, manager
+  `name` + `email`.
+- Server action `inviteOrganization`:
+  1. `withServiceRole`: insert `tenants` row; insert `public.users` (role=`manager`,
+     tenant_id=new) ; insert `invitations` (role=manager, invited_by_kind=twistag,
+     status=pending).
+  2. `admin.auth.admin.createUser({ email, email_confirm:true })` (idempotent).
+  3. Return a sign-in link (dev) shown inline; (prod) `admin.inviteUserByEmail`.
+  - Audit-logged.
+
+### 6.2 Manager invites members (`/team`)
+- `/team` (gated to role `manager`/`sponsor`): list current org members + pending
+  invitations; "Invite members" → form: rows of `email` + `role` (ic/sponsor).
+- Server action `inviteMembers` (tenant-scoped via `withTenantContext` for the
+  invitation rows; `withServiceRole` for cross-table user + auth creation, audited):
+  for each: insert `public.users` (tenant_id = manager's tenant), `invitations`
+  (invited_by_kind=user, invited_by_id=manager.user_id), `admin.createUser`.
+- A manager can only invite into **their own** tenant (enforced by `getSession()` tenant + RLS).
+
+### 6.3 Member sign-in
+Member uses the dev shortcut / magic link → hook resolves email → IC view.
+
+## 7. Error / bad-state (docs/06 §4.3)
+
+- No session on gated route → `/sign-in`. Non-admin on `/admin` → 403 page.
+- Signed-in email not in either table → claims lack tenant/twistag → `/sign-in?error=no-access`.
+- Manager attempting to invite into another tenant → blocked (tenant from session; RLS on insert).
+- Duplicate invite email within a tenant → upsert/ignore (UNIQUE `(tenant_id,email)`).
+
+## 8. Testing
+
+- **Unit:** `parseClaims` (twistag vs tenant vs none); invite input validation (Zod).
+- **Integration (embedded-pg):**
+  - `custom_access_token_hook`: twistag email → `twistag_role`; tenant email →
+    `tenant_id/role/user_id`; unknown → unchanged.
+  - `invitations` adversarial isolation (read/insert/update/delete cross-tenant blocked)
+    + tenant-A manager cannot insert an invitation tagged tenant B.
+- **Proof script** (`db/proof-auth.ts`, real project): generateLink→verifyOtp→decode →
+  assert claims, for a super admin and a tenant user.
+
+## 9. Seed (`db/seed-demo.ts`, `npm run db:seed`)
+
+Idempotent, via admin/service role:
+- `twistag_users`: super admin `admin@twistag.com` (+ Supabase auth user).
+- One demo org (Northwind) + its manager + a couple ICs (so there's something to see
+  pre-invite), each with a Supabase auth user. New orgs/members created at runtime via
+  the invite flows above.
+
+## 10. File structure
+
 ```
-- Reads the email from `event->'claims'->>'email'`.
-- `SELECT id, tenant_id, role FROM public.users WHERE email = <email> LIMIT 1`.
-- If found, merges `tenant_id`, `role`, `user_id` (= `public.users.id`) into
-  `event->'claims'` and returns the event; else returns it unchanged.
-- Grants: `EXECUTE` to `supabase_auth_admin` only (revoked from `authenticated`,
-  `anon`, `public`); `supabase_auth_admin` gets `SELECT` on `public.users`.
-- `db/bootstrap.sql` gains the `supabase_auth_admin` role (local shim) so the same
-  migration applies locally and on Supabase.
-- **Enabling** the hook is a Supabase dashboard step (Auth → Hooks → Customize Access
-  Token (JWT) Claims → select `public.custom_access_token_hook`). Documented; the
-  user performs it (like the pooler URL).
-
-### 4.4 Session reader (`lib/session.ts`)
-- `getSession()` → uses the server client: `getUser()` to authenticate, then reads
-  the custom claims from the verified access token (`tenant_id`, `role`, `user_id`).
-  Returns `{ userId, tenantId, role } | null`.
-- `getCurrentUser()` → from the claims, loads the full `User` row via
-  `withTenantContext({tenantId,userId,role}, …)` (the user can read their own tenant's
-  rows under RLS). Returns the `User` shape `lib/types.ts` already defines.
-- Both are server-only. After gating, callers can assume a session, but null is
-  handled defensively (redirect to `/sign-in`).
-- `lib/auth-claims.ts` — a tiny pure `parseClaims(payload)` helper (unit-tested) that
-  pulls `tenant_id`/`role`/`user_id` from a decoded JWT payload.
-
-### 4.5 Sign-in surfaces
-- `/sign-in` (client) — email field → `supabase.auth.signInWithOtp({ email, options:{
-  emailRedirectTo: <origin>/auth/callback }})` → "check your email" state.
-- `/sign-in/dev` (server component) — **404 in production** (`notFound()` when
-  `process.env.NODE_ENV === 'production'`). Lists demo personas; each is a form posting
-  to a Server Action that, via the admin client, `generateLink({type:'magiclink',email})`
-  then `verifyOtp({type:'magiclink', token_hash, email})` on the server client to set
-  the session cookie, then redirects to `next` (no email needed).
-- `/auth/callback` (route handler) — `exchangeCodeForSession(code)`, redirect to `next` or `/me`.
-- Sign-out — Server Action `supabase.auth.signOut()` → redirect `/`.
-
-### 4.6 Demo seed (`db/seed-demo.ts`, `npm run db:seed`)
-Idempotent. Via the admin/service-role client:
-- Upsert a `tenants` row (Northwind) + the demo `public.users` (Priya, Marcus, Dana…)
-  with stable UUIDs, using `withServiceRole`.
-- For each, `admin.auth.admin.createUser({ email, email_confirm:true })` (ignore
-  "already exists"). So personas can sign in. The DB `users.id` and the Supabase
-  `auth.users.id` are **independent**; linkage is by email (the hook resolves it).
-
-## 5. Data flow (sign-in → RLS)
-
-1. User requests `/sign-in/dev` (dev) or `/sign-in` (prod), authenticates.
-2. Supabase mints the access token; the **hook** adds `tenant_id`/`role`/`user_id`.
-3. The session cookie is set; middleware refreshes it per request.
-4. `getCurrentUser()` reads claims → `withTenantContext(claims, …)` sets
-   `request.jwt.claims` → RLS scopes queries (today only the seed/proof exercise real
-   queries; pages still read `lib/data.ts`).
-
-## 6. Error handling / bad-state (per docs/06 §4.3)
-
-- No session on a protected route → redirect `/sign-in`.
-- Signed-in email with **no** `public.users` match → claims lack `tenant_id`;
-  `getCurrentUser()` returns null → redirect to a `/sign-in?error=no-access` state
-  ("your account isn't part of a workspace yet"). No tenant leakage.
-- Malformed/expired token → `getUser()` fails → treated as no session.
-
-## 7. Testing
-
-- **Unit:** `lib/auth-claims.test.ts` — `parseClaims` extracts/validates claims;
-  rejects missing `tenant_id`.
-- **Integration** (embedded-pg, `db/auth-hook.integration.test.ts`): seed a
-  `public.users` row, call `SELECT public.custom_access_token_hook(<event>)`, assert
-  the returned claims contain the right `tenant_id`/`role`/`user_id`; and that an
-  unknown email passes through unchanged.
-- **Proof script** (`db/proof-auth.ts`, manual `npm run db:proof:auth`): against the
-  real project — admin `generateLink` for a seeded demo email, `verifyOtp`, decode the
-  access token, assert `tenant_id`/`role` present. Proves the hook end-to-end (after
-  the user enables it in the dashboard).
-
-## 8. File structure
-
-```
-middleware.ts                         session refresh + route gating
-lib/supabase/server.ts | client.ts | admin.ts
+middleware.ts
+lib/supabase/{server,client,admin}.ts
 lib/auth-claims.ts (+ .test.ts)
-lib/session.ts                        (rewritten: real claims)
-app/(auth)/sign-in/page.tsx           real magic-link form (client)
-app/(auth)/sign-in/dev/page.tsx       dev persona shortcut (404 in prod)
-app/(auth)/sign-in/actions.ts         server actions (dev sign-in, sign-out)
-app/auth/callback/route.ts            code exchange
-db/migrations/0001_auth_hook.sql      custom_access_token_hook + grants
-db/bootstrap.sql                      (+ supabase_auth_admin role)
-db/seed-demo.ts                       npm run db:seed
-db/proof-auth.ts                      npm run db:proof:auth
-db/auth-hook.integration.test.ts
+lib/session.ts                     (rewritten)
+lib/invitations.ts                 (Zod input schemas + server-action helpers)
+app/(auth)/sign-in/page.tsx        real magic link (client)
+app/(auth)/sign-in/dev/page.tsx    one-click persona list (404 in prod)
+app/(auth)/sign-in/actions.ts      dev sign-in + sign-out actions
+app/auth/callback/route.ts
+app/(app)/admin/page.tsx           super-admin: orgs + invite organization
+app/(app)/admin/actions.ts         inviteOrganization
+app/(app)/team/page.tsx            manager: members + invite members
+app/(app)/team/actions.ts          inviteMembers
+db/migrations/0001_auth_onboarding.sql   twistag_users, invitations, hook, grants
+db/bootstrap.sql                   (+ supabase_auth_admin)
+db/seed-demo.ts | db/proof-auth.ts
+db/auth-hook.integration.test.ts | db/invitations.integration.test.ts
 ```
 
-## 9. Dependencies & env
+## 11. Dependencies, env, worktree
 
 - Add `@supabase/ssr`, `@supabase/supabase-js`.
-- Env (already in `.env.local`): `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`.
-- Worktree note: implementation happens in the `backend-auth` git worktree
-  (`/Users/fred/Documents/GitHub/atlas-auth`); needs `npm install` + a copy of
-  `.env.local` there.
+- Env already in `.env.local`. Implementation in the `backend-auth` worktree
+  (`/Users/fred/Documents/GitHub/atlas-auth`): `npm install` + copy `.env.local`.
 
-## 10. Manual Supabase steps (flagged at the run step)
+## 12. Manual Supabase steps (flagged at run)
 
-1. Auth → URL Configuration → add redirect URL `http://localhost:3000/auth/callback`.
-2. Auth → Hooks → "Customize Access Token (JWT) Claims" → enable
+1. Auth → URL Configuration → add `http://localhost:3000/auth/callback`.
+2. Auth → Hooks → Customize Access Token (JWT) Claims → enable
    `public.custom_access_token_hook`.
 
-## 11. Risks & mitigations
+## 13. Risks
 
-- **Hook not enabled** → tokens lack `tenant_id`; proof script + a clear runtime
-  "no-access" state surface it. Documented as a required manual step.
-- **`@supabase/ssr` cookie wiring in Next 15** (async `cookies()`) — follow the current
-  SSR pattern; the `/auth/callback` + middleware are the canonical touchpoints.
-- **Dev shortcut leaking to prod** → `/sign-in/dev` hard-returns `notFound()` when
-  `NODE_ENV==='production'`; the action checks the same.
-- **Gating breaks the demo** → mitigated by the dev one-click persona sign-in.
-- **`auth.users` vs `public.users` divergence** → linkage strictly by email; seed
-  creates both; hook resolves email→tenant.
+- **Hook not enabled** → no claims; proof script + a clear "no-access" state surface it.
+- **Dev shortcut in prod** → `/sign-in/dev` + its action hard-gate on `NODE_ENV`.
+- **`@supabase/ssr` Next 15 cookies** → follow canonical middleware/callback pattern.
+- **Scope creep** → sprint creation, member→session wiring, Twistag impersonation-write
+  are explicitly out (later slices). This slice = identity + tenancy + invitations + gating.
 
-## 12. Success criteria
+## 14. Success criteria
 
-- Magic-link sign-in works in dev (real flow) and the dev shortcut signs in instantly.
-- After sign-in, `getCurrentUser()` returns the real persona; middleware blocks
-  unauthenticated access to protected routes.
-- Hook integration test green; `npm run db:proof:auth` shows real `tenant_id`/`role`
-  claims on the live project.
-- `npm test`, `npm run test:integration`, lint, build all green.
-- No demo fallback remains in `lib/session.ts`; no secret committed.
-
-## 13. Out of scope / next
-
-Part B (Twistag-side auth + tenant switching), tRPC data layer, GDPR endpoints.
+- Sign in as super admin → `/admin` → invite an org → a tenant + manager + invitation
+  are created and the manager appears in `/sign-in/dev`.
+- Sign in as that manager → `/team` → invite members → ICs created + appear in dev list.
+- Sign in as a member → IC view. All gated; cross-tenant blocked (adversarial tests).
+- Hook + invitations integration tests green; proof script shows real claims.
+- `npm test`, `npm run test:integration`, lint, build green. No secret committed.
