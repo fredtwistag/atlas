@@ -1,18 +1,21 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc } from "drizzle-orm";
-import { router, tenantProcedure } from "../trpc";
+import { eq, desc, inArray } from "drizzle-orm";
+import { router, tenantProcedure, managerProcedure } from "../trpc";
 import { withTenantContext } from "@/db/client";
 import {
   sprints,
   topics,
   sprintParticipants,
+  sessions,
   users,
   tenants,
   opportunities,
   captures,
 } from "@/db/schema";
 import { computeProgress } from "@/lib/dashboard-map";
+import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
+import { LaunchSprintSchema } from "@/lib/schemas";
 import type {
   Sprint,
   Participant,
@@ -43,6 +46,98 @@ export const sprintRouter = router({
       return rows[0]?.id ?? null;
     }),
   ),
+
+  launch: managerProcedure
+    .input(LaunchSprintSchema)
+    .mutation(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx): Promise<string> => {
+        const selectedTemplates = TOPIC_TEMPLATES.filter((t) =>
+          input.topicKeys.includes(t.key),
+        );
+        if (selectedTemplates.length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Pick at least one topic.",
+          });
+        }
+
+        // Selected members (for sponsorId + scope_department).
+        const members = await tx
+          .select({
+            id: users.id,
+            role: users.role,
+            department: users.department,
+          })
+          .from(users)
+          .where(inArray(users.id, input.participantIds));
+        const sponsorId = members.find((m) => m.role === "sponsor")?.id ?? null;
+        const scope = Array.from(
+          new Set(
+            members.map((m) => m.department).filter((d): d is string => !!d),
+          ),
+        ).join(", ");
+
+        const start = new Date();
+        const end = new Date(start.getTime() + 24 * DAY);
+        const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+        const [sprint] = await tx
+          .insert(sprints)
+          .values({
+            tenantId: ctx.session.tenantId,
+            name: input.name,
+            primaryFocus: input.primaryFocus,
+            scopeDepartment: scope || null,
+            startDate: fmt(start),
+            endDate: fmt(end),
+            cadence: "weekly",
+            status: "active",
+            managerId: ctx.session.userId,
+            sponsorId,
+          })
+          .returning({ id: sprints.id });
+
+        const topicRows = await tx
+          .insert(topics)
+          .values(
+            selectedTemplates.map((t) => ({
+              tenantId: ctx.session.tenantId,
+              sprintId: sprint.id,
+              title: t.title,
+              description: t.description,
+              orderIdx: t.orderIdx,
+              questionCount: t.questionCount,
+              estMinutes: t.estMinutes,
+            })),
+          )
+          .returning({ id: topics.id });
+
+        await tx.insert(sprintParticipants).values(
+          input.participantIds.map((userId) => ({
+            tenantId: ctx.session.tenantId,
+            sprintId: sprint.id,
+            userId,
+            status: "not_started",
+            sessionsCompleted: 0,
+            sessionsTotal: topicRows.length,
+            lastActiveLabel: "Invited · not started",
+          })),
+        );
+
+        const sessionValues = input.participantIds.flatMap((userId) =>
+          topicRows.map((t) => ({
+            tenantId: ctx.session.tenantId,
+            sprintId: sprint.id,
+            topicId: t.id,
+            userId,
+            status: "not_started",
+          })),
+        );
+        await tx.insert(sessions).values(sessionValues);
+
+        return sprint.id;
+      }),
+    ),
 
   get: tenantProcedure.input(idInput).query(({ ctx, input }) =>
     withTenantContext(ctx.session, async (tx): Promise<Sprint> => {

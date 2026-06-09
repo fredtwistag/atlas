@@ -1,11 +1,19 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
-import { sprints, opportunities } from "@/db/schema";
+import {
+  sprints,
+  opportunities,
+  users,
+  topics,
+  sprintParticipants,
+  sessions,
+} from "@/db/schema";
 import {
   seedRow,
   resetDb,
   seedTenants,
+  asUser,
   TENANT_A,
   TENANT_B,
 } from "@/db/test/helpers";
@@ -55,6 +63,15 @@ const asTenant = (tenantId: string) =>
     },
   });
 
+const MGR_A = "44444444-4444-4444-8444-44444444a001";
+const IC_A1 = "44444444-4444-4444-8444-44444444a002";
+const IC_A2 = "44444444-4444-4444-8444-44444444a003";
+
+const asManager = (tenantId: string, userId: string) =>
+  createCaller({
+    session: { kind: "tenant", tenantId, userId, role: "manager" },
+  });
+
 beforeEach(async () => {
   await resetDb();
   await seedTenants();
@@ -97,5 +114,123 @@ describe("tRPC routers — tenant isolation", () => {
       session: { kind: "twistag", twistagRole: "twistag_admin", userId: "x" },
     });
     await expect(api.sprint.get({ id: SPRINT_A })).rejects.toThrow();
+  });
+});
+
+describe("sprint.launch", () => {
+  beforeEach(async () => {
+    // resetDb()/seedTenants() already ran in the outer beforeEach; add users.
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: MGR_A,
+          tenantId: TENANT_A,
+          email: "mgr@a.example",
+          name: "Mgr A",
+          role: "manager",
+          department: "Ops",
+        },
+        {
+          id: IC_A1,
+          tenantId: TENANT_A,
+          email: "ic1@a.example",
+          name: "IC One",
+          role: "ic",
+          department: "Finance",
+        },
+        {
+          id: IC_A2,
+          tenantId: TENANT_A,
+          email: "ic2@a.example",
+          name: "IC Two",
+          role: "ic",
+          department: "Sales",
+        },
+      ]),
+    );
+  });
+
+  it("creates sprint + topics + participants + sessions for the manager's tenant", async () => {
+    const api = asManager(TENANT_A, MGR_A);
+    const sprintId = await api.sprint.launch({
+      name: "Ops Discovery",
+      primaryFocus: "Quote-to-cash",
+      topicKeys: ["how-work-flows", "when-things-break"],
+      participantIds: [IC_A1, IC_A2],
+    });
+    expect(typeof sprintId).toBe("string");
+
+    const topicRows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(topics),
+    );
+    expect(topicRows).toHaveLength(2);
+
+    const partRows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sprintParticipants),
+    );
+    expect(partRows).toHaveLength(2);
+    expect(partRows.every((p) => p.sessionsTotal === 2)).toBe(true);
+    expect(partRows.every((p) => p.status === "not_started")).toBe(true);
+
+    const sessionRows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sessions),
+    );
+    expect(sessionRows).toHaveLength(4); // 2 participants x 2 topics
+    expect(sessionRows.every((s) => s.status === "not_started")).toBe(true);
+  });
+
+  it("isolates tenants — A cannot see a sprint B launched", async () => {
+    const MGR_B = "44444444-4444-4444-8444-44444444b001";
+    const IC_B1 = "44444444-4444-4444-8444-44444444b002";
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: MGR_B,
+          tenantId: TENANT_B,
+          email: "mgr@b.example",
+          name: "Mgr B",
+          role: "manager",
+          department: "Ops",
+        },
+        {
+          id: IC_B1,
+          tenantId: TENANT_B,
+          email: "ic1@b.example",
+          name: "IC B",
+          role: "ic",
+          department: "Ops",
+        },
+      ]),
+    );
+    await asManager(TENANT_B, MGR_B).sprint.launch({
+      name: "B Sprint",
+      primaryFocus: "B focus",
+      topicKeys: ["one-change"],
+      participantIds: [IC_B1],
+    });
+
+    const aTopics = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(topics),
+    );
+    expect(aTopics).toHaveLength(0);
+  });
+
+  it("rejects an IC session (managerProcedure)", async () => {
+    const api = createCaller({
+      session: {
+        kind: "tenant",
+        tenantId: TENANT_A,
+        userId: IC_A1,
+        role: "ic",
+      },
+    });
+    await expect(
+      api.sprint.launch({
+        name: "x",
+        primaryFocus: "y",
+        topicKeys: ["one-change"],
+        participantIds: [IC_A1],
+      }),
+    ).rejects.toThrow();
   });
 });
