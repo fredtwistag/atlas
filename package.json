@@ -19,7 +19,8 @@
     "db:migrate": "tsx --env-file=.env.local db/migrate.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "db:seed": "tsx --env-file=.env.local db/seed-demo.ts",
-    "db:proof:auth": "tsx --env-file=.env.local db/proof-auth.ts"
+    "db:proof:auth": "tsx --env-file=.env.local db/proof-auth.ts",
+    "db:seed:dashboard": "tsx --env-file=.env.local db/seed-dashboard.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
