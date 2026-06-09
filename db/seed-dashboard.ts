@@ -26,10 +26,26 @@ async function main(): Promise<void> {
         .select()
         .from(tenants)
         .where(eq(tenants.slug, "northwind"));
-      if (!t) throw new Error("Run `npm run db:seed` first (Northwind missing).");
+      if (!t)
+        throw new Error("Run `npm run db:seed` first (Northwind missing).");
       const tenantId = t.id;
 
+      // Idempotent: clear this tenant's dashboard rows before reseeding.
+      await tx
+        .delete(opportunityEvidence)
+        .where(eq(opportunityEvidence.tenantId, tenantId));
+      await tx.delete(captures).where(eq(captures.tenantId, tenantId));
+      await tx
+        .delete(opportunities)
+        .where(eq(opportunities.tenantId, tenantId));
+      await tx
+        .delete(sprintParticipants)
+        .where(eq(sprintParticipants.tenantId, tenantId));
+      await tx.delete(topics).where(eq(topics.tenantId, tenantId));
+
       // Roster: manager + sponsor + participants, with titles/departments.
+      // Upsert titles so evidence role attribution is correct even for users
+      // created earlier (by the auth seed) without titles.
       const roster = [
         sprint.manager,
         sprint.sponsor,
@@ -46,7 +62,15 @@ async function main(): Promise<void> {
             department: u.department,
             title: u.title,
           })
-          .onConflictDoNothing();
+          .onConflictDoUpdate({
+            target: [users.tenantId, users.email],
+            set: {
+              name: u.name,
+              role: u.role,
+              department: u.department,
+              title: u.title,
+            },
+          });
       }
       const dbUsers = await tx
         .select()
@@ -134,8 +158,7 @@ async function main(): Promise<void> {
           .returning();
 
         for (const ev of o.evidence) {
-          const contributor =
-            byTitle.get(ev.contributorRole)?.id ?? managerId;
+          const contributor = byTitle.get(ev.contributorRole)?.id ?? managerId;
           if (!contributor) continue;
           const [cap] = await tx
             .insert(captures)
@@ -175,7 +198,9 @@ async function main(): Promise<void> {
     }
   }
   // eslint-disable-next-line no-console
-  console.log(`dashboard seed complete — sprint ${SPRINT_ID}, ${opps.length} opportunities`);
+  console.log(
+    `dashboard seed complete — sprint ${SPRINT_ID}, ${opps.length} opportunities`,
+  );
 }
 
 main()
