@@ -37,7 +37,12 @@ atlas-project/
 npm install
 npm run dev          # http://localhost:3000
 npm run build        # production build (all routes typecheck + compile)
+npm test             # Vitest unit + component suite
+npm run lint         # ESLint (next/core-web-vitals)
+npm run typecheck    # tsc --noEmit
 ```
+
+CI (`.github/workflows/ci.yml`) runs typecheck + lint + test + build on every push and PR.
 
 Key routes to walk through:
 - `/` — marketing landing (and `/pricing`)

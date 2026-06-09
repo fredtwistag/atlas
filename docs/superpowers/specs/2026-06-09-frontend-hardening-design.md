@@ -1,7 +1,7 @@
 # Front-end hardening — design spec
 
 **Date:** 2026-06-09
-**Status:** Approved (design) — pending spec review
+**Status:** Implemented (branch `frontend-hardening`)
 **Owner:** fred@twistag.com
 **Scope decision:** Full foundation hardening + Vitest/RTL/CI (chosen 2026-06-09)
 
