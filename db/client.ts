@@ -76,9 +76,7 @@ export async function withServiceRole<T>(
  * Run `fn` as `supabase_auth_admin` — the role Supabase Auth executes the access
  * token hook as. Test/seed utility so we can exercise the hook the way GoTrue does.
  */
-export async function withAuthAdmin<T>(
-  fn: (tx: Db) => Promise<T>,
-): Promise<T> {
+export async function withAuthAdmin<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
   return db().transaction(async (tx) => {
     await tx.execute(sql`SET LOCAL ROLE supabase_auth_admin`);
     return fn(tx as unknown as Db);
