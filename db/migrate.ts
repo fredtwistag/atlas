@@ -49,9 +49,15 @@ export async function runMigrations(
 // CLI entry: real project, no bootstrap.
 const isCli = process.argv[1] === fileURLToPath(import.meta.url);
 if (isCli) {
-  const url = process.env.DATABASE_URL;
+  // Migrations run DDL in multi-statement transactions, so they use a
+  // SESSION/direct connection (DIRECT_URL, port 5432) — NOT the app's
+  // transaction-mode pooler (DATABASE_URL, port 6543). Falls back to
+  // DATABASE_URL for single-URL setups.
+  const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
   if (!url) {
-    throw new Error("DATABASE_URL is not set (load it from .env.local)");
+    throw new Error(
+      "DIRECT_URL/DATABASE_URL is not set (load it from .env.local)",
+    );
   }
   runMigrations(url, { withBootstrap: false })
     .then(() => {

@@ -12,13 +12,37 @@ function connectionUrl(): string {
   return url;
 }
 
+/**
+ * postgres-js pool options. `DATABASE_URL` must point at Supabase's
+ * TRANSACTION-mode pooler (port 6543) so connections return to the pooler
+ * after each transaction instead of being pinned per-client (session mode,
+ * port 5432, which exhausts the 15-client cap under normal concurrency).
+ *
+ * - `prepare: false` is REQUIRED for the transaction pooler — named prepared
+ *   statements can't be reused across the pooler's rotating backends.
+ * - `idle_timeout` releases idle connections; `max_lifetime` recycles them.
+ * - `max` is per-process; keep it low (serverless multiplies it across
+ *   instances). Override with `DB_POOL_MAX` (e.g. 1 on Vercel).
+ *
+ * Migrations use a SESSION/direct connection (see db/migrate.ts + DIRECT_URL).
+ */
+function poolOptions(): postgres.Options<Record<string, never>> {
+  return {
+    max: Number(process.env.DB_POOL_MAX ?? 5),
+    idle_timeout: 20,
+    max_lifetime: 60 * 30,
+    prepare: false,
+    onnotice: () => {},
+  };
+}
+
 // Lazily create one pool per process.
 let _client: ReturnType<typeof postgres> | null = null;
 let _db: Db | null = null;
 
 function db(): Db {
   if (!_db) {
-    _client = postgres(connectionUrl(), { max: 10, onnotice: () => {} });
+    _client = postgres(connectionUrl(), poolOptions());
     _db = drizzle(_client, { schema });
   }
   return _db;
@@ -27,7 +51,7 @@ function db(): Db {
 /** For tests that boot embedded-pg after import: point the pool at a URL. */
 export function configureDb(url: string): void {
   void _client?.end();
-  _client = postgres(url, { max: 5, onnotice: () => {} });
+  _client = postgres(url, poolOptions());
   _db = drizzle(_client, { schema });
 }
 
