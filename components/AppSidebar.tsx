@@ -70,7 +70,7 @@ const PERSONAS: Persona[] = [
   {
     id: "Manager",
     short: "Manager",
-    home: `/sprint/${SPRINT_ID}`,
+    home: `/sprint`,
     match: ["/sprint"],
     groups: [
       {
@@ -79,8 +79,8 @@ const PERSONAS: Persona[] = [
           {
             label: "Overview",
             icon: LayoutDashboard,
-            href: `/sprint/${SPRINT_ID}`,
-            match: [`/sprint/${SPRINT_ID}`],
+            href: `/sprint`,
+            match: [`/sprint`],
           },
           {
             label: "Opportunities",
