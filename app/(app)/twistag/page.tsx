@@ -4,16 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { db } from "@/lib/data";
-import type { ClientSummary } from "@/lib/types";
-
-const healthMeta: Record<
-  ClientSummary["health"],
-  { label: string; tone: "success" | "warning" | "danger" }
-> = {
-  healthy: { label: "Healthy", tone: "success" },
-  watch: { label: "Watch", tone: "warning" },
-  at_risk: { label: "At risk", tone: "danger" },
-};
+import { clientHealthMeta } from "@/lib/ui-maps";
 
 export default function TwistagCockpit() {
   const clients = db.twistag.clientList();
@@ -127,7 +118,7 @@ export default function TwistagCockpit() {
           </thead>
           <tbody>
             {clients.map((c) => {
-              const meta = healthMeta[c.health];
+              const meta = clientHealthMeta[c.health];
               const isLive = c.tenantId === "spr-northwind-q2";
               return (
                 <tr

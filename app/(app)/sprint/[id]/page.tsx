@@ -13,17 +13,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { db, usdRange } from "@/lib/data";
-import type { ParticipantStatus } from "@/lib/types";
-
-const statusMeta: Record<
-  ParticipantStatus,
-  { label: string; tone: "success" | "brand" | "warning" | "neutral" }
-> = {
-  completed: { label: "Complete", tone: "success" },
-  in_progress: { label: "In progress", tone: "brand" },
-  idle: { label: "Idle", tone: "warning" },
-  not_started: { label: "Not started", tone: "neutral" },
-};
+import { participantStatusMeta } from "@/lib/ui-maps";
 
 export default async function ManagerDashboard({
   params,
@@ -130,7 +120,7 @@ export default async function ManagerDashboard({
               </thead>
               <tbody>
                 {sprint.participants.map((pt) => {
-                  const meta = statusMeta[pt.status];
+                  const meta = participantStatusMeta[pt.status];
                   const pct = Math.round(
                     (pt.sessionsCompleted / pt.sessionsTotal) * 100,
                   );

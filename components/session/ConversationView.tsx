@@ -8,6 +8,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { conversationScript } from "@/lib/data";
+import { captureKindTone } from "@/lib/ui-maps";
+import type { CaptureKind } from "@/lib/types";
 
 interface ChatMsg {
   id: string;
@@ -20,16 +22,6 @@ interface LiveCapture {
   kind: string;
   summary: string;
 }
-
-const kindTone: Record<string, "brand" | "warning" | "neutral" | "danger"> = {
-  bottleneck: "danger",
-  handoff: "warning",
-  frustration: "warning",
-  workaround: "brand",
-  tooling: "neutral",
-  sop: "neutral",
-  decision: "brand",
-};
 
 export function ConversationView({
   // sessionId is part of the public API (the real respond() will need it) but
@@ -230,7 +222,10 @@ export function ConversationView({
                 key={c.id}
                 className="rounded-lg border border-border bg-bg p-3"
               >
-                <Badge tone={kindTone[c.kind] ?? "neutral"} className="mb-1.5">
+                <Badge
+                  tone={captureKindTone[c.kind as CaptureKind] ?? "neutral"}
+                  className="mb-1.5"
+                >
                   {c.kind}
                 </Badge>
                 <p className="text-[13px] leading-relaxed text-text">
