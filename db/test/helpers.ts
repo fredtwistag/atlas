@@ -31,7 +31,10 @@ export function seedRow<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
 export async function resetDb(): Promise<void> {
   await withServiceRole({ action: "test.reset", actor: "test" }, (tx) =>
     tx.execute(
-      sql`TRUNCATE public.sprints, public.users, public.tenants RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE public.opportunity_evidence, public.opportunities, public.captures,
+          public.sessions, public.sprint_participants, public.topics,
+          public.invitations, public.sprints, public.users, public.tenants
+          RESTART IDENTITY CASCADE`,
     ),
   );
 }

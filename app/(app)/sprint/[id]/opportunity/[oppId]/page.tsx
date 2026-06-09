@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OpportunityDetail } from "@/components/opportunity/OpportunityDetail";
-import { db, sowDraftFor } from "@/lib/data";
+import { sowDraftFor } from "@/lib/data";
+import { getApi } from "@/server/trpc/caller";
 
 export async function generateMetadata({
   params,
@@ -9,8 +10,13 @@ export async function generateMetadata({
   params: Promise<{ id: string; oppId: string }>;
 }): Promise<Metadata> {
   const { oppId } = await params;
-  const opp = await db.opportunity.get(oppId);
-  return { title: opp ? `${opp.title} · Atlas` : "Opportunity · Atlas" };
+  try {
+    const api = await getApi();
+    const opp = await api.opportunity.get({ id: oppId });
+    return { title: `${opp.title} · Atlas` };
+  } catch {
+    return { title: "Opportunity · Atlas" };
+  }
 }
 
 export default async function OpportunityPage({
@@ -19,7 +25,8 @@ export default async function OpportunityPage({
   params: Promise<{ id: string; oppId: string }>;
 }) {
   const { id, oppId } = await params;
-  const opp = await db.opportunity.get(oppId);
+  const api = await getApi();
+  const opp = await api.opportunity.get({ id: oppId }).catch(() => null);
   if (!opp) notFound();
 
   return <OpportunityDetail sprintId={id} opp={opp} sow={sowDraftFor(opp)} />;

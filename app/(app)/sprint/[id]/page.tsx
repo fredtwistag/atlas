@@ -9,7 +9,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
-import { db } from "@/lib/data";
+import { notFound } from "next/navigation";
+import { getApi } from "@/server/trpc/caller";
 import { participantStatusMeta } from "@/lib/ui-maps";
 
 export async function generateMetadata({
@@ -18,8 +19,13 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const sprint = await db.sprint.get(id);
-  return { title: `${sprint.name} · Atlas` };
+  try {
+    const api = await getApi();
+    const sprint = await api.sprint.get({ id });
+    return { title: `${sprint.name} · Atlas` };
+  } catch {
+    return { title: "Sprint · Atlas" };
+  }
 }
 
 export default async function ManagerDashboard({
@@ -28,10 +34,15 @@ export default async function ManagerDashboard({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sprint = await db.sprint.get(id);
-  const p = await db.sprint.progress(id);
-  const opps = await db.opportunity.listForSprint(id);
-  const activity = await db.sprint.activity();
+  const api = await getApi();
+
+  const sprint = await api.sprint.get({ id }).catch(() => null);
+  if (!sprint) notFound();
+  const [p, opps, activity] = await Promise.all([
+    api.sprint.progress({ id }),
+    api.opportunity.listForSprint({ sprintId: id }),
+    api.sprint.activity({ id }),
+  ]);
 
   const stats = [
     {
