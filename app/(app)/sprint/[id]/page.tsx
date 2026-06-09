@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Avatar } from "@/components/ui/Avatar";
@@ -87,16 +88,13 @@ export default async function ManagerDashboard({
       {/* Stat strip */}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-              <s.icon className="h-3.5 w-3.5" />
-              {s.label}
-            </div>
-            <div className="font-serif text-3xl font-medium tracking-tight">
-              {s.value}
-            </div>
-            <div className="mt-1 text-sm text-text-3">{s.sub}</div>
-          </Card>
+          <StatCard
+            key={s.label}
+            icon={s.icon}
+            label={s.label}
+            value={s.value}
+            sub={s.sub}
+          />
         ))}
       </div>
 

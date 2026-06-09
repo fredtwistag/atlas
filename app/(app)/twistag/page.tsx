@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, Building2, CircleDot, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { db } from "@/lib/data";
@@ -89,15 +90,12 @@ export default function TwistagCockpit() {
             value: `${totals.avgCompletion}%`,
           },
         ].map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-              <s.icon className="h-3.5 w-3.5" />
-              {s.label}
-            </div>
-            <div className="font-serif text-3xl font-medium tracking-tight">
-              {s.value}
-            </div>
-          </Card>
+          <StatCard
+            key={s.label}
+            icon={s.icon}
+            label={s.label}
+            value={s.value}
+          />
         ))}
       </div>
 
