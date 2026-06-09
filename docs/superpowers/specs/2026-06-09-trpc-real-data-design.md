@@ -1,7 +1,7 @@
 # tRPC + real tenant data (core screens) — design spec
 
 **Date:** 2026-06-09
-**Status:** Approved (design) — core-screens scope
+**Status:** Implemented (branch `backend-trpc`) — manager dashboard + opportunity detail on real data, verified end-to-end
 **Owner:** fred@twistag.com
 **Builds on:** DB+RLS foundation, Supabase Auth + onboarding (both on main).
 **Scope decision:** core screens first — manager dashboard + opportunity detail.

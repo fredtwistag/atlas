@@ -56,8 +56,21 @@ Tenant isolation is enforced by Postgres RLS (ADR-001). All tenant-scoped querie
 through `withTenantContext()` in `db/client.ts`; cross-tenant/admin work goes through
 `withServiceRole()` (audit-logged). The adversarial tests boot a throwaway Postgres via
 `embedded-postgres` (no Docker needed) and prove cross-tenant read/insert/update/delete
-are blocked. The UI still runs on `lib/data.ts` — wiring real queries via tRPC is a later
-slice.
+are blocked.
+
+### tRPC + real data
+
+```bash
+npm run db:seed            # super admin + Northwind org + Supabase auth users
+npm run db:seed:dashboard  # Northwind's sprint/opportunities/evidence into real tables
+```
+
+The **manager dashboard** (`/sprint/[id]`) and **opportunity detail** read real,
+tenant-scoped data through tRPC: a `tenantProcedure` whose context is the Supabase
+session, queries running inside `withTenantContext()` so RLS scopes every read. Server
+Components call a per-request server caller (`server/trpc/caller.ts`); a React Query
+client (`lib/trpc/react.tsx`) is scaffolded for future Client Components. `/me`, the
+final report, and the Twistag cockpit still render `lib/data.ts` (next slices).
 
 Key routes to walk through:
 - `/` — marketing landing (and `/pricing`)
