@@ -87,9 +87,7 @@ export function Sheet({
                 {eyebrow}
               </div>
             ) : null}
-            <h2 className="font-serif text-xl font-medium tracking-tight">
-              {title}
-            </h2>
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           </div>
           <button
             onClick={onClose}

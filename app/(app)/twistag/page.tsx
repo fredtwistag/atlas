@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
 import type { Metadata } from "next";
 import { db } from "@/lib/data";
 import { clientHealthMeta } from "@/lib/ui-maps";
@@ -24,14 +25,12 @@ export default async function TwistagCockpit() {
   };
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
+    <main className="w-full px-6 py-8 lg:px-8">
       <div className="mb-6">
         <div className="mb-1 text-sm font-medium text-text-3">
           Twistag · engagement cockpit
         </div>
-        <h1 className="font-serif text-3xl font-medium tracking-tight">
-          Your clients
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Your clients</h1>
         <p className="mt-1.5 text-md text-text-2">
           Every sprint you lead, in one place. Health, momentum, and the
           opportunities heading toward FDE engagements.
@@ -104,29 +103,24 @@ export default async function TwistagCockpit() {
 
       {/* Client table */}
       <Card className="overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-xs uppercase tracking-[0.04em] text-text-3">
-              <th className="px-4 py-2.5 font-semibold">Client</th>
-              <th className="px-4 py-2.5 font-semibold">Sprint</th>
-              <th className="px-4 py-2.5 font-semibold">Health</th>
-              <th className="px-4 py-2.5 font-semibold">Completion</th>
-              <th className="px-4 py-2.5 text-center font-semibold">Opps</th>
-              <th className="px-4 py-2.5 text-center font-semibold">
-                Approved
-              </th>
-            </tr>
-          </thead>
+        <Table>
+          <THead>
+            <HeaderRow>
+              <Th>Client</Th>
+              <Th>Sprint</Th>
+              <Th>Health</Th>
+              <Th>Completion</Th>
+              <Th align="center">Opps</Th>
+              <Th align="center">Approved</Th>
+            </HeaderRow>
+          </THead>
           <tbody>
             {clients.map((c) => {
               const meta = clientHealthMeta[c.health];
               const isLive = c.tenantId === "spr-northwind-q2";
               return (
-                <tr
-                  key={c.tenantId}
-                  className="border-b border-border last:border-0 hover:bg-surface-2"
-                >
-                  <td className="px-4 py-3">
+                <Tr key={c.tenantId}>
+                  <Td>
                     {isLive ? (
                       <Link
                         href={`/sprint/${c.tenantId}`}
@@ -138,34 +132,34 @@ export default async function TwistagCockpit() {
                       <div className="font-medium leading-tight">{c.name}</div>
                     )}
                     <div className="text-xs text-text-3">{c.segment}</div>
-                  </td>
-                  <td className="px-4 py-3 text-text-2">{c.sprintName}</td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td className="text-text-2">{c.sprintName}</Td>
+                  <Td>
                     <Badge tone={meta.tone}>{meta.label}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </Td>
+                  <Td>
                     <div className="flex items-center gap-2">
                       <ProgressBar
                         value={c.completionPct}
                         tone={c.health === "healthy" ? "brand" : "warning"}
                         className="w-24"
                       />
-                      <span className="text-xs text-text-3">
+                      <span className="font-mono text-xs tabular-nums text-text-3">
                         {c.completionPct}%
                       </span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-center tabular-nums">
+                  </Td>
+                  <Td align="center" className="font-mono tabular-nums">
                     {c.opportunities}
-                  </td>
-                  <td className="px-4 py-3 text-center tabular-nums">
+                  </Td>
+                  <Td align="center" className="font-mono tabular-nums">
                     {c.approved}
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               );
             })}
           </tbody>
-        </table>
+        </Table>
       </Card>
       <p className="mt-3 px-1 text-xs text-text-3">
         Only Northwind Logistics is wired with live data in this demo. The

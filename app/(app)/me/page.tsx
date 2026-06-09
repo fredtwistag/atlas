@@ -35,13 +35,13 @@ export default async function IcHomePage() {
     }, 0);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       {/* Greeting */}
       <div className="mb-8">
         <div className="mb-1 text-sm font-medium text-text-3">
           {sprint.tenantName} · {sprint.name}
         </div>
-        <h1 className="font-serif text-3xl font-medium tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight">
           Welcome back, {me.name.split(" ")[0]}.
         </h1>
         <p className="mt-1.5 text-md text-text-2">
@@ -106,7 +106,7 @@ export default async function IcHomePage() {
                 <div className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-brand">
                   Up next
                 </div>
-                <h2 className="font-serif text-2xl font-medium tracking-tight">
+                <h2 className="text-2xl font-semibold tracking-tight">
                   {sprint.topics.find((t) => t.id === next.topicId)?.title}
                 </h2>
                 <p className="mt-1.5 max-w-md text-md text-text-2">

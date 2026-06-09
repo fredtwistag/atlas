@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function SprintLoading() {
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
+    <main className="w-full px-6 py-8 lg:px-8">
       <Skeleton className="mb-2 h-8 w-80" />
       <Skeleton className="mb-6 h-4 w-[28rem]" />
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

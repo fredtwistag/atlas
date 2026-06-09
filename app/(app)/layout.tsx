@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/AppHeader";
+import { AppShell } from "@/components/AppShell";
 import { getCurrentUser } from "@/lib/session";
 
 export default async function AppLayout({
@@ -8,9 +8,6 @@ export default async function AppLayout({
 }) {
   const me = await getCurrentUser();
   return (
-    <div className="min-h-screen bg-bg">
-      <AppHeader user={{ name: me.name, title: me.title }} />
-      {children}
-    </div>
+    <AppShell user={{ name: me.name, title: me.title }}>{children}</AppShell>
   );
 }

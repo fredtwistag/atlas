@@ -42,7 +42,22 @@ npm run lint         # ESLint (next/core-web-vitals)
 npm run typecheck    # tsc --noEmit
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck + lint + test + build on every push and PR.
+CI (`.github/workflows/ci.yml`) runs typecheck + lint + test + build on every push and PR,
+plus a separate job for the database adversarial RLS tests.
+
+### Database (slice 1: schema + RLS)
+
+```bash
+npm run db:migrate         # apply migrations to DATABASE_URL (Supabase dev, via Session pooler)
+npm run test:integration   # adversarial RLS tests on an ephemeral local Postgres
+```
+
+Tenant isolation is enforced by Postgres RLS (ADR-001). All tenant-scoped queries go
+through `withTenantContext()` in `db/client.ts`; cross-tenant/admin work goes through
+`withServiceRole()` (audit-logged). The adversarial tests boot a throwaway Postgres via
+`embedded-postgres` (no Docker needed) and prove cross-tenant read/insert/update/delete
+are blocked. The UI still runs on `lib/data.ts` — wiring real queries via tRPC is a later
+slice.
 
 Key routes to walk through:
 - `/` — marketing landing (and `/pricing`)

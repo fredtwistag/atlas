@@ -8,6 +8,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
 import { db } from "@/lib/data";
 import { participantStatusMeta } from "@/lib/ui-maps";
 
@@ -60,14 +61,14 @@ export default async function ManagerDashboard({
   ];
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
+    <main className="w-full px-6 py-8 lg:px-8">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-sm text-text-3">
             {sprint.tenantName} · {sprint.tenantSegment}
           </div>
-          <h1 className="font-serif text-3xl font-medium tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight">
             {sprint.name}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-text-2">
@@ -110,17 +111,15 @@ export default async function ManagerDashboard({
             Team progress
           </h2>
           <Card className="overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-[0.04em] text-text-3">
-                  <th className="px-4 py-2.5 font-semibold">Contributor</th>
-                  <th className="px-4 py-2.5 font-semibold">Progress</th>
-                  <th className="px-4 py-2.5 font-semibold">Status</th>
-                  <th className="px-4 py-2.5 text-right font-semibold">
-                    Last active
-                  </th>
-                </tr>
-              </thead>
+            <Table>
+              <THead>
+                <HeaderRow>
+                  <Th>Contributor</Th>
+                  <Th>Progress</Th>
+                  <Th>Status</Th>
+                  <Th align="right">Last active</Th>
+                </HeaderRow>
+              </THead>
               <tbody>
                 {sprint.participants.map((pt) => {
                   const meta = participantStatusMeta[pt.status];
@@ -128,11 +127,8 @@ export default async function ManagerDashboard({
                     (pt.sessionsCompleted / pt.sessionsTotal) * 100,
                   );
                   return (
-                    <tr
-                      key={pt.user.id}
-                      className="border-b border-border last:border-0"
-                    >
-                      <td className="px-4 py-3">
+                    <Tr key={pt.user.id} hover={false}>
+                      <Td>
                         <div className="flex items-center gap-2.5">
                           <Avatar name={pt.user.name} size="sm" />
                           <div className="min-w-0">
@@ -144,23 +140,23 @@ export default async function ManagerDashboard({
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </Td>
+                      <Td>
                         <div className="flex items-center gap-2">
                           <ProgressBar
                             value={pct}
                             tone={pt.status === "idle" ? "warning" : "brand"}
                             className="w-20"
                           />
-                          <span className="text-xs text-text-3">
+                          <span className="font-mono text-xs tabular-nums text-text-3">
                             {pt.sessionsCompleted}/{pt.sessionsTotal}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </Td>
+                      <Td>
                         <Badge tone={meta.tone}>{meta.label}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs text-text-3">
+                      </Td>
+                      <Td align="right" className="text-xs text-text-3">
                         {pt.status === "idle" || pt.status === "not_started" ? (
                           <Link
                             href={`/sprint/${id}/nudge/${pt.user.id}`}
@@ -171,12 +167,12 @@ export default async function ManagerDashboard({
                         ) : (
                           pt.lastActiveLabel
                         )}
-                      </td>
-                    </tr>
+                      </Td>
+                    </Tr>
                   );
                 })}
               </tbody>
-            </table>
+            </Table>
           </Card>
 
           {/* Activity feed */}

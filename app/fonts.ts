@@ -1,16 +1,9 @@
-import { Inter, Fraunces, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono } from "next/font/google";
 
-export const inter = Inter({
+export const dmSans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
-});
-
-export const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  style: ["normal", "italic"],
-  variable: "--font-fraunces",
+  variable: "--font-dm-sans",
 });
 
 export const jetbrainsMono = JetBrains_Mono({

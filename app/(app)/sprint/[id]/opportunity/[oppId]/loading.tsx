@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function OpportunityLoading() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="w-full px-6 py-8 lg:px-8">
       <Skeleton className="mb-5 h-4 w-28" />
       <Skeleton className="mb-3 h-10 w-2/3" />
       <Skeleton className="mb-6 h-16 w-full" />

@@ -45,7 +45,7 @@ export function NudgeComposer({
       <div className="mb-6 flex items-center gap-3">
         <Avatar name={name} size="lg" />
         <div>
-          <h1 className="font-serif text-2xl font-medium tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight">
             Nudge {name}
           </h1>
           <div className="mt-0.5 flex items-center gap-2 text-sm text-text-2">
