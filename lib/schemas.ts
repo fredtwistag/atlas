@@ -33,3 +33,12 @@ export const OpportunityCandidateSchema = z.object({
   tags: z.array(z.string()).max(8),
 });
 export type OpportunityCandidate = z.infer<typeof OpportunityCandidateSchema>;
+
+/** Manager launch-sprint form input. Validated in the server action + mutation. */
+export const LaunchSprintSchema = z.object({
+  name: z.string().min(3).max(120),
+  primaryFocus: z.string().min(3).max(200),
+  topicKeys: z.array(z.string()).min(1),
+  participantIds: z.array(z.string().uuid()).min(1),
+});
+export type LaunchSprintInput = z.infer<typeof LaunchSprintSchema>;

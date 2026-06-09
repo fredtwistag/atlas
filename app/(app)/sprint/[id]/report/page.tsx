@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Check, Download } from "lucide-react";
 import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
-import { db, usdShort } from "@/lib/data";
+import { usdShort } from "@/lib/data";
+import { getApi } from "@/server/trpc/caller";
 
 export const metadata: Metadata = { title: "Discovery report · Atlas" };
+export const dynamic = "force-dynamic";
 
 export default async function FinalReport({
   params,
@@ -12,9 +15,13 @@ export default async function FinalReport({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sprint = await db.sprint.get(id);
-  const p = await db.sprint.progress(id);
-  const opps = await db.opportunity.listForSprint(id);
+  const api = await getApi();
+  const sprint = await api.sprint.get({ id }).catch(() => null);
+  if (!sprint) notFound();
+  const [p, opps] = await Promise.all([
+    api.sprint.progress({ id }),
+    api.opportunity.listForSprint({ sprintId: id }),
+  ]);
 
   const topFive = opps.slice(0, 5);
   const totalLow = topFive.reduce((s, o) => s + o.impactLow, 0);

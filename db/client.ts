@@ -73,6 +73,43 @@ export async function withServiceRole<T>(
 }
 
 /**
+ * Run `fn` with a Twistag (cross-tenant) read context: the `*_twistag_read`
+ * RLS policies (USING twistag_role IS NOT NULL) grant SELECT across all
+ * tenants. The read runs as the `authenticated` role with a twistag_role
+ * claim — NOT a service-role bypass. The access is audit-logged (written as
+ * service_role first, in the same transaction).
+ *
+ * Read-only by intent: tenant insert/update policies require a tenant_id match,
+ * which a twistag claim does not have, so writes here would be denied anyway.
+ */
+export async function withTwistagContext<T>(
+  audit: { twistagRole: string; actor: string },
+  fn: (tx: Db) => Promise<T>,
+): Promise<T> {
+  const claimsJson = JSON.stringify({
+    sub: audit.actor,
+    twistag_role: audit.twistagRole,
+  });
+  return db().transaction(async (tx) => {
+    // Audit the cross-tenant read as service_role (authenticated lacks INSERT
+    // on audit_log).
+    await tx.execute(sql`SET LOCAL ROLE service_role`);
+    await tx.execute(
+      sql`INSERT INTO public.audit_log (action, metadata)
+          VALUES ('twistag.read',
+                  jsonb_build_object('actor', ${audit.actor}::text,
+                                     'twistag_role', ${audit.twistagRole}::text))`,
+    );
+    // Switch to authenticated + twistag claims for the actual reads.
+    await tx.execute(sql`SET LOCAL ROLE authenticated`);
+    await tx.execute(
+      sql`SELECT set_config('request.jwt.claims', ${claimsJson}, true)`,
+    );
+    return fn(tx as unknown as Db);
+  });
+}
+
+/**
  * Run `fn` as `supabase_auth_admin` — the role Supabase Auth executes the access
  * token hook as. Test/seed utility so we can exercise the hook the way GoTrue does.
  */

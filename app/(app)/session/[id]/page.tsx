@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ConversationView } from "@/components/session/ConversationView";
-import { db } from "@/lib/data";
+import { getApi } from "@/server/trpc/caller";
+import { completeSession } from "../actions";
 
 export const metadata: Metadata = { title: "Discovery session · Atlas" };
+export const dynamic = "force-dynamic";
 
 export default async function SessionPage({
   params,
@@ -11,14 +13,15 @@ export default async function SessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await db.session.get(id);
-  const sprint = await db.sprint.get();
-  // The demo's interactive script is anchored on the "One change" / next topic;
-  // fall back to a sensible title if the id isn't one of the seeded sessions.
-  const topicTitle =
-    session?.topicTitle ?? sprint.topics[0]?.title ?? "Discovery session";
+  const api = await getApi();
+  const session = await api.session.get({ id }).catch(() => null);
+  if (!session) notFound();
 
-  if (!id) notFound();
-
-  return <ConversationView sessionId={id} topicTitle={topicTitle} />;
+  return (
+    <ConversationView
+      sessionId={session.id}
+      topicTitle={session.topicTitle}
+      onComplete={completeSession}
+    />
+  );
 }

@@ -179,6 +179,26 @@ export interface SprintProgress {
   signalQuality: number; // sponsor-rated, /5
 }
 
+export interface MySessionView {
+  id: string;
+  topicId: string;
+  topicTitle: string;
+  topicDescription: string;
+  estMinutes: number;
+  status: SessionStatus;
+  completedAt: string | null;
+  editWindowEndsAt: string | null;
+  captureCount: number;
+  totalSeconds: number | null;
+}
+
+export interface MyDashboard {
+  sprintId: string;
+  sprintName: string;
+  tenantName: string;
+  sessions: MySessionView[];
+}
+
 export interface ClientSummary {
   tenantId: string;
   name: string;

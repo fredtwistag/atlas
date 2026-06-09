@@ -8,6 +8,7 @@ import {
   sprints,
   topics,
   sprintParticipants,
+  sessions,
   opportunities,
   captures,
   opportunityEvidence,
@@ -38,6 +39,7 @@ async function main(): Promise<void> {
       await tx
         .delete(opportunities)
         .where(eq(opportunities.tenantId, tenantId));
+      await tx.delete(sessions).where(eq(sessions.tenantId, tenantId));
       await tx
         .delete(sprintParticipants)
         .where(eq(sprintParticipants.tenantId, tenantId));
@@ -130,6 +132,33 @@ async function main(): Promise<void> {
             lastActiveLabel: p.lastActiveLabel,
           })
           .onConflictDoNothing();
+      }
+
+      // Sessions: one per participant × topic. The first `sessionsCompleted`
+      // topics (in order) are marked complete so the IC's /me is real.
+      const dbTopics = await tx
+        .select()
+        .from(topics)
+        .where(eq(topics.tenantId, tenantId))
+        .orderBy(topics.orderIdx);
+      for (const p of sprint.participants) {
+        const uid = byEmail.get(p.user.email)?.id;
+        if (!uid) continue;
+        for (let i = 0; i < dbTopics.length; i++) {
+          const done = i < p.sessionsCompleted;
+          await tx.insert(sessions).values({
+            tenantId,
+            sprintId: SPRINT_ID,
+            topicId: dbTopics[i].id,
+            userId: uid,
+            status: done ? "completed" : "not_started",
+            totalSeconds: done ? 360 : null,
+            messagesCount: done ? 11 : 0,
+            captureCount: done ? 5 : 0,
+            completedAt: done ? new Date("2026-05-25T12:00:00Z") : null,
+            editWindowEndsAt: done ? new Date("2026-06-01T12:00:00Z") : null,
+          });
+        }
       }
 
       // Opportunities + evidence captures.

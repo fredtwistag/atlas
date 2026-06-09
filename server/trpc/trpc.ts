@@ -15,3 +15,23 @@ export const tenantProcedure = t.procedure.use(({ ctx, next }) => {
   }
   return next({ ctx: { session: ctx.session } });
 });
+
+/** Requires a tenant session with a manager/sponsor role (launch + admin actions). */
+export const managerProcedure = t.procedure.use(({ ctx, next }) => {
+  if (
+    !ctx.session ||
+    ctx.session.kind !== "tenant" ||
+    !(ctx.session.role === "manager" || ctx.session.role === "sponsor")
+  ) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+  return next({ ctx: { session: ctx.session } });
+});
+
+/** Requires a Twistag (cross-tenant) session. */
+export const twistagProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session || ctx.session.kind !== "twistag") {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  return next({ ctx: { session: ctx.session } });
+});

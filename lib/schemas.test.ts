@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CaptureSchema, ExtractionSchema } from "./schemas";
+import { CaptureSchema, ExtractionSchema, LaunchSprintSchema } from "./schemas";
 
 describe("CaptureSchema", () => {
   it("accepts a valid capture", () => {
@@ -41,5 +41,33 @@ describe("CaptureSchema", () => {
       notes_for_next_probe: null,
     });
     expect(ok.success).toBe(true);
+  });
+});
+
+describe("LaunchSprintSchema", () => {
+  const ok = {
+    name: "Operations Discovery",
+    primaryFocus: "Quote-to-cash",
+    topicKeys: ["how-work-flows"],
+    participantIds: ["00000000-0000-4000-8000-000000000001"],
+  };
+
+  it("accepts a valid launch payload", () => {
+    expect(LaunchSprintSchema.safeParse(ok).success).toBe(true);
+  });
+
+  it("rejects empty topic or participant lists", () => {
+    expect(LaunchSprintSchema.safeParse({ ...ok, topicKeys: [] }).success).toBe(
+      false,
+    );
+    expect(
+      LaunchSprintSchema.safeParse({ ...ok, participantIds: [] }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a non-uuid participant id", () => {
+    expect(
+      LaunchSprintSchema.safeParse({ ...ok, participantIds: ["nope"] }).success,
+    ).toBe(false);
   });
 });
