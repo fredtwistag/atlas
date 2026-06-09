@@ -66,10 +66,16 @@ const asTenant = (tenantId: string) =>
 const MGR_A = "44444444-4444-4444-8444-44444444a001";
 const IC_A1 = "44444444-4444-4444-8444-44444444a002";
 const IC_A2 = "44444444-4444-4444-8444-44444444a003";
+const IC_VIEW = "55555555-5555-4555-8555-55555555a001";
 
 const asManager = (tenantId: string, userId: string) =>
   createCaller({
     session: { kind: "tenant", tenantId, userId, role: "manager" },
+  });
+
+const asIc = (tenantId: string, userId: string) =>
+  createCaller({
+    session: { kind: "tenant", tenantId, userId, role: "ic" },
   });
 
 beforeEach(async () => {
@@ -231,6 +237,92 @@ describe("sprint.launch", () => {
         topicKeys: ["one-change"],
         participantIds: [IC_A1],
       }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("session.myDashboard / session.get", () => {
+  const TOPIC_ID = "55555555-5555-4555-8555-55555555a010";
+  const SES_ID = "55555555-5555-4555-8555-55555555a020";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: IC_VIEW,
+        tenantId: TENANT_A,
+        email: "view@a.example",
+        name: "Viewer",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    // SPRINT_A already exists (outer beforeEach). Add a topic, participant, session.
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: TOPIC_ID,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "How work flows",
+        description: "desc",
+        orderIdx: 1,
+        questionCount: 5,
+        estMinutes: 6,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprintParticipants).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        userId: IC_VIEW,
+        status: "not_started",
+        sessionsCompleted: 0,
+        sessionsTotal: 1,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        id: SES_ID,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        topicId: TOPIC_ID,
+        userId: IC_VIEW,
+        status: "not_started",
+      }),
+    );
+  });
+
+  it("returns the IC's active sprint sessions", async () => {
+    const data = await asIc(TENANT_A, IC_VIEW).session.myDashboard();
+    expect(data).not.toBeNull();
+    expect(data!.sprintId).toBe(SPRINT_A);
+    expect(data!.sessions).toHaveLength(1);
+    expect(data!.sessions[0].topicTitle).toBe("How work flows");
+  });
+
+  it("returns null for a user who is not a participant", async () => {
+    const other = "55555555-5555-4555-8555-55555555a099";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: other,
+        tenantId: TENANT_A,
+        email: "no@a.example",
+        name: "No",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    const data = await asIc(TENANT_A, other).session.myDashboard();
+    expect(data).toBeNull();
+  });
+
+  it("session.get returns the topic title for the owning tenant", async () => {
+    const s = await asIc(TENANT_A, IC_VIEW).session.get({ id: SES_ID });
+    expect(s.topicTitle).toBe("How work flows");
+  });
+
+  it("session.get is blocked cross-tenant (NOT_FOUND under RLS)", async () => {
+    await expect(
+      asIc(TENANT_B, IC_VIEW).session.get({ id: SES_ID }),
     ).rejects.toThrow();
   });
 });
