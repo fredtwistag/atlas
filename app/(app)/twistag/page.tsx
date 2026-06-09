@@ -4,8 +4,11 @@ import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import type { Metadata } from "next";
 import { db } from "@/lib/data";
 import { clientHealthMeta } from "@/lib/ui-maps";
+
+export const metadata: Metadata = { title: "Clients · Atlas" };
 
 export default async function TwistagCockpit() {
   const clients = await db.twistag.clientList();

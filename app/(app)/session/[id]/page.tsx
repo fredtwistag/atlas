@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ConversationView } from "@/components/session/ConversationView";
 import { db } from "@/lib/data";
+
+export const metadata: Metadata = { title: "Discovery session · Atlas" };
 
 export default async function SessionPage({
   params,

@@ -11,8 +11,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ButtonLink } from "@/components/ui/Button";
+import type { Metadata } from "next";
 import { db } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
+
+export const metadata: Metadata = { title: "My sprint · Atlas" };
 
 export default async function IcHomePage() {
   const me = await getCurrentUser();

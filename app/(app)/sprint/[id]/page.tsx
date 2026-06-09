@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Activity, CircleDot, FileText, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +10,16 @@ import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { db } from "@/lib/data";
 import { participantStatusMeta } from "@/lib/ui-maps";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const sprint = await db.sprint.get(id);
+  return { title: `${sprint.name} · Atlas` };
+}
 
 export default async function ManagerDashboard({
   params,

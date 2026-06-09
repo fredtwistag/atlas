@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { Check, Download } from "lucide-react";
 import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { db, usdShort } from "@/lib/data";
+
+export const metadata: Metadata = { title: "Discovery report · Atlas" };
 
 export default async function FinalReport({
   params,
