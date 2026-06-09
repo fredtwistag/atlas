@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Mail, MessageSquare, Sparkles } from "lucide-react";
+import { Check, Mail, MessageSquare, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { BackLink } from "@/components/ui/BackLink";
 import { Textarea, Label, Input } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
@@ -37,12 +38,9 @@ export function NudgeComposer({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <Link
-        href={`/sprint/${sprintId}`}
-        className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 hover:text-text"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to sprint
-      </Link>
+      <div className="mb-5">
+        <BackLink href={`/sprint/${sprintId}`}>Back to sprint</BackLink>
+      </div>
 
       <div className="mb-6 flex items-center gap-3">
         <Avatar name={name} size="lg" />

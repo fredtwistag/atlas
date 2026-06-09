@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   Check,
   ChevronRight,
   Clock,
@@ -17,6 +15,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { BackLink } from "@/components/ui/BackLink";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
 import { usdRange, usdShort } from "@/lib/data";
@@ -48,12 +47,9 @@ export function OpportunityDetail({
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
-      <Link
-        href={`/sprint/${sprintId}`}
-        className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 hover:text-text"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to sprint
-      </Link>
+      <div className="mb-5">
+        <BackLink href={`/sprint/${sprintId}`}>Back to sprint</BackLink>
+      </div>
 
       {/* Hero */}
       <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

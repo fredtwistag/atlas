@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Check, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { BackLink } from "@/components/ui/BackLink";
 import { Textarea } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 
@@ -49,12 +50,9 @@ export function EditCaptures({
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
-      <Link
-        href="/me"
-        className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 hover:text-text"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to my sprint
-      </Link>
+      <div className="mb-5">
+        <BackLink href="/me">Back to my sprint</BackLink>
+      </div>
 
       <div className="mb-2 flex items-center gap-2">
         <h1 className="font-serif text-2xl font-medium tracking-tight">

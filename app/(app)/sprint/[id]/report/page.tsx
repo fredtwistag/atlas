@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, Check, Download } from "lucide-react";
+import { Check, Download } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { BackLink } from "@/components/ui/BackLink";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { db, usdRange, usdShort } from "@/lib/data";
 
@@ -25,12 +26,7 @@ export default async function FinalReport({
       {/* Toolbar */}
       <div className="sticky top-14 z-40 border-b border-border bg-bg/85 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-2.5">
-          <Link
-            href={`/sprint/${id}`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-text-2 hover:text-text"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to sprint
-          </Link>
+          <BackLink href={`/sprint/${id}`}>Back to sprint</BackLink>
           <button className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-[13px] font-medium hover:bg-surface-2">
             <Download className="h-3.5 w-3.5" /> Download PDF
           </button>
