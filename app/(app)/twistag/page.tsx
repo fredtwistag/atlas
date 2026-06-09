@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AlertTriangle, Building2, CircleDot, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
@@ -6,13 +5,15 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
 import type { Metadata } from "next";
-import { db } from "@/lib/data";
+import { getApi } from "@/server/trpc/caller";
 import { clientHealthMeta } from "@/lib/ui-maps";
 
 export const metadata: Metadata = { title: "Clients · Atlas" };
+export const dynamic = "force-dynamic";
 
 export default async function TwistagCockpit() {
-  const clients = await db.twistag.clientList();
+  const api = await getApi();
+  const clients = await api.twistag.clientList();
   const alerts = clients.filter((c) => c.alert);
 
   const totals = {
@@ -54,18 +55,9 @@ export default async function TwistagCockpit() {
                   <span className="font-semibold">{c.name}</span>
                   <span className="text-text-2"> — {c.alert}</span>
                 </div>
-                {c.tenantId === "spr-northwind-q2" ? (
-                  <Link
-                    href={`/sprint/${c.tenantId}`}
-                    className="shrink-0 text-[13px] font-medium text-brand hover:text-brand-hover"
-                  >
-                    Open →
-                  </Link>
-                ) : (
-                  <span className="shrink-0 text-[13px] font-medium text-text-3">
-                    Open →
-                  </span>
-                )}
+                <span className="shrink-0 text-[13px] font-medium text-text-3">
+                  Needs attention
+                </span>
               </div>
             ))}
           </div>
@@ -117,20 +109,10 @@ export default async function TwistagCockpit() {
           <tbody>
             {clients.map((c) => {
               const meta = clientHealthMeta[c.health];
-              const isLive = c.tenantId === "spr-northwind-q2";
               return (
                 <Tr key={c.tenantId}>
                   <Td>
-                    {isLive ? (
-                      <Link
-                        href={`/sprint/${c.tenantId}`}
-                        className="font-medium leading-tight text-brand hover:text-brand-hover"
-                      >
-                        {c.name}
-                      </Link>
-                    ) : (
-                      <div className="font-medium leading-tight">{c.name}</div>
-                    )}
+                    <div className="font-medium leading-tight">{c.name}</div>
                     <div className="text-xs text-text-3">{c.segment}</div>
                   </Td>
                   <Td className="text-text-2">{c.sprintName}</Td>
@@ -162,8 +144,8 @@ export default async function TwistagCockpit() {
         </Table>
       </Card>
       <p className="mt-3 px-1 text-xs text-text-3">
-        Only Northwind Logistics is wired with live data in this demo. The
-        others illustrate the multi-client overview.
+        Live across every client you lead. Health and completion update as
+        participants finish their sessions.
       </p>
     </main>
   );
