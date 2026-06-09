@@ -18,7 +18,7 @@ export function ScoreBadge({
   return (
     <span
       className={cn(
-        "flex shrink-0 flex-col items-center justify-center rounded-lg font-serif font-medium leading-none",
+        "flex shrink-0 flex-col items-center justify-center rounded-lg font-mono font-semibold leading-none tabular-nums",
         tone,
         size === "lg" ? "h-16 w-16" : "h-11 w-11",
       )}

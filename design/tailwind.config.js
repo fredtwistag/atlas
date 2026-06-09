@@ -45,7 +45,6 @@ module.exports = {
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
-        serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
       borderRadius: {
@@ -68,9 +67,9 @@ module.exports = {
         xl: ["18px", { lineHeight: "1.3", letterSpacing: "-0.015em" }],
         "2xl": ["22px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
         "3xl": ["28px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
-        "4xl": ["42px", { lineHeight: "1.1", letterSpacing: "-0.025em" }],
-        "5xl": ["56px", { lineHeight: "1.05", letterSpacing: "-0.03em" }],
-        "6xl": ["72px", { lineHeight: "1.0", letterSpacing: "-0.035em" }],
+        "4xl": ["42px", { lineHeight: "1.08", letterSpacing: "-0.03em" }],
+        "5xl": ["56px", { lineHeight: "1.02", letterSpacing: "-0.035em" }],
+        "6xl": ["72px", { lineHeight: "0.98", letterSpacing: "-0.04em" }],
       },
       transitionDuration: {
         fast: "120ms",

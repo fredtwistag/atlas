@@ -47,7 +47,7 @@ export function OpportunityDetail({
   ][opp.confidenceScore];
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="w-full px-6 py-8 lg:px-8">
       <div className="mb-5">
         <BackLink href={`/sprint/${sprintId}`}>Back to sprint</BackLink>
       </div>
@@ -63,7 +63,7 @@ export function OpportunityDetail({
               </Badge>
             ))}
           </div>
-          <h1 className="font-serif text-[32px] font-medium leading-tight tracking-tight">
+          <h1 className="text-[32px] font-semibold leading-tight tracking-tight">
             {opp.title}
           </h1>
           <p className="mt-2.5 text-md leading-relaxed text-text-2">

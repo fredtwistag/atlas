@@ -25,7 +25,7 @@ export default async function FinalReport({
   return (
     <div className="bg-bg">
       {/* Toolbar */}
-      <div className="sticky top-14 z-40 border-b border-border bg-bg/85 backdrop-blur">
+      <div className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-2.5">
           <BackLink href={`/sprint/${id}`}>Back to sprint</BackLink>
           <button className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-[13px] font-medium hover:bg-surface-2">
@@ -40,7 +40,7 @@ export default async function FinalReport({
           <div className="mb-3 text-sm font-semibold uppercase tracking-[0.1em] text-brand">
             Atlas discovery report
           </div>
-          <h1 className="font-serif text-5xl font-medium leading-[1.05] tracking-tight">
+          <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight">
             {sprint.tenantName}
           </h1>
           <p className="mt-3 text-lg text-text-2">{sprint.name}</p>
@@ -89,9 +89,7 @@ export default async function FinalReport({
                 key={l}
                 className="rounded-lg border border-border bg-surface p-4 text-center"
               >
-                <div className="font-serif text-3xl font-medium tracking-tight">
-                  {v}
-                </div>
+                <div className="text-3xl font-semibold tracking-tight">{v}</div>
                 <div className="mt-1 text-xs text-text-3">{l}</div>
               </div>
             ))}
@@ -175,9 +173,7 @@ function Section({
 }) {
   return (
     <section className="mb-10">
-      <h2 className="mb-3 font-serif text-2xl font-medium tracking-tight">
-        {title}
-      </h2>
+      <h2 className="mb-3 text-2xl font-semibold tracking-tight">{title}</h2>
       <div className="space-y-3 text-md leading-relaxed text-text-2 [&_strong]:font-semibold [&_strong]:text-text">
         {children}
       </div>

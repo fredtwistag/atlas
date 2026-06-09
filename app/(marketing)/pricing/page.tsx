@@ -63,7 +63,7 @@ export default function PricingPage() {
       </nav>
 
       <section className="px-7 py-20 text-center">
-        <h1 className="font-serif text-5xl font-medium tracking-tight">
+        <h1 className="text-5xl font-semibold tracking-tight">
           Priced to the outcome, not the hour.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-text-2">
@@ -87,7 +87,7 @@ export default function PricingPage() {
                   Available now
                 </span>
               )}
-              <h2 className="font-serif text-2xl font-medium tracking-tight">
+              <h2 className="text-2xl font-semibold tracking-tight">
                 {t.name}
               </h2>
               <div className="mt-2 text-3xl font-medium tracking-tight">

@@ -55,9 +55,7 @@ export function EditCaptures({
       </div>
 
       <div className="mb-2 flex items-center gap-2">
-        <h1 className="font-serif text-2xl font-medium tracking-tight">
-          {topicTitle}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{topicTitle}</h1>
         <Badge tone="success">
           <Check className="h-3 w-3" /> Completed {completedAt}
         </Badge>

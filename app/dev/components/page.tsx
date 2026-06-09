@@ -6,6 +6,15 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Input, Textarea, Label } from "@/components/ui/Input";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { Logo } from "@/components/Logo";
+import {
+  Table,
+  THead,
+  Th,
+  HeaderRow,
+  Tr,
+  Td,
+  StatusCell,
+} from "@/components/ui/Table";
 
 export const metadata = { title: "Atlas — component showcase" };
 
@@ -16,7 +25,7 @@ export default function ComponentsShowcase() {
         <header className="flex items-center justify-between">
           <div>
             <Logo />
-            <h1 className="mt-3 font-serif text-3xl font-medium tracking-tight">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight">
               Tier-1 components
             </h1>
             <p className="mt-1 text-md text-text-2">
@@ -28,6 +37,33 @@ export default function ComponentsShowcase() {
             ← Home
           </ButtonLink>
         </header>
+
+        <Group title="Typography — DM Sans">
+          <div className="space-y-2">
+            <div className="text-5xl font-semibold tracking-tight">
+              Display 5xl
+            </div>
+            <div className="text-3xl font-semibold tracking-tight">
+              Heading 3xl
+            </div>
+            <div className="text-xl font-semibold tracking-tight">
+              Heading xl
+            </div>
+            <div className="text-md text-text-2">
+              Body md — the quick brown fox jumps over the lazy dog.
+            </div>
+            <div className="text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
+              Label xs
+            </div>
+            <div className="font-mono text-2xl font-semibold tabular-nums">
+              1,284.50 · 98% · 7.1
+            </div>
+            <p className="text-sm text-text-3">
+              One sans family (weights carry hierarchy) + JetBrains Mono for
+              numbers, scores, and metrics. No serif.
+            </p>
+          </div>
+        </Group>
 
         <Group title="Button">
           <div className="flex flex-wrap items-center gap-3">
@@ -95,6 +131,48 @@ export default function ComponentsShowcase() {
               <Textarea id="note" rows={3} placeholder="Type a note…" />
             </div>
           </div>
+        </Group>
+
+        <Group title="Table">
+          <Card className="overflow-hidden">
+            <Table>
+              <THead>
+                <HeaderRow>
+                  <Th>Device</Th>
+                  <Th align="center">PW</Th>
+                  <Th align="center">HD</Th>
+                  <Th align="center">AV</Th>
+                  <Th align="right">Last check</Th>
+                </HeaderRow>
+              </THead>
+              <tbody>
+                {[
+                  { d: "Priya's MacBook Pro", pw: true, hd: true, av: false },
+                  { d: "Marcus's ThinkPad", pw: true, hd: null, av: true },
+                  { d: "Dana's MacBook Air", pw: false, hd: false, av: false },
+                ].map((r) => (
+                  <Tr key={r.d}>
+                    <Td className="font-medium">{r.d}</Td>
+                    <Td align="center">
+                      <StatusCell ok={r.pw} />
+                    </Td>
+                    <Td align="center">
+                      <StatusCell ok={r.hd} />
+                    </Td>
+                    <Td align="center">
+                      <StatusCell ok={r.av} />
+                    </Td>
+                    <Td
+                      align="right"
+                      className="font-mono text-xs tabular-nums text-text-3"
+                    >
+                      2 days
+                    </Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
         </Group>
 
         <Group title="Card">

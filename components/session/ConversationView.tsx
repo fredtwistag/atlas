@@ -97,8 +97,9 @@ export function ConversationView({
 
   return (
     <div className="mx-auto grid max-w-6xl gap-5 px-6 py-6 lg:grid-cols-[1fr_320px]">
-      {/* Thread */}
-      <div className="flex h-[calc(100vh-7.5rem)] flex-col rounded-lg border border-border bg-surface">
+      {/* Thread — fills the viewport minus the mobile top bar (3.5rem) and the
+          page padding; on desktop there's no top bar so only padding is subtracted. */}
+      <div className="flex h-[calc(100vh-6.5rem)] flex-col rounded-lg border border-border bg-surface lg:h-[calc(100vh-3rem)]">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div>
             <div className="text-[13px] font-semibold">{topicTitle}</div>

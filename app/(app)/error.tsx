@@ -17,7 +17,7 @@ export default function AppError({
 
   return (
     <main className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center">
-      <h1 className="font-serif text-2xl font-medium tracking-tight">
+      <h1 className="text-2xl font-semibold tracking-tight">
         Something didn&apos;t load.
       </h1>
       <p className="mt-2 text-md text-text-2">

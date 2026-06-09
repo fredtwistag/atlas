@@ -44,7 +44,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="px-7 pb-28 pt-20 text-center">
         <div className="mx-auto max-w-[880px]">
-          <h1 className="font-serif text-[clamp(44px,7vw,72px)] font-medium leading-[1.0] tracking-[-0.035em]">
+          <h1 className="text-[clamp(44px,7vw,72px)] font-semibold leading-[1.0] tracking-[-0.035em]">
             An{" "}
             <em className="not-italic text-brand">
               operational discovery sprint
@@ -94,7 +94,7 @@ export default function LandingPage() {
             ].map((name) => (
               <span
                 key={name}
-                className="font-serif text-[18px] font-medium tracking-tight text-text-2"
+                className="text-[18px] font-semibold tracking-tight text-text-2"
               >
                 {name}
               </span>
@@ -110,7 +110,7 @@ export default function LandingPage() {
             <div className="mb-4 text-xs font-semibold uppercase tracking-[0.1em] text-text-3">
               What Atlas does
             </div>
-            <h2 className="font-serif text-[clamp(36px,5vw,48px)] font-medium leading-[1.08] tracking-[-0.025em]">
+            <h2 className="text-[clamp(36px,5vw,48px)] font-semibold leading-[1.08] tracking-[-0.025em]">
               A new way to discover what&apos;s actually slowing your team down.
             </h2>
             <p className="mt-4 max-w-[580px] text-[18px] leading-relaxed text-text-2">
@@ -140,10 +140,10 @@ export default function LandingPage() {
                 key={num}
                 className="rounded-lg border border-border bg-bg p-7"
               >
-                <div className="mb-8 font-serif text-sm font-medium text-text-3">
+                <div className="mb-8 text-sm font-semibold text-text-3">
                   {num}
                 </div>
-                <h3 className="mb-3 font-serif text-2xl font-medium leading-tight tracking-tight">
+                <h3 className="mb-3 text-2xl font-semibold leading-tight tracking-tight">
                   {title}
                 </h3>
                 <p className="text-md leading-relaxed text-text-2">{desc}</p>
@@ -160,7 +160,7 @@ export default function LandingPage() {
             <div className="mb-4 text-xs font-semibold uppercase tracking-[0.1em] text-text-3">
               How it works
             </div>
-            <h2 className="font-serif text-[clamp(36px,5vw,48px)] font-medium leading-[1.08] tracking-[-0.025em]">
+            <h2 className="text-[clamp(36px,5vw,48px)] font-semibold leading-[1.08] tracking-[-0.025em]">
               From map to ship, in 4 weeks.
             </h2>
             <p className="mt-4 max-w-[580px] text-[18px] leading-relaxed text-text-2">
@@ -209,7 +209,7 @@ export default function LandingPage() {
                   <span className="h-px w-6 bg-text-3" />
                   {step.phase}
                 </div>
-                <h3 className="mb-3.5 font-serif text-[26px] font-medium leading-tight tracking-tight">
+                <h3 className="mb-3.5 text-[26px] font-semibold leading-tight tracking-tight">
                   {step.title}
                 </h3>
                 <p className="text-md leading-relaxed text-text-2">
@@ -244,7 +244,7 @@ export default function LandingPage() {
             <div className="mb-4 text-xs font-semibold uppercase tracking-[0.1em] text-white/50">
               For who
             </div>
-            <h2 className="font-serif text-[clamp(36px,5vw,48px)] font-medium leading-[1.08] tracking-[-0.025em]">
+            <h2 className="text-[clamp(36px,5vw,48px)] font-semibold leading-[1.08] tracking-[-0.025em]">
               Built for the teams who don&apos;t have time for a transformation
               program.
             </h2>
@@ -284,7 +284,7 @@ export default function LandingPage() {
                 <div className="mb-3 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white/50">
                   {eyebrow}
                 </div>
-                <div className="mb-3 font-serif text-2xl font-medium leading-tight tracking-tight">
+                <div className="mb-3 text-2xl font-semibold leading-tight tracking-tight">
                   {title}
                 </div>
                 <p className="text-md leading-relaxed text-white/70">{desc}</p>
@@ -301,7 +301,7 @@ export default function LandingPage() {
             <div className="mb-4 text-xs font-semibold uppercase tracking-[0.1em] text-text-3">
               Outcomes
             </div>
-            <h2 className="font-serif text-[clamp(36px,5vw,48px)] font-medium leading-[1.08] tracking-[-0.025em]">
+            <h2 className="text-[clamp(36px,5vw,48px)] font-semibold leading-[1.08] tracking-[-0.025em]">
               What discovery actually moves.
             </h2>
             <p className="mx-auto mt-4 max-w-[580px] text-[18px] leading-relaxed text-text-2">
@@ -334,7 +334,7 @@ export default function LandingPage() {
                 key={label}
                 className="rounded-lg border border-border bg-surface p-7"
               >
-                <div className="mb-2 font-serif text-[56px] font-medium leading-none tracking-[-0.03em]">
+                <div className="mb-2 text-[56px] font-semibold leading-none tracking-[-0.03em]">
                   {stat}
                   <span className="ml-0.5 text-[22px] font-medium text-text-3">
                     {unit}
@@ -353,7 +353,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="border-t border-border bg-surface px-7 py-24 text-center">
         <div className="mx-auto max-w-[760px]">
-          <h2 className="font-serif text-[clamp(40px,6vw,56px)] font-medium leading-[1.05] tracking-[-0.025em]">
+          <h2 className="text-[clamp(40px,6vw,56px)] font-semibold leading-[1.05] tracking-[-0.025em]">
             The first opportunity surfaces within a week.
           </h2>
           <p className="mx-auto mt-6 max-w-[540px] text-[17px] leading-relaxed text-text-2">
