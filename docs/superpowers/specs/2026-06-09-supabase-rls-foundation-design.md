@@ -1,7 +1,7 @@
 # Supabase schema + RLS foundation (slice 1) — design spec
 
 **Date:** 2026-06-09
-**Status:** Implemented (branch `backend-db-rls`) — remote apply pending Session-pooler URL
+**Status:** Implemented (branch `backend-db-rls`) — applied to the Supabase dev project (RLS verified)
 **Owner:** fred@twistag.com
 **Tickets:** ATL-013 (RLS scaffolding + adversarial harness), ATL-014 (tenants + users + sprints)
 **Decisions:** harness + core tables first; adversarial tests on ephemeral local Postgres (chosen 2026-06-09)
