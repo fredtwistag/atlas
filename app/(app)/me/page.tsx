@@ -12,11 +12,12 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ButtonLink } from "@/components/ui/Button";
 import { db } from "@/lib/data";
+import { getCurrentUser } from "@/lib/session";
 
-export default function IcHomePage() {
-  const me = db.me();
-  const sprint = db.sprint.get();
-  const sessions = db.session.mine();
+export default async function IcHomePage() {
+  const me = await getCurrentUser();
+  const sprint = await db.sprint.get();
+  const sessions = await db.session.mine();
 
   const completed = sessions.filter((s) => s.status === "completed");
   const next = sessions.find((s) => s.status !== "completed");

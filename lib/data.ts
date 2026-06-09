@@ -991,7 +991,6 @@ export const db = {
   twistag: {
     clientList: (): ClientSummary[] => clients,
   },
-  me: (): User => currentIc,
 };
 
 /** SOW draft auto-generated on opportunity approval (see ATL-502). */
