@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Sprint Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, textarea, select { font-family: inherit; font-size: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Top nav */
+  .topnav {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text);
+    border-radius: 5px;
+    position: relative;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface);
+    border-radius: 2px;
+  }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-2); font-size: 13px;
+  }
+  .breadcrumb-sep { color: var(--text-3); }
+  .breadcrumb-current { color: var(--text); font-weight: 500; }
+  .nav-spacer { flex: 1; }
+  .close-btn {
+    color: var(--text-2);
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+
+  /* Iter label */
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text);
+    color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 100;
+  }
+
+  /* Layout */
+  .wizard {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 52px);
+  }
+  @media (max-width: 800px) {
+    .wizard { grid-template-columns: 1fr; }
+    .stepper-side { display: none; }
+  }
+
+  /* Stepper side */
+  .stepper-side {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 36px 28px;
+  }
+  .stepper-eyebrow {
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .stepper-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 28px;
+  }
+  .step-list {
+    list-style: none;
+    position: relative;
+  }
+  .step-list::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 22px;
+    bottom: 22px;
+    width: 1px;
+    background: var(--border);
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    cursor: pointer;
+    position: relative;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    z-index: 1;
+    transition: all 0.15s ease;
+  }
+  .step.done .step-num {
+    background: var(--text);
+    color: var(--surface);
+    border-color: var(--text);
+  }
+  .step.active .step-num {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.08);
+  }
+  .step-body { padding-top: 4px; }
+  .step-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-3);
+    margin-bottom: 2px;
+  }
+  .step.done .step-name, .step.active .step-name { color: var(--text); }
+  .step-hint {
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  /* Main */
+  .wiz-main {
+    padding: 56px 56px 80px;
+    overflow-y: auto;
+  }
+  @media (max-width: 800px) {
+    .wiz-main { padding: 32px 24px 80px; }
+  }
+
+  .wiz-eyebrow {
+    color: var(--text-3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .wiz-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    max-width: 600px;
+  }
+  .wiz-sub {
+    color: var(--text-2);
+    font-size: 15px;
+    max-width: 600px;
+    margin-bottom: 36px;
+  }
+
+  /* Form fields */
+  .field { margin-bottom: 22px; max-width: 600px; }
+  .field-label {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 400;
+  }
+  .input, .textarea, .select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input:focus, .textarea:focus, .select:focus {
+    outline: none;
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+  /* Select cards */
+  .select-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-width: 600px;
+  }
+  @media (max-width: 500px) {
+    .select-cards { grid-template-columns: 1fr; }
+  }
+  .select-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+  .select-card:hover { border-color: var(--border-strong); }
+  .select-card.selected {
+    border-color: var(--text);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .select-card.selected::after {
+    content: '';
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 16px; height: 16px;
+    background: var(--text);
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .select-card-icon {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text-2);
+  }
+  .select-card-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .select-card-desc {
+    color: var(--text-2);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  /* Team invite */
+  .invite-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    overflow: hidden;
+    margin-bottom: 12px;
+    max-width: 600px;
+  }
+  .invite-row {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .invite-row:first-child { border-top: none; }
+  .av {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 600; font-size: 11px;
+    flex-shrink: 0;
+  }
+  .av-1 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .av-2 { background: linear-gradient(135deg, #10b981, #059669); }
+  .av-3 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+  .av-4 { background: linear-gradient(135deg, #ec4899, #be185d); }
+  .av-5 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+  .av-6 { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+  .av-7 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  .av-8 { background: linear-gradient(135deg, #f97316, #c2410c); }
+  .invite-info { flex: 1; }
+  .invite-name {
+    font-weight: 500;
+    font-size: 13.5px;
+    margin-bottom: 1px;
+  }
+  .invite-email {
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .invite-role {
+    color: var(--text-2);
+    font-size: 12px;
+    margin-right: 8px;
+  }
+  .invite-remove {
+    color: var(--text-3);
+    width: 26px; height: 26px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .invite-remove:hover { background: var(--surface-2); color: var(--text); }
+
+  .invite-add {
+    display: flex;
+    gap: 8px;
+    max-width: 600px;
+  }
+  .invite-add .input { flex: 1; }
+  .csv-upload {
+    margin-top: 10px;
+    color: var(--text-3);
+    font-size: 12.5px;
+  }
+  .csv-upload a {
+    color: var(--brand);
+    font-weight: 500;
+  }
+
+  /* Topics */
+  .topics-list { max-width: 720px; }
+  .topic {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .topic:hover { border-color: var(--border-strong); }
+  .topic.selected {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .topic-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    margin-top: 1px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .topic.selected .topic-check {
+    background: var(--text);
+    border-color: var(--text);
+  }
+  .topic.selected .topic-check::after {
+    content: '';
+    width: 10px; height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: contain;
+  }
+  .topic-body { flex: 1; }
+  .topic-title {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .topic-meta {
+    color: var(--text-2);
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .topic-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .tag {
+    font-size: 11px;
+    padding: 1px 7px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .tag.suggested {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+  .add-custom-topic {
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Timeline */
+  .timeline-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 600px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) {
+    .timeline-grid { grid-template-columns: 1fr; }
+  }
+  .timeline-vis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    max-width: 600px;
+  }
+  .timeline-vis-title {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 14px;
+  }
+  .timeline-track {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .timeline-track::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 100%;
+    background: var(--text);
+    border-radius: 3px;
+  }
+  .timeline-dots {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -10px;
+    position: relative;
+  }
+  .timeline-dot {
+    width: 14px; height: 14px;
+    background: var(--text);
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+  }
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  .timeline-summary {
+    color: var(--text-2);
+    font-size: 13px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .timeline-summary strong { color: var(--text); font-weight: 600; }
+
+  /* Review */
+  .review-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 700px;
+    margin-bottom: 18px;
+  }
+  .review-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  .review-row:first-child { border-top: none; padding-top: 0; }
+  .review-row:last-child { padding-bottom: 0; }
+  .review-label {
+    width: 140px;
+    color: var(--text-3);
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .review-value {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .review-value strong { font-weight: 600; }
+  .review-edit {
+    color: var(--brand);
+    font-size: 12.5px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* Wiz nav (bottom) */
+  .wiz-nav {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    padding: 16px 0 0;
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 720px;
+  }
+  .wiz-nav-spacer { flex: 1; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13.5px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 8px 12px; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
+  /* Wiz step content */
+  .wiz-step { display: none; }
+  .wiz-step.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 2 · Sprint Setup</div>
+
+<nav class="topnav">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <span>Atlas</span>
+  </div>
+  <div class="breadcrumb">
+    <span>Acme Manufacturing</span>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">New sprint</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <button class="close-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    Save & close
+  </button>
+</nav>
+
+<div class="wizard">
+
+  <!-- Stepper sidebar -->
+  <aside class="stepper-side">
+    <div class="stepper-eyebrow">New sprint</div>
+    <h2 class="stepper-title">Set up a discovery sprint</h2>
+    <ul class="step-list">
+      <li class="step active" data-step="1">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-name">Scope</div>
+          <div class="step-hint">Department + focus</div>
+        </div>
+      </li>
+      <li class="step" data-step="2">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-name">Team</div>
+          <div class="step-hint">Who participates</div>
+        </div>
+      </li>
+      <li class="step" data-step="3">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-name">Topics</div>
+          <div class="step-hint">What Atlas asks</div>
+        </div>
+      </li>
+      <li class="step" data-step="4">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-name">Timeline</div>
+          <div class="step-hint">Dates + cadence</div>
+        </div>
+      </li>
+      <li class="step" data-step="5">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-name">Review & launch</div>
+          <div class="step-hint">Confirm and go</div>
+        </div>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Wiz main -->
+  <main class="wiz-main">
+
+    <!-- STEP 1 -->
+    <section class="wiz-step active" data-step="1">
+      <div class="wiz-eyebrow">Step 1 of 5</div>
+      <h1 class="wiz-title">What part of the business should this sprint cover?</h1>
+      <p class="wiz-sub">Pick the department and what you want Atlas to focus on. You can expand scope later.</p>
+
+      <div class="field">
+        <label class="field-label">Sprint name <span class="field-hint">— how the team will see it</span></label>
+        <input class="input" value="Operations Discovery" placeholder="e.g. Q3 Operations Discovery" />
+      </div>
+
+      <div class="field">
+        <label class="field-label">Department or function</label>
+        <select class="select">
+          <option>Operations</option>
+          <option>Sales & RevOps</option>
+          <option>Finance</option>
+          <option>Customer Success</option>
+          <option>Engineering</option>
+          <option>HR / People</option>
+          <option>Marketing</option>
+          <option>Cross-functional</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Primary focus <span class="field-hint">— pick one to start</span></label>
+        <div class="select-cards">
+          <button class="select-card selected">
+            <div class="select-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+            </div>
+            <div class="select-card-title">Process efficiency</div>
+            <div class="select-card-desc">Where time goes, what's manual, what could be automated.</div>
+          </button>
+          <button class="select-card">
+            <div class="select-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="select-card-title">Decision bottlenecks</div>
+            <div class="select-card-desc">Where things wait for someone, single points of approval.</div>
+          </button>
+          <button class="select-card">
+            <div class="select-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+            </div>
+            <div class="select-card-title">Tribal knowledge</div>
+            <div class="select-card-desc">SOPs that don't exist in writing, knowledge in people's heads.</div>
+          </button>
+          <button class="select-card">
+            <div class="select-card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="select-card-title">Tool & system gaps</div>
+            <div class="select-card-desc">Where existing tools fall short, workarounds in spreadsheets.</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Anything specific you want Atlas to listen for? <span class="field-hint">— optional</span></label>
+        <textarea class="textarea" placeholder="e.g. We just acquired a new region and onboarding is messy. We're losing time to manual quote handoffs."></textarea>
+      </div>
+
+      <div class="wiz-nav">
+        <div class="wiz-nav-spacer"></div>
+        <button class="btn btn-primary" onclick="nextStep()">Continue → <kbd style="font-size:10px; font-family: 'JetBrains Mono'; opacity: 0.6;"></kbd></button>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="wiz-step" data-step="2">
+      <div class="wiz-eyebrow">Step 2 of 5</div>
+      <h1 class="wiz-title">Who participates?</h1>
+      <p class="wiz-sub">Invite team members by email. They'll get a magic link — no password setup needed. You can add more later.</p>
+
+      <div class="field">
+        <label class="field-label">Invited <span class="field-hint">— 8 people</span></label>
+        <div class="invite-list">
+          <div class="invite-row">
+            <div class="av av-1">SA</div>
+            <div class="invite-info">
+              <div class="invite-name">Sara Almeida</div>
+              <div class="invite-email">sara.almeida@acme.com</div>
+            </div>
+            <span class="invite-role">Account Executive</span>
+            <button class="invite-remove" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="invite-row">
+            <div class="av av-2">JM</div>
+            <div class="invite-info">
+              <div class="invite-name">João Marques</div>
+              <div class="invite-email">joao.marques@acme.com</div>
+            </div>
+            <span class="invite-role">VP Sales</span>
+            <button class="invite-remove" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="invite-row">
+            <div class="av av-3">PD</div>
+            <div class="invite-info">
+              <div class="invite-name">Pedro Dias</div>
+              <div class="invite-email">pedro.dias@acme.com</div>
+            </div>
+            <span class="invite-role">Sales Ops Lead</span>
+            <button class="invite-remove" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="invite-row">
+            <div class="av av-4">RS</div>
+            <div class="invite-info">
+              <div class="invite-name">Rita Silva</div>
+              <div class="invite-email">rita.silva@acme.com</div>
+            </div>
+            <span class="invite-role">Finance Manager</span>
+            <button class="invite-remove" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="invite-row">
+            <div class="av av-5">FL</div>
+            <div class="invite-info">
+              <div class="invite-name">Filipe Lopes</div>
+              <div class="invite-email">filipe.lopes@acme.com</div>
+            </div>
+            <span class="invite-role">Account Executive</span>
+            <button class="invite-remove" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+        </div>
+        <div class="invite-add">
+          <input class="input" placeholder="Add by email — comma or enter to add multiple" />
+          <button class="btn btn-secondary">Add</button>
+        </div>
+        <div class="csv-upload">Adding more than 10 people? <a href="#">Upload a CSV →</a></div>
+      </div>
+
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <div class="wiz-nav-spacer"></div>
+        <button class="btn btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="wiz-step" data-step="3">
+      <div class="wiz-eyebrow">Step 3 of 5</div>
+      <h1 class="wiz-title">What should Atlas ask about?</h1>
+      <p class="wiz-sub">We've suggested topics based on your scope. Pick the ones that matter, add custom ones, or trust the defaults.</p>
+
+      <div class="topics-list">
+        <div class="topic selected">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">Quote-to-cash flow</div>
+            <div class="topic-meta">How quotes get assembled, approved, and turned into invoices. ~5 min · 7 questions · adapted per role.</div>
+            <div class="topic-tags">
+              <span class="tag suggested">Atlas suggested</span>
+              <span class="tag">workflow</span>
+              <span class="tag">sales · finance</span>
+            </div>
+          </div>
+        </div>
+        <div class="topic selected">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">Exception handling — when the process breaks</div>
+            <div class="topic-meta">What people do when the standard flow doesn't apply: edge cases, workarounds, escalations. ~5 min · 6 questions.</div>
+            <div class="topic-tags">
+              <span class="tag suggested">Atlas suggested</span>
+              <span class="tag">edge cases</span>
+              <span class="tag">tribal knowledge</span>
+            </div>
+          </div>
+        </div>
+        <div class="topic selected">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">Tools you use most + the ones you fight with</div>
+            <div class="topic-meta">Where existing systems work and where they fall short. Captures shadow tools and Excel workarounds. ~4 min · 5 questions.</div>
+            <div class="topic-tags">
+              <span class="tag suggested">Atlas suggested</span>
+              <span class="tag">tooling</span>
+              <span class="tag">friction</span>
+            </div>
+          </div>
+        </div>
+        <div class="topic selected">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">One thing you'd change</div>
+            <div class="topic-meta">Final session. Open prompt for what the person would fix if they could. Surfaces priorities Atlas might miss otherwise. ~4 min · 4 questions.</div>
+            <div class="topic-tags">
+              <span class="tag suggested">Atlas suggested</span>
+              <span class="tag">closing topic</span>
+            </div>
+          </div>
+        </div>
+        <div class="topic">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">Customer escalation paths</div>
+            <div class="topic-meta">Optional. How escalations from customers are routed and resolved. ~6 min · 8 questions.</div>
+            <div class="topic-tags">
+              <span class="tag">customer success</span>
+              <span class="tag">cross-functional</span>
+            </div>
+          </div>
+        </div>
+        <div class="topic">
+          <div class="topic-check"></div>
+          <div class="topic-body">
+            <div class="topic-title">Onboarding new team members</div>
+            <div class="topic-meta">Optional. How the team trains new hires and what's missing in current documentation. ~5 min · 6 questions.</div>
+            <div class="topic-tags">
+              <span class="tag">knowledge transfer</span>
+              <span class="tag">documentation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="add-custom-topic">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add a custom topic
+      </a>
+
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <div class="wiz-nav-spacer"></div>
+        <button class="btn btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="wiz-step" data-step="4">
+      <div class="wiz-eyebrow">Step 4 of 5</div>
+      <h1 class="wiz-title">When does this run?</h1>
+      <p class="wiz-sub">Atlas spreads sessions across the timeline so it doesn't feel like a burden on any single week.</p>
+
+      <div class="timeline-grid">
+        <div class="field" style="margin-bottom: 0;">
+          <label class="field-label">Start date</label>
+          <input class="input" type="text" value="Mon, Jun 9, 2026" />
+        </div>
+        <div class="field" style="margin-bottom: 0;">
+          <label class="field-label">End date</label>
+          <input class="input" type="text" value="Sun, Jul 6, 2026" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Cadence <span class="field-hint">— how often Atlas surfaces a new session per person</span></label>
+        <select class="select">
+          <option>Weekly (4 sessions over 4 weeks) — recommended</option>
+          <option>Twice weekly (4 sessions over 2 weeks) — faster, more intense</option>
+          <option>Bi-weekly (4 sessions over 8 weeks) — gentle pace</option>
+          <option>Custom schedule</option>
+        </select>
+      </div>
+
+      <div class="timeline-vis">
+        <div class="timeline-vis-title">Sprint timeline preview</div>
+        <div class="timeline-track"></div>
+        <div class="timeline-dots">
+          <div class="timeline-dot"></div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-dot"></div>
+        </div>
+        <div class="timeline-labels">
+          <span>Jun 9<br/>Kickoff</span>
+          <span>Jun 16<br/>S1 due</span>
+          <span>Jun 23<br/>S2 due</span>
+          <span>Jun 30<br/>S3 due</span>
+          <span>Jul 6<br/>S4 + close</span>
+        </div>
+        <div class="timeline-summary">
+          <strong>4 weeks</strong>, 8 contributors, 4 topics. Atlas will send each person their first session invitation on Jun 9. Email reminders triggered after 48h of inactivity. <strong>You'll get a weekly digest every Monday.</strong>
+        </div>
+      </div>
+
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <div class="wiz-nav-spacer"></div>
+        <button class="btn btn-primary" onclick="nextStep()">Continue →</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 -->
+    <section class="wiz-step" data-step="5">
+      <div class="wiz-eyebrow">Step 5 of 5</div>
+      <h1 class="wiz-title">Review and launch</h1>
+      <p class="wiz-sub">Once you launch, Atlas sends invitations within the next hour. You can pause or edit anything later.</p>
+
+      <div class="review-card">
+        <div class="review-row">
+          <div class="review-label">Sprint name</div>
+          <div class="review-value"><strong>Operations Discovery</strong></div>
+          <a class="review-edit">Edit</a>
+        </div>
+        <div class="review-row">
+          <div class="review-label">Scope</div>
+          <div class="review-value">Operations · Process efficiency focus</div>
+          <a class="review-edit">Edit</a>
+        </div>
+        <div class="review-row">
+          <div class="review-label">Team</div>
+          <div class="review-value">8 contributors: Sara, João, Pedro, Rita, Filipe, Tiago, Ana, Diogo</div>
+          <a class="review-edit">Edit</a>
+        </div>
+        <div class="review-row">
+          <div class="review-label">Topics</div>
+          <div class="review-value">4 sessions per person: Quote-to-cash · Exception handling · Tools you use · One thing you'd change</div>
+          <a class="review-edit">Edit</a>
+        </div>
+        <div class="review-row">
+          <div class="review-label">Timeline</div>
+          <div class="review-value"><strong>Jun 9 → Jul 6</strong> · Weekly cadence · 4 weeks</div>
+          <a class="review-edit">Edit</a>
+        </div>
+        <div class="review-row">
+          <div class="review-label">You'll receive</div>
+          <div class="review-value">Weekly digest every Monday · Alerts if anyone goes idle 3+ days · Final report on Jul 6</div>
+        </div>
+      </div>
+
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" onclick="prevStep()">← Back</button>
+        <div class="wiz-nav-spacer"></div>
+        <button class="btn btn-secondary">Save as draft</button>
+        <button class="btn btn-primary">Launch sprint →</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  let currentStep = 1;
+  function showStep(n) {
+    document.querySelectorAll('.wiz-step').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.wiz-step[data-step="${n}"]`).classList.add('active');
+    document.querySelectorAll('.step').forEach((s, i) => {
+      const stepNum = parseInt(s.dataset.step);
+      s.classList.remove('active', 'done');
+      if (stepNum < n) s.classList.add('done');
+      if (stepNum === n) s.classList.add('active');
+    });
+    currentStep = n;
+    document.querySelector('.wiz-main').scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  function nextStep() { if (currentStep < 5) showStep(currentStep + 1); }
+  function prevStep() { if (currentStep > 1) showStep(currentStep - 1); }
+  document.querySelectorAll('.step').forEach(s => {
+    s.addEventListener('click', () => showStep(parseInt(s.dataset.step)));
+  });
+  document.querySelectorAll('.select-card').forEach(c => {
+    c.addEventListener('click', () => {
+      c.parentElement.querySelectorAll('.select-card').forEach(x => x.classList.remove('selected'));
+      c.classList.add('selected');
+    });
+  });
+  document.querySelectorAll('.topic').forEach(t => {
+    t.addEventListener('click', () => t.classList.toggle('selected'));
+  });
+</script>
+
+</body>
+</html>

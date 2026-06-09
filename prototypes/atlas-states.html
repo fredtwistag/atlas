@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — States & Edge Cases</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  a { color: inherit; text-decoration: none; }
+
+  /* State picker (prototype only) */
+  .picker {
+    position: fixed;
+    top: 12px; right: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 6px;
+    display: flex;
+    gap: 4px;
+    z-index: 200;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+    max-width: 90vw;
+  }
+  .picker button {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    color: var(--text-2);
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .picker button:hover { background: var(--surface-2); }
+  .picker button.active { background: var(--text); color: var(--surface); }
+  .picker-label {
+    padding: 4px 8px 4px 6px;
+    color: var(--text-3);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .topnav {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; gap: 24px;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .logo-mark::before {
+    content: ''; position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .breadcrumb { color: var(--text-2); font-size: 13px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 16px; border-radius: var(--radius);
+    font-weight: 500; font-size: 13px;
+    transition: all 0.15s; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); }
+  .btn-large { padding: 12px 20px; font-size: 14px; }
+
+  .state { display: none; min-height: calc(100vh - 52px); }
+  .state.active { display: block; }
+
+  /* ============ EMPTY: Day 1 of sprint (manager) ============ */
+  .empty-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+  .empty-illustration {
+    width: 88px; height: 88px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1.5px dashed var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-3);
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .empty-illustration .pulse {
+    position: absolute;
+    inset: -3px;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--text);
+    opacity: 0;
+    animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0; transform: scale(1); }
+    50% { opacity: 0.15; transform: scale(1.04); }
+  }
+  .empty-eyebrow {
+    color: var(--text-3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .empty-title {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .empty-sub {
+    color: var(--text-2);
+    font-size: 16px;
+    line-height: 1.55;
+    margin-bottom: 32px;
+    max-width: 600px;
+  }
+  .empty-steps {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 26px;
+    margin-bottom: 28px;
+  }
+  .empty-steps-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 16px;
+  }
+  .empty-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+  }
+  .empty-step:first-child { border-top: none; padding-top: 0; }
+  .empty-step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    color: var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 11px;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+  .empty-step.done .empty-step-num {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--surface);
+  }
+  .empty-step.done .empty-step-num::after {
+    content: '';
+    width: 10px; height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: contain;
+  }
+  .empty-step.done .empty-step-num span { display: none; }
+  .empty-step-active .empty-step-num {
+    border-color: var(--text);
+    color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.08);
+  }
+  .empty-step-body { flex: 1; padding-top: 2px; }
+  .empty-step-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .empty-step-desc {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .empty-step-time {
+    margin-left: auto;
+    color: var(--text-3);
+    font-size: 12px;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  /* ============ ERROR: Magic link expired ============ */
+  .error-wrap {
+    min-height: calc(100vh - 52px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .error-card {
+    max-width: 480px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    text-align: center;
+  }
+  .error-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .error-icon.warning { background: var(--warning-soft); color: var(--warning); }
+  .error-icon.info { background: var(--brand-soft); color: var(--brand); }
+  .error-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .error-desc {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 24px;
+  }
+  .error-desc strong { color: var(--text); font-weight: 600; }
+  .error-input-wrap {
+    margin-bottom: 16px;
+  }
+  .error-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--surface);
+  }
+  .error-input:focus {
+    outline: none;
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .error-foot {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .error-foot a { color: var(--brand); font-weight: 500; }
+
+  /* ============ ERROR: Session interrupted ============ */
+  .interrupted-wrap {
+    min-height: calc(100vh - 52px);
+    background: var(--bg);
+  }
+  .interrupted-top {
+    padding: 14px 28px;
+    background: var(--warning-soft);
+    border-bottom: 1px solid #fcd34d;
+    color: #92400e;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .interrupted-top svg { flex-shrink: 0; }
+  .interrupted-top strong { font-weight: 600; }
+  .interrupted-content {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 56px 24px;
+    text-align: center;
+  }
+  .interrupted-illustration {
+    margin-bottom: 28px;
+    color: var(--text-3);
+  }
+  .interrupted-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+  }
+  .interrupted-desc {
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .interrupted-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .interrupted-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    text-align: left;
+    margin-top: 36px;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .interrupted-card strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 4px; }
+
+  /* ============ EMPTY: Twistag, no clients yet ============ */
+  .ts-empty-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 52px);
+  }
+  .ts-empty-side {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+  }
+  .ts-empty-side-item {
+    padding: 6px 10px;
+    color: var(--text-3);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+  }
+  .ts-empty-main {
+    padding: 80px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ts-empty-card {
+    background: var(--surface);
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 48px 56px;
+    text-align: center;
+    max-width: 520px;
+  }
+  @media (max-width: 700px) {
+    .ts-empty-card { padding: 36px 24px; }
+  }
+  .ts-empty-illustration {
+    width: 72px; height: 72px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    color: var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+  }
+  .ts-empty-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .ts-empty-desc {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .ts-empty-actions {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  }
+  .ts-empty-foot {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- State picker -->
+<div class="picker">
+  <span class="picker-label">Iter 6 · State</span>
+  <button data-state="day1" class="active">Day 1 (mgr)</button>
+  <button data-state="expired">Link expired</button>
+  <button data-state="interrupted">Interrupted</button>
+  <button data-state="left">Person left</button>
+  <button data-state="ts-empty">Twistag empty</button>
+</div>
+
+<!-- ============ STATE: DAY 1 (manager dashboard before first data) ============ -->
+<section class="state active" data-state="day1">
+  <nav class="topnav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+    <div class="breadcrumb">
+      Acme Manufacturing · Operations Discovery · Day 1
+    </div>
+  </nav>
+
+  <div class="empty-page">
+    <div class="empty-illustration">
+      <div class="pulse"></div>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    </div>
+    <div class="empty-eyebrow">Sprint launched</div>
+    <h1 class="empty-title">Atlas is sending invitations now.</h1>
+    <p class="empty-sub">Over the next hour, your 14 contributors will get magic-link emails. The first opportunities will surface as conversations roll in — usually within 24-48 hours.</p>
+
+    <div class="empty-steps">
+      <div class="empty-steps-title">Sprint launch checklist</div>
+      <div class="empty-step done">
+        <div class="empty-step-num"><span>1</span></div>
+        <div class="empty-step-body">
+          <div class="empty-step-title">Scope and team defined</div>
+          <div class="empty-step-desc">14 contributors across Sales, Finance, SDR, Sales Ops</div>
+        </div>
+        <div class="empty-step-time">2 hrs ago</div>
+      </div>
+      <div class="empty-step done">
+        <div class="empty-step-num"><span>2</span></div>
+        <div class="empty-step-body">
+          <div class="empty-step-title">Topics published</div>
+          <div class="empty-step-desc">4 sessions per person · Quote-to-cash, Exception handling, Tools, One change</div>
+        </div>
+        <div class="empty-step-time">2 hrs ago</div>
+      </div>
+      <div class="empty-step empty-step-active">
+        <div class="empty-step-num"><span>3</span></div>
+        <div class="empty-step-body">
+          <div class="empty-step-title">Invitations going out</div>
+          <div class="empty-step-desc">10 of 14 sent · 4 queued · all delivered by 11:00 AM</div>
+        </div>
+        <div class="empty-step-time">in progress</div>
+      </div>
+      <div class="empty-step">
+        <div class="empty-step-num"><span>4</span></div>
+        <div class="empty-step-body">
+          <div class="empty-step-title">First conversations begin</div>
+          <div class="empty-step-desc">First completion typically within 24 hours — you'll get an alert</div>
+        </div>
+        <div class="empty-step-time">expected today</div>
+      </div>
+      <div class="empty-step">
+        <div class="empty-step-num"><span>5</span></div>
+        <div class="empty-step-body">
+          <div class="empty-step-title">First opportunities surface</div>
+          <div class="empty-step-desc">Once 3-4 contributors complete their first session</div>
+        </div>
+        <div class="empty-step-time">2-3 days</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-primary btn-large">Preview the invitation email</button>
+      <button class="btn btn-secondary btn-large">Add more contributors</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATE: LINK EXPIRED ============ -->
+<section class="state" data-state="expired">
+  <nav class="topnav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+  </nav>
+
+  <div class="error-wrap">
+    <div class="error-card">
+      <div class="error-icon warning">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h2 class="error-title">This link has expired</h2>
+      <p class="error-desc">Magic links last for 24 hours. Drop your email and we'll send a fresh one — <strong>no password required</strong>.</p>
+      <div class="error-input-wrap">
+        <input class="error-input" type="email" value="sara.almeida@acme.com" />
+      </div>
+      <button class="btn btn-primary" style="width: 100%; padding: 11px;">Send me a new link</button>
+      <div class="error-foot">
+        Don't recognize this? <a>Tell us</a> · We won't email anyone we don't already have an invitation for.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATE: SESSION INTERRUPTED ============ -->
+<section class="state" data-state="interrupted">
+  <nav class="topnav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+  </nav>
+
+  <div class="interrupted-wrap">
+    <div class="interrupted-top">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      <span><strong>Connection lost.</strong> Your progress was saved at question 3 of 7. Nothing was lost.</span>
+    </div>
+
+    <div class="interrupted-content">
+      <div class="interrupted-illustration">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h1 class="interrupted-title">Picking up where you left off</h1>
+      <p class="interrupted-desc">Atlas saved your last answer 2 minutes ago. You can continue now, take a break and come back, or wrap up later — we'll email you a link.</p>
+
+      <div class="interrupted-actions">
+        <button class="btn btn-primary btn-large">Continue session →</button>
+        <button class="btn btn-secondary btn-large">Take a break</button>
+      </div>
+
+      <div class="interrupted-card">
+        <strong>What's still safe:</strong>
+        Everything you've shared so far is encrypted and saved on Atlas servers. The session resumes from the exact question you were on — including the live "what Atlas heard" summary you can review in the side panel.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATE: PERSON LEFT THE COMPANY ============ -->
+<section class="state" data-state="left">
+  <nav class="topnav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+    <div class="breadcrumb">
+      Acme Manufacturing · Operations Discovery · Manage contributor
+    </div>
+  </nav>
+
+  <div class="error-wrap">
+    <div class="error-card" style="max-width: 520px;">
+      <div class="error-icon info">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      </div>
+      <h2 class="error-title">Filipe's email is bouncing.</h2>
+      <p class="error-desc">filipe.lopes@acme.com hasn't been deliverable for the last 3 days. <strong>Looks like Filipe may have left the company.</strong> What would you like to do with what he's already shared (1 session, 9 things captured)?</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;">
+        <button class="btn btn-secondary" style="justify-content: space-between; padding: 14px 18px;">
+          <span style="text-align: left; flex: 1;">
+            <strong style="display: block; font-weight: 600;">Keep his captured insights</strong>
+            <span style="color: var(--text-2); font-size: 12.5px; font-weight: 400;">Already in the opportunity backlog. Marked as 'former contributor.'</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="btn btn-secondary" style="justify-content: space-between; padding: 14px 18px;">
+          <span style="text-align: left; flex: 1;">
+            <strong style="display: block; font-weight: 600;">Remove him & his data</strong>
+            <span style="color: var(--text-2); font-size: 12.5px; font-weight: 400;">All quotes anonymized or removed. Cannot be undone.</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="btn btn-secondary" style="justify-content: space-between; padding: 14px 18px;">
+          <span style="text-align: left; flex: 1;">
+            <strong style="display: block; font-weight: 600;">Reassign to his replacement</strong>
+            <span style="color: var(--text-2); font-size: 12.5px; font-weight: 400;">Add a different email and Atlas reaches out to confirm.</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <button class="btn btn-ghost" style="width: 100%;">Decide later — pause invitations for now</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STATE: TWISTAG, NO CLIENTS YET ============ -->
+<section class="state" data-state="ts-empty">
+  <nav class="topnav">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas <span style="font-size: 10px; background: var(--text); color: var(--surface); padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600; letter-spacing: 0.04em;">TS</span></span>
+    </div>
+  </nav>
+
+  <div class="ts-empty-layout">
+    <aside class="ts-empty-side">
+      <div class="ts-empty-side-item">All clients</div>
+      <div class="ts-empty-side-item">Opportunities</div>
+      <div class="ts-empty-side-item">Engagements</div>
+      <div class="ts-empty-side-item">Pattern library</div>
+    </aside>
+    <div class="ts-empty-main">
+      <div class="ts-empty-card">
+        <div class="ts-empty-illustration">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h2 class="ts-empty-title">No active clients yet.</h2>
+        <p class="ts-empty-desc">Onboard your first client to see opportunities surface here. Twistag-side patterns and cross-portfolio insights start working from client #2 onwards.</p>
+        <div class="ts-empty-actions">
+          <button class="btn btn-primary">Onboard a client</button>
+          <button class="btn btn-secondary">Import from CRM</button>
+        </div>
+        <div class="ts-empty-foot">
+          Want to see how this dashboard looks with data? <a href="atlas-twistag-cockpit.html" style="color: var(--brand); font-weight: 500;">View demo workspace</a>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const states = document.querySelectorAll('.state');
+  const btns = document.querySelectorAll('.picker button');
+  btns.forEach(b => {
+    b.addEventListener('click', () => {
+      const target = b.dataset.state;
+      states.forEach(s => s.classList.remove('active'));
+      btns.forEach(x => x.classList.remove('active'));
+      document.querySelector(`.state[data-state="${target}"]`).classList.add('active');
+      b.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  });
+</script>
+
+</body>
+</html>

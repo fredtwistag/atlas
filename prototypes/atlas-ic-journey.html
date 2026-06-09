@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — IC Journey Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-hover: #4338ca;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warning: #d97706;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Stepper for navigation between screens (proto only) */
+  .stepper {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
+    font-size: 12px;
+    z-index: 100;
+  }
+  .stepper button {
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: var(--text-2);
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .stepper button:hover { background: var(--surface-2); }
+  .stepper button.active { background: var(--text); color: var(--surface); }
+  .stepper-label { color: var(--text-3); margin-right: 4px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--text);
+    color: var(--surface);
+  }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost {
+    color: var(--text-2);
+    padding: 8px 12px;
+  }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn-large { padding: 14px 24px; font-size: 15px; }
+
+  /* Screens */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ============ SCREEN 1: EMAIL ============ */
+  .email-shell {
+    max-width: 720px;
+    margin: 60px auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .email-meta {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .email-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+  }
+  .email-from { font-weight: 600; }
+  .email-to { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+  .email-time { margin-left: auto; color: var(--text-3); font-size: 13px; }
+  .email-subject {
+    padding: 20px 24px 8px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .email-body {
+    padding: 0 24px 32px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+  .email-body p { margin-bottom: 14px; }
+  .email-body strong { font-weight: 600; }
+  .email-cta {
+    margin: 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .email-meta-grid {
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 16px 0 20px;
+  }
+  .email-meta-item { }
+  .email-meta-item-label {
+    font-size: 12px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+  .email-meta-item-value {
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .email-footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    color: var(--text-3);
+    font-size: 12px;
+    background: var(--surface-2);
+  }
+
+  /* ============ SCREEN 2: WELCOME ============ */
+  .welcome-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .top-bar {
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text);
+    border-radius: 5px;
+    position: relative;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1.5px solid var(--surface);
+    border-radius: 2px;
+  }
+  .top-bar-meta {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--text-3); font-size: 13px;
+  }
+  .top-bar-user {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-2);
+  }
+  .avatar-sm {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 12px;
+  }
+
+  .welcome-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .welcome-card {
+    max-width: 560px;
+    width: 100%;
+  }
+  .welcome-eyebrow {
+    color: var(--text-3);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    letter-spacing: 0.01em;
+  }
+  .welcome-title {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .welcome-sub {
+    color: var(--text-2);
+    font-size: 16px;
+    line-height: 1.55;
+    margin-bottom: 32px;
+  }
+  .privacy-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .privacy-note h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .privacy-list {
+    list-style: none;
+    color: var(--text-2);
+    font-size: 14px;
+  }
+  .privacy-list li {
+    padding: 8px 0;
+    display: flex; gap: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .privacy-list li:first-child { border-top: none; padding-top: 0; }
+  .privacy-list li::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--text-3);
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+  .privacy-link {
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 12px;
+  }
+  .welcome-cta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .welcome-meta {
+    color: var(--text-3);
+    font-size: 13px;
+    margin-left: auto;
+  }
+
+  /* ============ SCREEN 3: PRE-SESSION BRIEF ============ */
+  .brief-content {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 80px 20px;
+  }
+  .brief-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 32px;
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .brief-progress-bar {
+    width: 80px; height: 4px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .brief-progress-fill {
+    height: 100%; width: 12.5%;
+    background: var(--text);
+    border-radius: 2px;
+  }
+  .brief-eyebrow {
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .brief-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin-bottom: 14px;
+  }
+  .brief-sub {
+    color: var(--text-2);
+    margin-bottom: 36px;
+    font-size: 15px;
+  }
+  .brief-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .brief-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .brief-card-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .brief-card-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .brief-list {
+    list-style: none;
+  }
+  .brief-list li {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 14px;
+    color: var(--text);
+  }
+  .brief-list li:first-child { border-top: none; padding-top: 0; }
+  .brief-list-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--brand-soft);
+    color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .brief-list-body strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 14px;
+  }
+  .brief-list-body span {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .brief-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .brief-skip {
+    color: var(--text-3);
+    font-size: 13px;
+    margin-left: auto;
+  }
+
+  /* ============ SCREEN 4: CONVERSATION ============ */
+  .convo-shell {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    height: 100vh;
+    background: var(--surface);
+  }
+  @media (max-width: 900px) {
+    .convo-shell { grid-template-columns: 1fr; }
+    .convo-sidebar { display: none; }
+  }
+  .convo-main {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .convo-header {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--surface);
+  }
+  .convo-header-title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .convo-header-sub {
+    color: var(--text-3);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .convo-progress-wrap {
+    flex: 1;
+    max-width: 320px;
+  }
+  .convo-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .convo-progress-bar {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .convo-progress-fill {
+    height: 100%;
+    width: 43%;
+    background: var(--text);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .convo-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .convo-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 28px;
+  }
+  .convo-thread-inner {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .msg {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .msg-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .msg-avatar.bot {
+    background: var(--text);
+    color: var(--surface);
+  }
+  .msg-avatar.bot::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--surface);
+    border: 1.5px solid var(--text);
+    box-shadow: inset 0 0 0 1.5px var(--surface);
+  }
+  .msg-avatar.user {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+  }
+  .msg-body {
+    flex: 1;
+    padding-top: 2px;
+  }
+  .msg-author {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .msg-time {
+    color: var(--text-3);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .msg-content {
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 14.5px;
+  }
+  .msg-content p + p { margin-top: 10px; }
+
+  .typing {
+    display: flex;
+    gap: 4px;
+    padding-top: 6px;
+  }
+  .typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-3);
+    animation: typing 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+
+  .convo-input-wrap {
+    padding: 20px 28px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .convo-input-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .convo-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px 48px;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: var(--text);
+    resize: none;
+    background: var(--surface);
+    line-height: 1.5;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .convo-input:focus {
+    outline: none;
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .convo-input-actions {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .convo-hint {
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .convo-hint kbd {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .send-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: var(--text);
+    color: var(--surface);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .send-btn:disabled {
+    background: var(--surface-2);
+    color: var(--text-3);
+    cursor: not-allowed;
+  }
+  .voice-btn {
+    padding: 6px;
+    color: var(--text-3);
+    border-radius: var(--radius-sm);
+  }
+  .voice-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .convo-sidebar {
+    padding: 24px 24px;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+  .sidebar-section {
+    margin-bottom: 28px;
+  }
+  .sidebar-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sidebar-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .captured-list {
+    list-style: none;
+  }
+  .captured-list li {
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    position: relative;
+    transition: all 0.15s ease;
+  }
+  .captured-list li:hover {
+    border-color: var(--border-strong);
+  }
+  .captured-list li.new {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+  .captured-list li.new::after {
+    content: 'new';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--brand);
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .captured-tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    margin-right: 4px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .sidebar-empty {
+    color: var(--text-3);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px 0;
+  }
+  .pause-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .pause-note strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  /* ============ SCREEN 5: COMPLETION ============ */
+  .done-content {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 80px 20px 60px;
+  }
+  .done-badge {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--success-soft);
+    color: var(--success);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .done-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+  }
+  .done-sub {
+    color: var(--text-2);
+    margin-bottom: 32px;
+    font-size: 15px;
+  }
+  .done-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .done-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .done-stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .done-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .done-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .done-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .done-card-title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .edit-link {
+    color: var(--brand);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .heard-list {
+    list-style: none;
+  }
+  .heard-list li {
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .heard-list li:first-child { border-top: none; padding-top: 0; }
+  .heard-tag {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 2px 8px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    border-radius: 4px;
+    font-weight: 500;
+    height: fit-content;
+    margin-top: 2px;
+  }
+  .next-card {
+    background: var(--text);
+    color: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 28px;
+  }
+  .next-card-eyebrow {
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .next-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .next-card-meta {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .next-card-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-on-dark-primary {
+    background: var(--surface);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .btn-on-dark-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--surface);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-on-dark-secondary:hover {
+    background: rgba(255,255,255,0.14);
+  }
+  .done-bottom {
+    color: var(--text-3);
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .done-bottom a { color: var(--brand); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- PROTO NAV -->
+<div class="stepper">
+  <span class="stepper-label">Atlas IC journey</span>
+  <button data-step="1" class="active">1. Invite</button>
+  <button data-step="2">2. Welcome</button>
+  <button data-step="3">3. Brief</button>
+  <button data-step="4">4. Session</button>
+  <button data-step="5">5. Done</button>
+</div>
+
+<!-- ================= SCREEN 1: EMAIL ================= -->
+<section class="screen active" data-screen="1">
+  <div class="email-shell">
+    <div class="email-meta">
+      <div class="email-avatar">A</div>
+      <div>
+        <div class="email-from">Atlas <span style="color: var(--text-3); font-weight: 400;">on behalf of Maria Costa</span></div>
+        <div class="email-to">to sara.almeida@acme.com</div>
+      </div>
+      <div class="email-time">today · 9:14 AM</div>
+    </div>
+    <h1 class="email-subject">Sara — help us map how Operations actually works (≈5 min)</h1>
+    <div class="email-body">
+      <p>Hi Sara,</p>
+      <p>I'm trying to get a clearer picture of where the team spends time on quote-to-cash, and Atlas is helping us do it without scheduling another round of meetings.</p>
+      <p>Atlas will ask you <strong>4 short questions in a chat window</strong>, one session at a time, over the next 3 weeks. Each one is about 5 minutes. You can do them whenever it fits your day.</p>
+
+      <div class="email-meta-grid">
+        <div class="email-meta-item">
+          <div class="email-meta-item-label">Time per session</div>
+          <div class="email-meta-item-value">~5 min</div>
+        </div>
+        <div class="email-meta-item">
+          <div class="email-meta-item-label">Total sessions</div>
+          <div class="email-meta-item-value">4 over 3 weeks</div>
+        </div>
+        <div class="email-meta-item">
+          <div class="email-meta-item-label">First session due</div>
+          <div class="email-meta-item-value">Fri, Jun 12</div>
+        </div>
+      </div>
+
+      <p>What you share helps us figure out what to fix or automate — it's not feedback about <em>you</em>, it's about how the work flows.</p>
+
+      <div class="email-cta">
+        <a class="btn btn-primary btn-large" onclick="go(2)">Start your first session →</a>
+        <span style="color: var(--text-3); font-size: 13px;">Takes ~5 minutes</span>
+      </div>
+
+      <p style="color: var(--text-2); font-size: 13px;">Questions about how this works or what happens to your answers? <a href="#" style="color: var(--brand); font-weight: 500;">Read the 60-second FAQ</a>.</p>
+    </div>
+    <div class="email-footer">
+      Atlas · Operational discovery, run by Twistag for Acme · <a href="#" style="color: var(--text-2);">Privacy</a> · <a href="#" style="color: var(--text-2);">Opt out of these messages</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREEN 2: WELCOME ================= -->
+<section class="screen" data-screen="2">
+  <div class="welcome-wrap">
+    <header class="top-bar">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <span>Atlas</span>
+      </div>
+      <div class="top-bar-meta">
+        <span>Acme Manufacturing</span>
+        <span>·</span>
+        <span>Operations Discovery Sprint</span>
+      </div>
+    </header>
+    <div class="welcome-content">
+      <div class="welcome-card">
+        <div class="welcome-eyebrow">Signed in as Sara Almeida</div>
+        <h1 class="welcome-title">Welcome to Acme's discovery workspace.</h1>
+        <p class="welcome-sub">You'll do 4 short conversations over the next 3 weeks. Before you start, here's what to know.</p>
+
+        <div class="privacy-note">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            How your answers are used
+          </h4>
+          <ul class="privacy-list">
+            <li>Aggregated with other team responses to map workflows. <strong>Never used to evaluate you individually.</strong></li>
+            <li>Only your manager (Maria Costa) and the discovery team see specific quotes.</li>
+            <li>You can edit or delete any answer for 7 days after each session.</li>
+            <li>If you skip a question or want to come back later, that's fine.</li>
+          </ul>
+          <a href="#" class="privacy-link">Full privacy details →</a>
+        </div>
+
+        <div class="welcome-cta-row">
+          <button class="btn btn-primary btn-large" onclick="go(3)">I understand — let's start</button>
+          <button class="btn btn-ghost" onclick="alert('Snoozed. We will email you tomorrow.')">Not now</button>
+          <span class="welcome-meta">~5 min today</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREEN 3: PRE-SESSION BRIEF ================= -->
+<section class="screen" data-screen="3">
+  <header class="top-bar">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+    <div class="top-bar-user">
+      <div class="avatar-sm">S</div>
+      <span>Sara Almeida</span>
+    </div>
+  </header>
+  <div class="brief-content">
+    <div class="brief-progress">
+      <span>Session 1 of 4</span>
+      <div class="brief-progress-bar"><div class="brief-progress-fill" style="width: 0%;"></div></div>
+      <span>0%</span>
+    </div>
+    <div class="brief-eyebrow">Today's session</div>
+    <h1 class="brief-title">How does an enterprise quote actually flow through the team?</h1>
+    <p class="brief-sub">Walk us through what happens between "new request lands" and "deal closes" — the way it really happens, including the parts that go off-script.</p>
+
+    <div class="brief-card">
+      <div class="brief-card-header">
+        <div class="brief-card-title">What to expect</div>
+        <div class="brief-card-meta">~5 min</div>
+      </div>
+      <ul class="brief-list">
+        <li>
+          <div class="brief-list-icon">1</div>
+          <div class="brief-list-body">
+            <strong>4 conversational questions</strong>
+            <span>Open-ended. The bot will ask follow-ups if something needs clarifying. Voice optional.</span>
+          </div>
+        </li>
+        <li>
+          <div class="brief-list-icon">2</div>
+          <div class="brief-list-body">
+            <strong>You can pause and resume</strong>
+            <span>Got a meeting? Close the tab. Your progress saves automatically. We'll email a reminder if you don't come back in 24h.</span>
+          </div>
+        </li>
+        <li>
+          <div class="brief-list-icon">3</div>
+          <div class="brief-list-body">
+            <strong>No right answers</strong>
+            <span>We want the real picture — including workarounds, edge cases, and the stuff that frustrates you.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="brief-actions">
+      <button class="btn btn-primary btn-large" onclick="go(4)">Begin session →</button>
+      <button class="btn btn-secondary" onclick="alert('Snoozed until tomorrow morning.')">Do this tomorrow</button>
+      <a class="brief-skip" href="#">Skip session →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREEN 4: CONVERSATION ================= -->
+<section class="screen" data-screen="4">
+  <div class="convo-shell">
+    <div class="convo-main">
+      <header class="convo-header">
+        <div>
+          <div class="convo-header-title">Quote-to-cash flow</div>
+          <div class="convo-header-sub">Session 1 of 4 · Operations Discovery</div>
+        </div>
+        <div class="convo-progress-wrap">
+          <div class="convo-progress-meta">
+            <span>Question 3 of 7</span>
+            <span>~3 min left</span>
+          </div>
+          <div class="convo-progress-bar">
+            <div class="convo-progress-fill"></div>
+          </div>
+        </div>
+        <div class="convo-header-actions">
+          <button class="icon-btn" title="Voice mode">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+          <button class="icon-btn" title="Pause session" onclick="alert('Saved. We will email you in 24h.')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="convo-thread">
+        <div class="convo-thread-inner">
+
+          <div class="msg">
+            <div class="msg-avatar bot">A</div>
+            <div class="msg-body">
+              <div class="msg-author">Atlas <span class="msg-time">9:21 AM</span></div>
+              <div class="msg-content">
+                <p>Hi Sara — thanks for jumping in. Want to start with a quick walkthrough?</p>
+                <p>Tell me what happens from the moment a new enterprise quote request lands in the team's queue, up until the customer signs. Just talk it through like you'd explain it to a new hire.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar user">S</div>
+            <div class="msg-body">
+              <div class="msg-author">Sara <span class="msg-time">9:22 AM</span></div>
+              <div class="msg-content">
+                <p>Sure. So when a request comes in via Salesforce, the SDR triages it and assigns it to one of the AEs. The AE pulls together a draft using our SKU pricing sheet, but for enterprise deals there's almost always custom pricing involved — that goes to João for approval.</p>
+                <p>Then it bounces between AE, João, and sometimes finance for 2-4 days before we send anything to the customer.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar bot">A</div>
+            <div class="msg-body">
+              <div class="msg-author">Atlas <span class="msg-time">9:23 AM</span></div>
+              <div class="msg-content">
+                <p>Got it. You mentioned João for pricing approval — is that always the same person, and how long does it usually take him to turn it around?</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar user">S</div>
+            <div class="msg-body">
+              <div class="msg-author">Sara <span class="msg-time">9:24 AM</span></div>
+              <div class="msg-content">
+                <p>Always João. He's the VP Sales. Turnaround depends — if he's in the office, same day. If he's traveling, can be 2 days. And honestly when he's slammed, sometimes AEs just send the quote at list price and tell the customer "we'll come back with a discount" — which is messy because then the customer anchors on list and we lose negotiating room.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar bot">A</div>
+            <div class="msg-body">
+              <div class="msg-author">Atlas <span class="msg-time">9:25 AM</span></div>
+              <div class="msg-content">
+                <p>That's useful. Last thing on this thread — when João isn't reachable and the AE sends list-price, how often does that happen in a typical month, and does anyone track that downstream impact?</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar user">S</div>
+            <div class="msg-body" style="opacity: 0.5;">
+              <div class="msg-author">Sara <span class="msg-time">typing…</span></div>
+              <div class="msg-content">
+                <div class="typing"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="convo-input-wrap">
+        <div class="convo-input-inner">
+          <textarea class="convo-input" rows="2" placeholder="Honestly, probably 4-5 times a month. Nobody tracks it formally but…"></textarea>
+          <div class="convo-input-actions">
+            <span class="convo-hint">Press <kbd>↵</kbd> to send · <kbd>Shift+↵</kbd> for new line</span>
+            <button class="voice-btn" title="Voice reply">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button class="send-btn" onclick="go(5)">
+              Send
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="convo-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">What Atlas heard</div>
+        <ul class="captured-list">
+          <li class="new">
+            <div>
+              <strong>Pricing approval bottleneck</strong> — João (VP Sales) is single point of approval for custom enterprise pricing. 2-4 days typical, longer when traveling.
+              <div style="margin-top: 8px;">
+                <span class="captured-tag">workflow</span>
+                <span class="captured-tag">single point of failure</span>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>List-price workaround</strong> — when João is unreachable, AEs send list-price quotes; customer anchors high, hurts later negotiation.
+              <div style="margin-top: 8px;">
+                <span class="captured-tag">workaround</span>
+                <span class="captured-tag">margin risk</span>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Quote flow</strong> — Salesforce → SDR → AE → João → Finance → Customer. 2-4 days end to end.
+              <div style="margin-top: 8px;">
+                <span class="captured-tag">process step</span>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Coming up</div>
+        <div class="pause-note">
+          <strong>3 more topics today</strong>
+          Exception handling · Tools you use most · One thing you'd change
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Your control</div>
+        <div class="pause-note">
+          <strong>This stays editable for 7 days</strong>
+          You can review or remove anything you've shared from your dashboard.
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= SCREEN 5: COMPLETION ================= -->
+<section class="screen" data-screen="5">
+  <header class="top-bar">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <span>Atlas</span>
+    </div>
+    <div class="top-bar-user">
+      <div class="avatar-sm">S</div>
+      <span>Sara Almeida</span>
+    </div>
+  </header>
+  <div class="done-content">
+    <div class="done-badge">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h1 class="done-title">Nicely done, Sara.</h1>
+    <p class="done-sub">Session 1 captured. 3 more to go over the next 3 weeks.</p>
+
+    <div class="done-stats">
+      <div class="done-stat">
+        <div class="done-stat-label">Time</div>
+        <div class="done-stat-value">5 min 12s</div>
+      </div>
+      <div class="done-stat">
+        <div class="done-stat-label">Questions</div>
+        <div class="done-stat-value">7 of 7</div>
+      </div>
+      <div class="done-stat">
+        <div class="done-stat-label">Sprint progress</div>
+        <div class="done-stat-value">25%</div>
+      </div>
+    </div>
+
+    <div class="done-card">
+      <div class="done-card-header">
+        <div class="done-card-title">Here's what Atlas captured</div>
+        <a href="#" class="edit-link">Edit anything</a>
+      </div>
+      <ul class="heard-list">
+        <li>
+          <span class="heard-tag">bottleneck</span>
+          <span>VP Sales is the single approver for enterprise custom pricing. 2-4 days typical, longer during travel.</span>
+        </li>
+        <li>
+          <span class="heard-tag">workaround</span>
+          <span>When VP is unreachable, list-price quotes go out — customer anchors high, hurting downstream negotiation.</span>
+        </li>
+        <li>
+          <span class="heard-tag">tooling</span>
+          <span>Quote drafts assembled manually from SKU sheet; no enterprise template.</span>
+        </li>
+        <li>
+          <span class="heard-tag">handoff</span>
+          <span>Finance review adds ~1 day when invoice terms deviate from standard.</span>
+        </li>
+        <li>
+          <span class="heard-tag">frustration</span>
+          <span>Lack of visibility into where a quote is sitting in approval chain.</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="next-card">
+      <div class="next-card-eyebrow">Next session</div>
+      <h3 class="next-card-title">Exception handling — what happens when the standard process breaks?</h3>
+      <p class="next-card-meta">~4 min · Available Tuesday, Jun 16</p>
+      <div class="next-card-actions">
+        <button class="btn-on-dark-primary" onclick="alert('Reminder scheduled for Tuesday 9 AM.')">Remind me Tuesday morning</button>
+        <button class="btn-on-dark-secondary">Start now</button>
+      </div>
+    </div>
+
+    <div class="done-bottom">
+      Something inaccurate? <a href="#">Edit what Atlas heard</a> within 7 days.<br />
+      Done for today — close this tab whenever.
+    </div>
+  </div>
+</section>
+
+<script>
+  // Simple screen state for prototype
+  const screens = document.querySelectorAll('.screen');
+  const stepperBtns = document.querySelectorAll('.stepper button');
+
+  function go(n) {
+    screens.forEach(s => s.classList.remove('active'));
+    stepperBtns.forEach(b => b.classList.remove('active'));
+    document.querySelector(`.screen[data-screen="${n}"]`).classList.add('active');
+    document.querySelector(`.stepper button[data-step="${n}"]`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  stepperBtns.forEach(btn => {
+    btn.addEventListener('click', () => go(parseInt(btn.dataset.step)));
+  });
+
+  // Auto-resize textarea
+  document.querySelectorAll('.convo-input').forEach(ta => {
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Opportunity Detail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px -10px rgba(0,0,0,0.18), 0 4px 12px -4px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, textarea { font-family: inherit; font-size: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Iter label */
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text);
+    color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 200;
+  }
+
+  /* Top nav */
+  .topnav {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-2); font-size: 13px;
+  }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb-sep { color: var(--text-3); }
+  .breadcrumb-current { color: var(--text); font-weight: 500; }
+  .nav-spacer { flex: 1; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius);
+    font-weight: 500; font-size: 13px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 6px 10px; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn-large { padding: 10px 18px; font-size: 14px; }
+
+  /* Page */
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* Back link row */
+  .back-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 20px;
+  }
+  .back-link {
+    color: var(--text-2);
+    font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .back-link:hover { color: var(--text); }
+  .back-row .sep { color: var(--text-3); }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    background: var(--warning);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px var(--warning-soft);
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-flag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 14px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .hero-title {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    max-width: 900px;
+  }
+  .hero-desc {
+    color: var(--text-2);
+    font-size: 15.5px;
+    line-height: 1.55;
+    max-width: 800px;
+    margin-bottom: 24px;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: flex-end;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .hero-stat {
+    border-left: 2px solid var(--text);
+    padding-left: 14px;
+  }
+  .hero-stat.muted { border-left-color: var(--border-strong); }
+  .hero-stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .hero-stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-stat-sub {
+    color: var(--text-3);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+  .hero-actions {
+    display: flex; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-approve {
+    background: var(--text);
+    color: var(--surface);
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-approve:hover { background: #1f1f23; }
+  .btn-approve svg { transition: transform 0.2s; }
+  .btn-approve:hover svg { transform: translateX(2px); }
+
+  /* Two col layout */
+  .grid-main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 32px;
+  }
+  @media (max-width: 1000px) {
+    .grid-main { grid-template-columns: 1fr; }
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 10px 14px;
+    color: var(--text-2);
+    font-weight: 500;
+    font-size: 13.5px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--text);
+  }
+  .tab-count {
+    background: var(--surface-2);
+    color: var(--text-2);
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tab.active .tab-count {
+    background: var(--text);
+    color: var(--surface);
+  }
+
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Section heading */
+  .sec-h {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+    margin-top: 24px;
+  }
+  .sec-h:first-child { margin-top: 0; }
+  .sec-h-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .sec-h-meta {
+    color: var(--text-3);
+    font-size: 12px;
+  }
+
+  /* Quote cards */
+  .quote {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s ease;
+  }
+  .quote:hover { border-color: var(--border-strong); }
+  .quote-text {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--text);
+    padding-left: 12px;
+    border-left: 3px solid var(--border-strong);
+    margin-bottom: 12px;
+  }
+  .quote-text mark {
+    background: #fef9c3;
+    padding: 1px 3px;
+    border-radius: 2px;
+  }
+  .quote-meta {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-2);
+    font-size: 12.5px;
+  }
+  .quote-role {
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 11.5px;
+    color: var(--text);
+  }
+  .quote-meta .sep { width: 3px; height: 3px; background: var(--text-3); border-radius: 50%; }
+
+  /* System signal cards */
+  .signal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .signal-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .signal-body { flex: 1; }
+  .signal-source {
+    font-size: 11.5px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .signal-finding {
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 6px;
+  }
+  .signal-finding strong { font-weight: 600; }
+  .signal-meta {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  /* Right panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .panel-h {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-h-meta { color: var(--text-3); font-size: 12px; font-weight: 400; }
+
+  /* Score */
+  .score-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+  }
+  .score-row + .score-row { border-top: 1px solid var(--border); }
+  .score-label {
+    font-size: 12.5px;
+    color: var(--text-2);
+    flex: 1;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .score-label-help {
+    color: var(--text-3);
+    cursor: help;
+  }
+  .score-bar-wrap {
+    width: 100px;
+    height: 5px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .score-bar {
+    height: 100%;
+    background: var(--text);
+    border-radius: 3px;
+  }
+  .score-value {
+    font-size: 12px;
+    font-weight: 600;
+    width: 36px;
+    text-align: right;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Confidence dots */
+  .conf-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .conf-dots { display: flex; gap: 3px; }
+  .conf-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .conf-dot.filled { background: var(--text); }
+  .conf-label { font-size: 13px; font-weight: 500; }
+  .conf-rationale {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* Similar opps */
+  .similar {
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .similar:first-child { border-top: none; padding-top: 0; }
+  .similar:hover .similar-title { color: var(--text); }
+  .similar-source {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--brand-soft);
+    color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .similar-body { flex: 1; min-width: 0; }
+  .similar-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 3px;
+  }
+  .similar-meta {
+    color: var(--text-3);
+    font-size: 11.5px;
+  }
+
+  /* Discussion (compact) */
+  .discussion-empty {
+    color: var(--text-3);
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  /* ============ APPROVE SHEET (slide-over) ============ */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,9,11,0.4);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 720px;
+    max-width: 100%;
+    background: var(--bg);
+    box-shadow: var(--shadow-lg);
+    z-index: 110;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sheet.show { transform: translateX(0); }
+
+  .sheet-head {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sheet-head-title {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    flex: 1;
+  }
+  .sheet-close {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sheet-close:hover { background: var(--surface-2); color: var(--text); }
+
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .sow-eyebrow {
+    color: var(--brand);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .sow-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .sow-sub {
+    color: var(--text-2);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.55;
+  }
+
+  .sow-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .sow-card-h {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .sow-row {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  .sow-row:first-of-type { border-top: none; padding-top: 0; }
+  .sow-label {
+    color: var(--text-3);
+    font-size: 12.5px;
+    width: 120px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .sow-value {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .sow-value strong { font-weight: 600; }
+  .sow-list { list-style: none; }
+  .sow-list li {
+    padding: 5px 0;
+    display: flex; gap: 10px;
+    color: var(--text);
+    font-size: 13.5px;
+  }
+  .sow-list li::before {
+    content: '';
+    width: 4px; height: 4px;
+    background: var(--text-2);
+    border-radius: 50%;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+  .sow-team {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .sow-team-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px;
+    min-width: 200px;
+  }
+  .sow-team-av {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 11px;
+    flex-shrink: 0;
+  }
+  .sow-team-name { font-weight: 500; font-size: 13px; }
+  .sow-team-role { color: var(--text-3); font-size: 11.5px; margin-top: 1px; }
+
+  .sow-comment {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .sow-comment textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.55;
+  }
+  .sow-comment textarea:focus { outline: none; }
+  .sow-comment-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .sow-comment-hint {
+    color: var(--text-3);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .sheet-foot {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sheet-foot-spacer { flex: 1; }
+  .sheet-foot-meta {
+    color: var(--text-3);
+    font-size: 12.5px;
+  }
+
+  /* Approve button big */
+  .btn-confirm {
+    background: var(--text);
+    color: var(--surface);
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-confirm:hover { background: #1f1f23; }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 3 · Evidence loop</div>
+
+<nav class="topnav">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <span>Atlas</span>
+  </div>
+  <div class="breadcrumb">
+    <a>Acme Manufacturing</a>
+    <span class="breadcrumb-sep">/</span>
+    <a>Operations Discovery</a>
+    <span class="breadcrumb-sep">/</span>
+    <a>Opportunities</a>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">#12 · Pricing pre-approval</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="back-row">
+    <a class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to opportunities
+    </a>
+    <span class="sep">·</span>
+    <span class="status-pill"><span class="dot"></span>Pending review</span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-flag">★ High-impact opportunity</div>
+    <h1 class="hero-title">Automate enterprise pricing pre-approval workflow</h1>
+    <p class="hero-desc">VP Sales is a single point of approval for all custom enterprise pricing. Quotes wait 2-4 days; when blocked, AEs send list-price quotes that anchor customers high. Costs ~5 deals/month in margin recovery plus 8-12 days of cycle time. Auto-routable rules cover the top 70% of cases.</p>
+
+    <div class="hero-grid">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Estimated annual impact</div>
+        <div class="hero-stat-value">$180K – $240K</div>
+        <div class="hero-stat-sub">Margin recovery + cycle time</div>
+      </div>
+      <div class="hero-stat muted">
+        <div class="hero-stat-label">Confidence</div>
+        <div class="hero-stat-value">High</div>
+        <div class="hero-stat-sub">11 evidence points</div>
+      </div>
+      <div class="hero-stat muted">
+        <div class="hero-stat-label">Time to ship</div>
+        <div class="hero-stat-value">3 – 5 wks</div>
+        <div class="hero-stat-sub">Twistag FDE pod</div>
+      </div>
+      <div class="hero-stat muted">
+        <div class="hero-stat-label">Departments</div>
+        <div class="hero-stat-value">Sales · Finance</div>
+        <div class="hero-stat-sub">Cross-functional</div>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="btn-approve" onclick="openSheet()">
+        Approve for FDE engagement
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <button class="btn btn-secondary btn-large">Request more detail</button>
+      <button class="btn btn-secondary btn-large">Defer</button>
+      <div style="flex: 1;"></div>
+      <button class="btn btn-ghost" title="Share">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share
+      </button>
+      <button class="btn btn-ghost" title="Export">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs + content -->
+  <div class="grid-main">
+
+    <div>
+      <div class="tabs">
+        <button class="tab active" data-tab="evidence">Evidence <span class="tab-count">11</span></button>
+        <button class="tab" data-tab="signals">System signals <span class="tab-count">4</span></button>
+        <button class="tab" data-tab="patterns">Similar patterns <span class="tab-count">3</span></button>
+        <button class="tab" data-tab="discussion">Discussion <span class="tab-count">2</span></button>
+      </div>
+
+      <!-- Evidence -->
+      <div class="tab-content active" data-tab="evidence">
+        <div class="sec-h">
+          <div class="sec-h-title">Quotes from team conversations</div>
+          <div class="sec-h-meta">Attributed by role · names hidden where opted out</div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"Turnaround depends — if João's in the office, same day. <mark>If he's traveling, can be 2 days.</mark> And honestly when he's slammed, sometimes AEs just send the quote at list price and tell the customer 'we'll come back with a discount' — which is messy because then the customer anchors on list and we lose negotiating room."</div>
+          <div class="quote-meta">
+            <span class="quote-role">Account Executive</span>
+            <span class="sep"></span>
+            <span>Session: Quote-to-cash flow</span>
+            <span class="sep"></span>
+            <span>Jun 8</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"Honestly, probably 4-5 times a month I send a list-price quote because I can't get João. <mark>Nobody tracks it formally but it's costing us — those deals close 8-12 points lower margin on average.</mark>"</div>
+          <div class="quote-meta">
+            <span class="quote-role">Account Executive</span>
+            <span class="sep"></span>
+            <span>Session: Exception handling</span>
+            <span class="sep"></span>
+            <span>Jun 16</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"My calendar is the bottleneck. <mark>I do 30-40 pricing approvals a week. Maybe 70% of them are formulaic</mark> — same tier, same volume bands, same discount logic. The other 30% need actual judgment. But I review all of them because the team got burned once when an AE went rogue."</div>
+          <div class="quote-meta">
+            <span class="quote-role">VP Sales</span>
+            <span class="sep"></span>
+            <span>Session: Tools you use most</span>
+            <span class="sep"></span>
+            <span>Jun 19</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"<mark>If I could change one thing, it'd be having pre-approved pricing rules for the deals that don't actually need me.</mark> I'd save 6 hours a week and the team would get answers faster."</div>
+          <div class="quote-meta">
+            <span class="quote-role">VP Sales</span>
+            <span class="sep"></span>
+            <span>Session: One thing you'd change</span>
+            <span class="sep"></span>
+            <span>Jun 22</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"From finance side, when a list-price quote goes out and we then need to issue a credit memo because the actual discount comes later, that's 2 days of work per deal for me. <mark>I do 4-6 of these a month. It's pure rework.</mark>"</div>
+          <div class="quote-meta">
+            <span class="quote-role">Finance Manager</span>
+            <span class="sep"></span>
+            <span>Session: Exception handling</span>
+            <span class="sep"></span>
+            <span>Jun 17</span>
+          </div>
+        </div>
+
+        <div class="quote">
+          <div class="quote-text">"We have a Slack channel <mark>#pricing-approvals where AEs post and ping João. There are usually 10-15 unanswered threads at any time.</mark> When he's back from a trip, he batches through them — but sometimes a deal closes or dies before he gets to it."</div>
+          <div class="quote-meta">
+            <span class="quote-role">Sales Ops Lead</span>
+            <span class="sep"></span>
+            <span>Session: Tools you use most</span>
+            <span class="sep"></span>
+            <span>Jun 12</span>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px;">
+          <button class="btn btn-secondary">Show 5 more quotes</button>
+        </div>
+      </div>
+
+      <!-- Signals -->
+      <div class="tab-content" data-tab="signals">
+        <div class="sec-h">
+          <div class="sec-h-title">System signals corroborating</div>
+          <div class="sec-h-meta">From connected systems · read-only</div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">Salesforce</div>
+            <div class="signal-finding">Of 142 enterprise opportunities created in Q2, <strong>38% sat in 'Pending pricing approval' stage for ≥48 hours</strong>. Of those, 21% eventually closed at margin below the company average for similar deals.</div>
+            <div class="signal-meta">Pulled Jun 21 · refresh nightly</div>
+          </div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">Calendar metadata · VP Sales</div>
+            <div class="signal-finding"><strong>23% of working hours in May were outside office hours</strong> (travel, conferences, customer meetings). During those windows, average pricing approval delay was 2.7x longer than baseline.</div>
+            <div class="signal-meta">Calendar metadata only · no event content accessed</div>
+          </div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">Salesforce — win/loss</div>
+            <div class="signal-finding">Win rate on enterprise opportunities <strong>drops from 38% to 22% when time-to-quote exceeds 5 business days</strong> (n=124 deals, last 4 quarters). Statistically significant.</div>
+            <div class="signal-meta">Pulled Jun 21</div>
+          </div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">NetSuite — credit memos</div>
+            <div class="signal-finding"><strong>17 credit memos issued in Q2 tied to pricing corrections post-quote</strong>. Each averages ~1.5 days of finance team work. Pattern matches AE-described list-price workaround.</div>
+            <div class="signal-meta">Pulled Jun 21</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patterns -->
+      <div class="tab-content" data-tab="patterns">
+        <div class="sec-h">
+          <div class="sec-h-title">Similar patterns in Twistag's portfolio</div>
+          <div class="sec-h-meta">Anonymized cross-client learning · opt-in only</div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon" style="background: var(--brand-soft); color: var(--brand);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">Industrial services client · 320 employees · 2025</div>
+            <div class="signal-finding"><strong>Same VP-bottleneck pattern.</strong> Twistag deployed rule-based pre-approval covering 65% of cases with manual escalation for the rest. Result: <strong>cycle time -71%, win rate +9pts</strong> in 14 weeks post-deploy.</div>
+            <div class="signal-meta">Outcome verified post-deploy · 6 months tracked</div>
+          </div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon" style="background: var(--brand-soft); color: var(--brand);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">B2B distributor · 180 employees · 2024</div>
+            <div class="signal-finding">Variant: <strong>tribal pricing knowledge held by 2 reps</strong>, one retiring. Twistag built pricing agent surfacing rationale from past comparable deals. Result: gross margin <strong>+220 bps over 6 months</strong>.</div>
+            <div class="signal-meta">Most relevant when single-points-of-knowledge are aging out</div>
+          </div>
+        </div>
+
+        <div class="signal">
+          <div class="signal-icon" style="background: var(--brand-soft); color: var(--brand);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          </div>
+          <div class="signal-body">
+            <div class="signal-source">SaaS scale-up · 240 employees · 2025</div>
+            <div class="signal-finding">Different pattern: <strong>over-approval, not bottleneck</strong>. AEs were approving too aggressively without review. Twistag built guardrails instead of pre-approval. <strong>Inverse playbook — informs what NOT to do here.</strong></div>
+            <div class="signal-meta">Counter-example · helpful for sizing the right intervention</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discussion -->
+      <div class="tab-content" data-tab="discussion">
+        <div class="sec-h">
+          <div class="sec-h-title">Internal discussion</div>
+          <div class="sec-h-meta">Visible to Maria, sponsor, Twistag team</div>
+        </div>
+
+        <div class="quote">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #be185d); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px;">MC</div>
+            <div>
+              <div style="font-weight: 500; font-size: 13px;">Maria Costa <span style="color: var(--text-3); font-weight: 400;">· Head of Operations</span></div>
+              <div style="color: var(--text-3); font-size: 12px;">2 days ago</div>
+            </div>
+          </div>
+          <div style="color: var(--text); font-size: 14px; line-height: 1.55;">João already mentioned this to me last quarter — I think we'd have his backing on the rule-based approach. Should we loop him in before approving?</div>
+        </div>
+
+        <div class="quote">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px;">RF</div>
+            <div>
+              <div style="font-weight: 500; font-size: 13px;">Ricardo Fonseca <span style="color: var(--text-3); font-weight: 400;">· Twistag, Engagement Lead</span></div>
+              <div style="color: var(--text-3); font-size: 12px;">yesterday</div>
+            </div>
+          </div>
+          <div style="color: var(--text); font-size: 14px; line-height: 1.55;">Yes — recommended. We've done this before; João's buy-in on the rule logic is the difference between 4 weeks and 12 weeks. Happy to join a 30-min walkthrough with him before you formally approve.</div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <textarea class="input" style="width: 100%; min-height: 70px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; line-height: 1.55;" placeholder="Add a comment…"></textarea>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn btn-secondary">Mention someone</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-primary">Post comment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side panel -->
+    <aside>
+      <div class="panel">
+        <div class="panel-h">Scoring breakdown</div>
+        <div class="score-row">
+          <div class="score-label">Financial impact <svg class="score-label-help" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width: 92%"></div></div>
+          <div class="score-value">9.2</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">Time to ship</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width: 78%"></div></div>
+          <div class="score-value">7.8</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">AI-suitability</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width: 85%"></div></div>
+          <div class="score-value">8.5</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">Change mgmt cost</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width: 60%"></div></div>
+          <div class="score-value">6.0</div>
+        </div>
+        <div class="score-row">
+          <div class="score-label">Dependency depth</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width: 82%"></div></div>
+          <div class="score-value">8.2</div>
+        </div>
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-weight: 600; font-size: 13px;">Composite</div>
+          <div style="font-weight: 600; font-size: 18px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;">7.9 / 10</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">Confidence</div>
+        <div class="conf-row">
+          <div class="conf-dots">
+            <span class="conf-dot filled"></span>
+            <span class="conf-dot filled"></span>
+            <span class="conf-dot filled"></span>
+            <span class="conf-dot filled"></span>
+            <span class="conf-dot"></span>
+          </div>
+          <span class="conf-label">High (4 / 5)</span>
+        </div>
+        <div class="conf-rationale">
+          11 quotes from 7 distinct contributors corroborate the pattern. 4 independent system signals from Salesforce / NetSuite / Calendar match. Cross-portfolio comparable exists with verified outcome. <strong>Main uncertainty:</strong> impact range depends on exact rule coverage — likely 65-75% of cases.
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">Related opportunities <span class="panel-h-meta">3</span></div>
+        <div class="similar">
+          <div class="similar-source">#15</div>
+          <div class="similar-body">
+            <div class="similar-title">AI-assisted quote drafting from past similar deals</div>
+            <div class="similar-meta">$120K-180K · same dept · could share build</div>
+          </div>
+        </div>
+        <div class="similar">
+          <div class="similar-source">#08</div>
+          <div class="similar-body">
+            <div class="similar-title">Approval status visibility in Slack channel</div>
+            <div class="similar-meta">$45K · approved Jun 5 · partial overlap</div>
+          </div>
+        </div>
+        <div class="similar">
+          <div class="similar-source">#04</div>
+          <div class="similar-body">
+            <div class="similar-title">Centralize invoice term exception SOP</div>
+            <div class="similar-meta">$60-95K · finance side · post-quote impact</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h">Metadata</div>
+        <div style="font-size: 13px; color: var(--text-2); line-height: 1.8;">
+          <div style="display: flex; justify-content: space-between;"><span>Surfaced</span><span style="color: var(--text); font-weight: 500;">Jun 17</span></div>
+          <div style="display: flex; justify-content: space-between;"><span>Last updated</span><span style="color: var(--text); font-weight: 500;">5 hrs ago</span></div>
+          <div style="display: flex; justify-content: space-between;"><span>Atlas version</span><span style="color: var(--text); font-weight: 500;">v0.7</span></div>
+          <div style="display: flex; justify-content: space-between;"><span>Twistag lead</span><span style="color: var(--text); font-weight: 500;">Ricardo Fonseca</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Approve sheet -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-head">
+    <div class="sheet-head-title">Approve for FDE delivery</div>
+    <button class="sheet-close" onclick="closeSheet()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="sheet-body">
+    <div class="sow-eyebrow">Statement of work · auto-drafted</div>
+    <h2 class="sow-title">Pricing pre-approval automation</h2>
+    <p class="sow-sub">Twistag delivery proposal generated from this opportunity. Edit anything before sending. Approving this kicks off scope alignment within 48h.</p>
+
+    <div class="sow-card">
+      <div class="sow-card-h">Scope</div>
+      <div class="sow-row">
+        <div class="sow-label">Deliverable</div>
+        <div class="sow-value">
+          <strong>Rule-based pricing pre-approval engine</strong> integrated into Salesforce. Covers the top 65-75% of enterprise pricing cases by volume. Manual escalation path preserved for non-standard deals.
+        </div>
+      </div>
+      <div class="sow-row">
+        <div class="sow-label">Includes</div>
+        <div class="sow-value">
+          <ul class="sow-list">
+            <li>Discovery workshop with VP Sales to capture decision rules (1 day)</li>
+            <li>Rule engine + Salesforce integration build</li>
+            <li>Approval status visibility in #pricing-approvals Slack channel</li>
+            <li>Dashboard for VP Sales to monitor automated approvals + override</li>
+            <li>Rollout enablement: 1 training session + Loom walkthroughs</li>
+            <li>30-day post-deploy monitoring + tuning</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sow-row">
+        <div class="sow-label">Not included</div>
+        <div class="sow-value" style="color: var(--text-2);">
+          Pricing strategy itself (decision rules sourced from VP Sales as-is).<br/>
+          Multi-currency or international tax logic (US enterprise only in v1).
+        </div>
+      </div>
+    </div>
+
+    <div class="sow-card">
+      <div class="sow-card-h">Team</div>
+      <div class="sow-team">
+        <div class="sow-team-card">
+          <div class="sow-team-av">RF</div>
+          <div>
+            <div class="sow-team-name">Ricardo Fonseca</div>
+            <div class="sow-team-role">FDE Lead · 60%</div>
+          </div>
+        </div>
+        <div class="sow-team-card">
+          <div class="sow-team-av" style="background: linear-gradient(135deg, #16a34a, #15803d);">AT</div>
+          <div>
+            <div class="sow-team-name">Ana Teixeira</div>
+            <div class="sow-team-role">FDE Eng · 80%</div>
+          </div>
+        </div>
+        <div class="sow-team-card">
+          <div class="sow-team-av" style="background: linear-gradient(135deg, #d97706, #b45309);">PM</div>
+          <div>
+            <div class="sow-team-name">Pedro Mendes</div>
+            <div class="sow-team-role">Product · 30%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sow-card">
+      <div class="sow-card-h">Timeline & price</div>
+      <div class="sow-row">
+        <div class="sow-label">Start</div>
+        <div class="sow-value"><strong>Week of Jul 14, 2026</strong> (2 weeks after sprint close)</div>
+      </div>
+      <div class="sow-row">
+        <div class="sow-label">Duration</div>
+        <div class="sow-value"><strong>4 weeks</strong> · target ship Aug 11</div>
+      </div>
+      <div class="sow-row">
+        <div class="sow-label">Price</div>
+        <div class="sow-value"><strong>$72,000</strong> · fixed fee · 50% on kickoff, 50% on ship</div>
+      </div>
+      <div class="sow-row">
+        <div class="sow-label">Bonus</div>
+        <div class="sow-value">+$15,000 if cycle time reduction ≥50% within 90 days post-ship</div>
+      </div>
+    </div>
+
+    <div class="sow-card">
+      <div class="sow-card-h">Success metrics</div>
+      <ul class="sow-list">
+        <li><strong>Cycle time:</strong> median time-to-quote on enterprise deals reduced by ≥50% within 90 days</li>
+        <li><strong>Margin recovery:</strong> 0 list-price workaround quotes after week 4 post-deploy</li>
+        <li><strong>Adoption:</strong> ≥80% of enterprise pricing requests routed through automated engine</li>
+        <li><strong>Override health:</strong> manual override rate stable at 25-35% (sanity check)</li>
+      </ul>
+    </div>
+
+    <div class="sow-comment">
+      <div class="sow-comment-label">Comments to Twistag team (optional)</div>
+      <textarea placeholder="e.g. Please loop João in before kickoff — he wants to be involved in defining the rule logic from day 1."></textarea>
+      <div class="sow-comment-hint">Visible to Ricardo and the Twistag engagement team. Not visible to the broader Acme team.</div>
+    </div>
+  </div>
+
+  <div class="sheet-foot">
+    <span class="sheet-foot-meta">By approving, you authorize Twistag to begin scope alignment. Final SOW signed before kickoff.</span>
+    <div class="sheet-foot-spacer"></div>
+    <button class="btn btn-secondary" onclick="closeSheet()">Cancel</button>
+    <button class="btn-confirm">
+      Approve & notify Twistag
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      const target = t.dataset.tab;
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelector(`.tab-content[data-tab="${target}"]`).classList.add('active');
+    });
+  });
+
+  function openSheet() {
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('sheet').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSheet() {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('sheet').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+</script>
+
+</body>
+</html>

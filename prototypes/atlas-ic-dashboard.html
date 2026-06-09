@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — IC Personal Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  a { color: inherit; text-decoration: none; }
+
+  /* Top nav */
+  .topnav {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-size: 14px;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text);
+    border-radius: 5px;
+    position: relative;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1.5px solid var(--surface);
+    border-radius: 2px;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-2);
+    font-size: 13px;
+  }
+  .breadcrumb-sep { color: var(--text-3); }
+  .breadcrumb-current { color: var(--text); font-weight: 500; }
+  .nav-spacer { flex: 1; }
+  .topnav-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-2);
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 12px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 6px 10px; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn-large { padding: 12px 20px; font-size: 14px; }
+
+  /* Layout */
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 32px 64px;
+  }
+  @media (max-width: 700px) {
+    .page { padding: 28px 20px 48px; }
+  }
+
+  /* Hero greeting */
+  .hero {
+    margin-bottom: 36px;
+  }
+  .hero-greeting {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .hero-greeting .meta {
+    color: var(--text-3);
+    font-weight: 500;
+  }
+  .hero-sub {
+    color: var(--text-2);
+    font-size: 15px;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 600; }
+
+  /* Sprint progress card */
+  .progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 36px;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .progress-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .progress-meta {
+    color: var(--text-2);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-meta .sep {
+    width: 3px; height: 3px;
+    background: var(--text-3);
+    border-radius: 50%;
+  }
+
+  /* Session pills row */
+  .session-pills {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .session-pill {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    text-align: left;
+    position: relative;
+    transition: all 0.15s ease;
+  }
+  .session-pill.done {
+    background: var(--success-soft);
+    border-color: #bbf7d0;
+  }
+  .session-pill.current {
+    background: var(--surface);
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .session-pill.upcoming { background: var(--surface); }
+  .session-pill-num {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .session-pill.done .session-pill-num { color: var(--success); }
+  .session-pill.current .session-pill-num { color: var(--text); }
+  .session-pill-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .session-pill-status {
+    font-size: 11px;
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .session-pill.done .session-pill-status::before {
+    content: '';
+    width: 5px; height: 5px;
+    background: var(--success);
+    border-radius: 50%;
+  }
+  .session-pill.current .session-pill-status::before {
+    content: '';
+    width: 5px; height: 5px;
+    background: var(--text);
+    border-radius: 50%;
+  }
+
+  /* Section */
+  .section { margin-bottom: 36px; }
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-count {
+    background: var(--surface-2);
+    color: var(--text-2);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Next session card (the hero CTA) */
+  .next-card {
+    background: var(--text);
+    color: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  @media (max-width: 700px) {
+    .next-card { flex-direction: column; align-items: flex-start; gap: 20px; }
+  }
+  .next-card-body { flex: 1; }
+  .next-card-eyebrow {
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .next-card-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .next-card-meta {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .next-card-meta .dot {
+    width: 3px; height: 3px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+  }
+  .btn-on-dark {
+    background: var(--surface);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-on-dark:hover { background: #f4f4f5; }
+
+  /* Completed session list */
+  .completed-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .completed-row {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.15s ease;
+  }
+  .completed-row:first-child { border-top: none; }
+  .completed-row:hover { background: var(--bg); cursor: pointer; }
+  .completed-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--success-soft);
+    color: var(--success);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .completed-info { flex: 1; min-width: 0; }
+  .completed-title {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .completed-meta {
+    color: var(--text-3);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .completed-meta .sep {
+    width: 3px; height: 3px;
+    background: var(--text-3);
+    border-radius: 50%;
+  }
+  .completed-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .edit-window {
+    font-size: 11px;
+    color: var(--warning);
+    background: var(--warning-soft);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .edit-window::before {
+    content: '';
+    width: 5px; height: 5px;
+    background: var(--warning);
+    border-radius: 50%;
+  }
+  .closed-window {
+    font-size: 11px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* Upcoming */
+  .upcoming-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .upcoming-cal {
+    width: 44px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .upcoming-cal-month {
+    background: var(--text);
+    color: var(--surface);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .upcoming-cal-day {
+    padding: 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .upcoming-info { flex: 1; }
+  .upcoming-title {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .upcoming-meta {
+    color: var(--text-2);
+    font-size: 13px;
+  }
+
+  /* Two col bottom */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) {
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+  }
+  .info-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .info-card p {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .info-card a {
+    color: var(--brand);
+    font-weight: 500;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Footer notice */
+  .footer-notice {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .footer-notice a { color: var(--text-2); }
+
+  /* Iteration label */
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text);
+    color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 100;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 2 · IC Dashboard</div>
+
+<nav class="topnav">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <span>Atlas</span>
+  </div>
+  <div class="breadcrumb">
+    <span>Acme Manufacturing</span>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">My discovery</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="topnav-actions">
+    <button class="icon-btn" title="Notifications">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <button class="icon-btn" title="Help">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </button>
+    <div class="avatar" title="Sara Almeida">SA</div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1 class="hero-greeting">Hi Sara <span class="meta">— 3 of 4 sessions done.</span></h1>
+    <p class="hero-sub">Operations Discovery sprint ends <strong>Jun 28</strong>. One last conversation when you're ready.</p>
+  </div>
+
+  <!-- Sprint progress -->
+  <div class="progress-card">
+    <div class="progress-row">
+      <div>
+        <div class="progress-title">Your progress</div>
+        <div class="progress-meta" style="margin-top: 4px;">
+          <span>75% complete</span>
+          <span class="sep"></span>
+          <span>~5 min remaining</span>
+          <span class="sep"></span>
+          <span>15 min total so far</span>
+        </div>
+      </div>
+    </div>
+    <div class="session-pills">
+      <button class="session-pill done">
+        <div class="session-pill-num">Session 1</div>
+        <div class="session-pill-title">Quote-to-cash flow</div>
+        <div class="session-pill-status">Done · Jun 8</div>
+      </button>
+      <button class="session-pill done">
+        <div class="session-pill-num">Session 2</div>
+        <div class="session-pill-title">Exception handling</div>
+        <div class="session-pill-status">Done · Jun 16</div>
+      </button>
+      <button class="session-pill done">
+        <div class="session-pill-num">Session 3</div>
+        <div class="session-pill-title">Tools you use most</div>
+        <div class="session-pill-status">Done · Jun 19</div>
+      </button>
+      <button class="session-pill current">
+        <div class="session-pill-num">Session 4</div>
+        <div class="session-pill-title">One thing you'd change</div>
+        <div class="session-pill-status">Available now</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Next session big CTA -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Continue</div>
+    </div>
+    <div class="next-card">
+      <div class="next-card-body">
+        <div class="next-card-eyebrow">Last session</div>
+        <div class="next-card-title">If you could change one thing about how the team works — what would it be?</div>
+        <div class="next-card-meta">
+          <span>~5 min</span>
+          <span class="dot"></span>
+          <span>4 questions</span>
+          <span class="dot"></span>
+          <span>You can pause anytime</span>
+        </div>
+      </div>
+      <a class="btn-on-dark" href="atlas-ic-journey.html">
+        Begin session
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Completed sessions -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Completed <span class="section-count">3</span></div>
+      <button class="btn-ghost">Manage all →</button>
+    </div>
+    <div class="completed-list">
+      <div class="completed-row">
+        <div class="completed-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="completed-info">
+          <div class="completed-title">Tools you use most</div>
+          <div class="completed-meta">
+            <span>Jun 19 · 4 min 38s</span>
+            <span class="sep"></span>
+            <span>6 things captured</span>
+          </div>
+        </div>
+        <div class="completed-actions">
+          <span class="edit-window">5 days to edit</span>
+          <button class="btn btn-secondary">Review</button>
+        </div>
+      </div>
+      <div class="completed-row">
+        <div class="completed-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="completed-info">
+          <div class="completed-title">Exception handling</div>
+          <div class="completed-meta">
+            <span>Jun 16 · 6 min 02s</span>
+            <span class="sep"></span>
+            <span>9 things captured</span>
+          </div>
+        </div>
+        <div class="completed-actions">
+          <span class="edit-window">2 days to edit</span>
+          <button class="btn btn-secondary">Review</button>
+        </div>
+      </div>
+      <div class="completed-row">
+        <div class="completed-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="completed-info">
+          <div class="completed-title">Quote-to-cash flow</div>
+          <div class="completed-meta">
+            <span>Jun 8 · 5 min 12s</span>
+            <span class="sep"></span>
+            <span>11 things captured</span>
+            <span class="sep"></span>
+            <span>Contributed to 2 opportunities</span>
+          </div>
+        </div>
+        <div class="completed-actions">
+          <span class="closed-window">Edit window closed</span>
+          <button class="btn btn-secondary">View</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coming up -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Reminders</div>
+    </div>
+    <div class="upcoming-card">
+      <div class="upcoming-cal">
+        <div class="upcoming-cal-month">Jun</div>
+        <div class="upcoming-cal-day">26</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-title">Session 4 reminder if not done</div>
+        <div class="upcoming-meta">We'll email you Friday at 9 AM. Snooze, edit cadence, or unsubscribe anytime.</div>
+      </div>
+      <button class="btn btn-ghost">Edit</button>
+    </div>
+  </div>
+
+  <!-- Bottom info cards -->
+  <div class="bottom-grid">
+    <div class="info-card">
+      <h4>What happens to your answers</h4>
+      <p>Each thing you've shared is part of mapping how Operations works — not a record about you. Your manager sees aggregate themes, not individual quotes attributed to your name.</p>
+      <a href="#">Read the privacy details
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    <div class="info-card">
+      <h4>Why this sprint exists</h4>
+      <p>Maria (your manager) is using Atlas to spot the bottlenecks and tooling gaps slowing the team down. The output is a list of concrete fixes — not feedback about people.</p>
+      <a href="#">Read the FAQ
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-notice">
+    Atlas · Operational discovery for Acme · <a href="#">Privacy</a> · <a href="#">Pause my notifications</a> · <a href="#">Sign out</a>
+  </div>
+</div>
+
+</body>
+</html>

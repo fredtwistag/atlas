@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --radius: 8px;
+    --radius-lg: 14px;
+    --serif: 'Fraunces', Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text); color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    z-index: 200;
+  }
+
+  /* Nav */
+  .nav {
+    position: sticky;
+    top: 0;
+    background: rgba(250, 250, 250, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 600; letter-spacing: -0.01em; font-size: 15px;
+  }
+  .nav-logo-mark {
+    width: 24px; height: 24px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .nav-logo-mark::before {
+    content: ''; position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .nav-links { display: flex; gap: 24px; }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+  .nav-links a {
+    color: var(--text-2);
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--text); }
+  .nav-spacer { flex: 1; }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    font-weight: 500; font-size: 13.5px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    line-height: 1;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 6px 12px; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-large { padding: 11px 22px; font-size: 14.5px; }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 80px 0 24px;
+    text-align: center;
+  }
+  .eyebrow {
+    color: var(--text-3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: 56px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 18px;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (max-width: 700px) { .hero h1 { font-size: 40px; } }
+  .hero p {
+    color: var(--text-2);
+    font-size: 17px;
+    line-height: 1.55;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Tabs */
+  .seg-toggle {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    margin: 36px auto 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .seg-toggle button {
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text-2);
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .seg-toggle button.active {
+    background: var(--text);
+    color: var(--surface);
+  }
+
+  /* Tiers grid */
+  .tiers {
+    padding: 56px 0 32px;
+  }
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .tiers-grid { grid-template-columns: 1fr; }
+  }
+  .tier {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .tier.featured {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.08);
+  }
+  .tier.featured::before {
+    content: 'Most popular';
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--surface);
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tier-eyebrow {
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .tier-name {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin-bottom: 4px;
+  }
+  .tier-desc {
+    color: var(--text-2);
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-bottom: 24px;
+    min-height: 48px;
+  }
+  .tier-price {
+    font-family: var(--serif);
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .tier-price .currency {
+    font-size: 20px;
+    color: var(--text-3);
+    margin-right: 2px;
+    vertical-align: top;
+  }
+  .tier-price .range {
+    font-size: 20px;
+    color: var(--text-3);
+    font-weight: 500;
+    margin-left: 2px;
+  }
+  .tier-period {
+    color: var(--text-3);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .tier-cta {
+    margin-bottom: 28px;
+  }
+  .tier-cta a {
+    display: block;
+    text-align: center;
+    width: 100%;
+  }
+  .tier-features-label {
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .tier-features {
+    list-style: none;
+    flex: 1;
+  }
+  .tier-features li {
+    padding: 8px 0;
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .tier-features li svg {
+    color: var(--text);
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .tier-note {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .tier-note a {
+    color: var(--brand);
+    font-weight: 500;
+  }
+
+  /* What's included strip */
+  .included {
+    padding: 72px 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .included-h {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .included-h h2 {
+    font-family: var(--serif);
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 700px) { .included-h h2 { font-size: 30px; } }
+  .included-h p {
+    color: var(--text-2);
+    font-size: 15px;
+  }
+  .included-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .included-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .included-grid { grid-template-columns: 1fr; } }
+  .included-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+  .included-item h4 {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .included-item p {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* Future tiers strip */
+  .future {
+    padding: 64px 0;
+  }
+  .future-card {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .future-card .eyebrow { color: var(--brand); margin-bottom: 8px; }
+  .future-card h3 {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+  }
+  .future-card p {
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  /* FAQ */
+  .faq {
+    padding: 80px 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .faq-h {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .faq-h h2 {
+    font-family: var(--serif);
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 700px) { .faq-h h2 { font-size: 30px; } }
+  .faq-list {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .faq-item {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+  }
+  .faq-item:last-child { border-bottom: 1px solid var(--border); }
+  .faq-q {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 10px;
+    letter-spacing: -0.005em;
+  }
+  .faq-a {
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+  .faq-a strong { color: var(--text); font-weight: 600; }
+
+  /* CTA */
+  .cta {
+    background: var(--text);
+    color: var(--surface);
+    padding: 80px 0;
+    text-align: center;
+  }
+  .cta h2 {
+    font-family: var(--serif);
+    font-size: 44px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (max-width: 700px) { .cta h2 { font-size: 32px; } }
+  .cta p {
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto 28px;
+    line-height: 1.55;
+  }
+  .btn-on-dark {
+    background: var(--surface);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14.5px;
+  }
+  .btn-on-dark:hover { background: #f4f4f5; }
+  .btn-on-dark-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--surface);
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 14.5px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-on-dark-secondary:hover { background: rgba(255,255,255,0.14); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    color: var(--text-3);
+    font-size: 12.5px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 7 · Pricing v2</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="atlas-landing.html">
+      <div class="nav-logo-mark"></div>
+      Atlas
+    </a>
+    <div class="nav-links">
+      <a href="atlas-landing.html#how">How it works</a>
+      <a href="atlas-landing.html#for-who">For who</a>
+      <a href="atlas-landing.html#outcomes">Outcomes</a>
+      <a class="active">Pricing</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-actions">
+      <a class="btn btn-ghost">Sign in</a>
+      <a class="btn btn-primary">Book a call</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="eyebrow">Pricing</div>
+    <h1>Pay for the sprint, get a roadmap that ships.</h1>
+    <p>One discovery sprint, fixed fee. Three sizes based on team scope. Every sprint ends with a ranked roadmap + pre-drafted SOWs for the work you decide to ship next.</p>
+
+    <div class="seg-toggle">
+      <button class="active">Operators &amp; Portcos</button>
+      <button>PE</button>
+      <button>SaaS / AI scale-ups</button>
+    </div>
+  </div>
+</section>
+
+<section class="tiers">
+  <div class="container">
+    <div class="tiers-grid">
+
+      <!-- Sprint Small -->
+      <div class="tier">
+        <div class="tier-eyebrow">For smaller teams</div>
+        <div class="tier-name">Sprint Small</div>
+        <div class="tier-desc">For mid-market under $200M or portcos under 100 employees. One department, focused scope.</div>
+        <div class="tier-price"><span class="currency">$</span>25K<span class="range">– 40K</span></div>
+        <div class="tier-period">one-time · 3 weeks</div>
+        <div class="tier-cta">
+          <a class="btn btn-secondary btn-large">Book a Small sprint</a>
+        </div>
+        <div class="tier-features-label">Includes</div>
+        <ul class="tier-features">
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 30 contributors</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 4 conversation topics</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Final report (PDF + HTML)</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1-2 pre-drafted SOWs ready to ship</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sponsor + manager dashboards</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 20% off second sprint within 12 months</li>
+        </ul>
+      </div>
+
+      <!-- Sprint Standard (featured) -->
+      <div class="tier featured">
+        <div class="tier-eyebrow">For most teams</div>
+        <div class="tier-name">Sprint Standard</div>
+        <div class="tier-desc">For mid-market $200-500M, portcos 100+ employees, or focused single-department scope at scale.</div>
+        <div class="tier-price"><span class="currency">$</span>45K<span class="range">– 70K</span></div>
+        <div class="tier-period">one-time · 4 weeks</div>
+        <div class="tier-cta">
+          <a class="btn btn-primary btn-large">Book a Standard sprint</a>
+        </div>
+        <div class="tier-features-label">Everything in Small, plus</div>
+        <ul class="tier-features">
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 60 contributors</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Custom topics beyond defaults</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 2-3 pre-drafted SOWs</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sponsor 1:1 mid-sprint review</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cross-portfolio pattern matches (Twistag-internal)</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority SOW turnaround (5-day SLA)</li>
+        </ul>
+      </div>
+
+      <!-- Sprint Plus -->
+      <div class="tier">
+        <div class="tier-eyebrow">For wider scope</div>
+        <div class="tier-name">Sprint Plus</div>
+        <div class="tier-desc">For multi-department coverage, post-acquisition integration, or higher-stakes sprints with broader buy-in.</div>
+        <div class="tier-price"><span class="currency">$</span>70K<span class="range">– 95K</span></div>
+        <div class="tier-period">one-time · 4 weeks</div>
+        <div class="tier-cta">
+          <a class="btn btn-secondary btn-large">Book a Plus sprint</a>
+        </div>
+        <div class="tier-features-label">Everything in Standard, plus</div>
+        <ul class="tier-features">
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 100 contributors</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 2 departments in one sprint</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 3+ pre-drafted SOWs</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Twistag engagement lead</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sponsor + LP-ready summary deck</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Post-sprint 30-day support window</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="tier-note">
+      Multi-portco engagements (PE firms with 3+ portcos)? <a>Talk to us</a> — volume pricing applies past 3 portcos.
+    </div>
+  </div>
+</section>
+
+<!-- What every sprint includes -->
+<section class="included">
+  <div class="container">
+    <div class="included-h">
+      <h2>Every sprint includes these.</h2>
+      <p>No surprise add-ons. No usage fees. No per-seat surprises.</p>
+    </div>
+
+    <div class="included-grid">
+      <div class="included-item">
+        <h4>5-10 opportunities surfaced</h4>
+        <p>Typical sprint result. 1-3 high-impact opportunities ($150K+/yr estimated impact), 2-4 quick wins, the rest categorized as foundation or research.</p>
+      </div>
+      <div class="included-item">
+        <h4>Auto-drafted SOWs</h4>
+        <p>For every approved opportunity, Atlas drafts a scope, team, timeline, price, and success metrics. You review, edit, sign. Saves 2-4 weeks of negotiation per project.</p>
+      </div>
+      <div class="included-item">
+        <h4>Twistag FDE delivery (optional)</h4>
+        <p>If you want Twistag to ship the approved work, FDE engagements start within 2 weeks of sprint close. Outcome-bonus pricing aligns incentives.</p>
+      </div>
+      <div class="included-item">
+        <h4>GDPR + SOC2 baseline</h4>
+        <p>EU residency by default. SOC2 Type 1 in progress. DPA on every engagement. IC privacy controls (edit window, opt-out, deletion).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Future tiers / roadmap honesty -->
+<section class="future">
+  <div class="container">
+    <div class="future-card">
+      <div class="eyebrow">Subscription tiers · coming Q3 2026</div>
+      <h3>Atlas Core and Atlas Portfolio</h3>
+      <p>Once Atlas integrates natively with Slack and Teams (mid-2026), we'll launch persistent subscriptions for clients who want a continuous discovery loop. Sprint customers get 25% off first year of Atlas Core when it launches.</p>
+      <a class="btn btn-secondary">Get notified at launch</a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="container">
+    <div class="faq-h">
+      <h2>Questions.</h2>
+    </div>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">Why is there no monthly subscription?</div>
+        <div class="faq-a">Because "persistent" requires Slack/Teams integration to be honest. Until that ships (Q3 2026 target), we sell the Sprint — a focused 3-4 week discovery engagement with a defined output. You'll always know what you're getting.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What if my team won't engage with the bot?</div>
+        <div class="faq-a">Adoption is the biggest risk and we treat it like one. We monitor Weekly Active Contributors per department from day 1 and <strong>intervene with you if it drops below 30% over 2 weeks</strong>. If we can't fix it together, we'll refund pro-rata. Honest numbers in your contract.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Do you compete with Glean, Microsoft Copilot, or Vanta?</div>
+        <div class="faq-a">No. Glean and Copilot are <strong>retrieval-first</strong> — they help find what's already written. Atlas is <strong>outbound-first</strong> — it asks questions to capture what's only in people's heads. Vanta does compliance evidence collection; Atlas does operational discovery. Different jobs, different buyers.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Are FDE engagements priced separately?</div>
+        <div class="faq-a">Yes — each FDE engagement is fixed-fee, agreed upfront based on the pre-drafted SOW. Bonus pricing tied to outcomes is available. Twistag handles delivery; clients can also take the SOW to their own engineering team.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What about white-label for consulting firms?</div>
+        <div class="faq-a">Not in our current go-to-market. We sell direct to operators, portcos, PE firms, and tech companies. Atlas is the IP, not a channel product. If you're a consulting firm with a specific need, get in touch — we may explore co-engagement on a case-by-case basis.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What does the data residency look like in Europe?</div>
+        <div class="faq-a">European customers are hosted in Frankfurt by default. We're <strong>GDPR-compliant by design</strong>, with works council notices ready for Germany and France. DPAs are standard; we don't make you ask twice.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="container">
+    <h2>Try it on one team. Decide from real evidence.</h2>
+    <p>Most clients start with a Sprint Standard on a single department. Four weeks later, they have evidence to decide what to ship next. No bigger commitment than that.</p>
+    <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+      <a class="btn-on-dark">Book a 20-min intro</a>
+      <a class="btn-on-dark-secondary" href="atlas-final-report.html">See a sample report</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    © 2026 Twistag. Atlas is a product of Twistag. · Made in Lisbon · <a href="atlas-landing.html" style="color: var(--text-2);">Home</a>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.seg-toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.seg-toggle button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Twistag Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --success-soft: #f0fdf4;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13.5px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, select { font-family: inherit; font-size: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  .iter-label {
+    position: fixed;
+    top: 12px; right: 12px;
+    background: var(--text); color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    z-index: 200;
+  }
+
+  /* Side nav (Twistag-style — dense, internal tool) */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidenav { display: none; }
+  }
+
+  .sidenav {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 18px 12px;
+    position: sticky; top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidenav-logo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: 24px;
+  }
+  .sidenav-logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .sidenav-logo-mark::before {
+    content: ''; position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .sidenav-brand {
+    font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+  }
+  .sidenav-brand .badge {
+    font-size: 10px;
+    background: var(--text);
+    color: var(--surface);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sidenav-section {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 14px 10px 6px;
+  }
+  .sidenav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 1px;
+    transition: all 0.12s ease;
+  }
+  .sidenav-item:hover { background: var(--surface-2); color: var(--text); }
+  .sidenav-item.active { background: var(--surface-2); color: var(--text); }
+  .sidenav-item svg { flex-shrink: 0; color: var(--text-3); }
+  .sidenav-item.active svg { color: var(--text); }
+  .sidenav-item .count {
+    margin-left: auto;
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  .sidenav-item.active .count {
+    background: var(--text);
+    color: var(--surface);
+  }
+  .sidenav-item .alert-dot {
+    margin-left: auto;
+    width: 6px; height: 6px;
+    background: var(--warning);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px var(--warning-soft);
+  }
+  .sidenav-foot {
+    position: absolute;
+    bottom: 12px;
+    left: 12px; right: 12px;
+    padding: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sidenav-foot-av {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 11px;
+  }
+  .sidenav-foot-info { flex: 1; min-width: 0; }
+  .sidenav-foot-name { font-size: 12.5px; font-weight: 500; }
+  .sidenav-foot-role { font-size: 11px; color: var(--text-3); }
+
+  /* Main */
+  .main {
+    overflow-x: auto;
+  }
+
+  /* Top bar */
+  .topbar {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .topbar-meta {
+    color: var(--text-3);
+    font-size: 12.5px;
+  }
+  .topbar-spacer { flex: 1; }
+  .view-toggle {
+    display: flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+  }
+  .view-toggle button {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--text-2);
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .view-toggle button.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .quick-search {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-2);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 12.5px;
+  }
+  .quick-search kbd {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-2);
+  }
+
+  /* Btn */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-sm);
+    font-weight: 500; font-size: 12.5px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 5px 8px; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
+  /* Content area */
+  .content {
+    padding: 24px 28px;
+  }
+
+  /* View management */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Stat row */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 1200px) {
+    .stat-row { grid-template-columns: repeat(3, 1fr); }
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .stat-label {
+    color: var(--text-2);
+    font-size: 11.5px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .stat-sub {
+    font-size: 11.5px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+  .stat-sub.up { color: var(--success); }
+  .stat-sub.down { color: var(--danger); }
+
+  /* Alert banner */
+  .alert-banner {
+    background: var(--warning-soft);
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #92400e;
+    font-size: 13px;
+  }
+  .alert-banner svg { flex-shrink: 0; }
+  .alert-banner strong { font-weight: 600; }
+  .alert-banner-spacer { flex: 1; }
+  .alert-banner-link {
+    color: #92400e;
+    font-weight: 600;
+    text-decoration: underline;
+    font-size: 12.5px;
+  }
+
+  /* Client table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .table-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .table-title {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .table-title-count {
+    background: var(--surface-2);
+    color: var(--text-2);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .table-head-spacer { flex: 1; }
+  .filter-pill {
+    padding: 3px 9px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    font-size: 11.5px;
+    color: var(--text-2);
+    font-weight: 500;
+    border: 1px solid var(--border);
+  }
+  .filter-pill:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .ctable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .ctable th {
+    background: var(--bg);
+    color: var(--text-3);
+    text-align: left;
+    padding: 8px 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 10.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ctable td {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .ctable tbody tr:hover { background: var(--bg); cursor: pointer; }
+  .ctable tbody tr:last-child td { border-bottom: none; }
+
+  .client-cell {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .client-logo {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--text);
+    color: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .client-logo.av-1 { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+  .client-logo.av-2 { background: linear-gradient(135deg, #10b981, #059669); }
+  .client-logo.av-3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .client-logo.av-4 { background: linear-gradient(135deg, #ec4899, #be185d); }
+  .client-logo.av-5 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+  .client-logo.av-6 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  .client-name { font-weight: 500; font-size: 13px; color: var(--text); }
+  .client-sub { color: var(--text-3); font-size: 11px; margin-top: 1px; }
+
+  .seg-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  .health-cell {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .health-bar-w {
+    width: 60px;
+    height: 5px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .health-bar-f {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .health-bar-f.good { background: var(--success); }
+  .health-bar-f.ok { background: var(--text); }
+  .health-bar-f.warn { background: var(--warning); }
+  .health-num {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    width: 30px;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+  .badge-active { background: var(--success-soft); color: var(--success); }
+  .badge-active::before { content: ''; width: 4px; height: 4px; background: var(--success); border-radius: 50%; }
+  .badge-warn { background: var(--warning-soft); color: var(--warning); }
+  .badge-warn::before { content: ''; width: 4px; height: 4px; background: var(--warning); border-radius: 50%; }
+  .badge-onboarding { background: var(--brand-soft); color: var(--brand); }
+  .badge-renewal { background: var(--surface-2); color: var(--text-2); }
+  .badge-closed { background: var(--surface-2); color: var(--text-3); }
+
+  .row-num {
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .row-num small {
+    color: var(--text-3);
+    font-weight: 400;
+    font-size: 11px;
+    margin-left: 2px;
+  }
+
+  /* ============ CLIENT DRILL-DOWN ============ */
+  .drill-head {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .drill-head-row {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 12px;
+  }
+  .drill-head-logo {
+    width: 44px; height: 44px;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .drill-head-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .drill-head-meta {
+    color: var(--text-2);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .drill-actions {
+    margin-left: auto;
+    display: flex; gap: 8px;
+  }
+
+  /* Drill columns */
+  .drill-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 1100px) { .drill-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .card-h {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-h-title {
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-body { padding: 14px 18px; }
+
+  /* Pipeline */
+  .pipe-row {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .pipe-row:first-child { border-top: none; }
+  .pipe-row:hover { background: var(--bg); cursor: pointer; }
+  .pipe-stage {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pipe-stage.surfaced { background: var(--brand-soft); color: var(--brand); }
+  .pipe-stage.approved { background: var(--text); color: var(--surface); }
+  .pipe-stage.delivery { background: var(--success-soft); color: var(--success); }
+  .pipe-stage.shipped { background: var(--success); color: var(--surface); }
+
+  .pipe-body { flex: 1; min-width: 0; }
+  .pipe-title {
+    font-weight: 500; font-size: 13.5px;
+    line-height: 1.4;
+    margin-bottom: 3px;
+  }
+  .pipe-meta {
+    color: var(--text-3);
+    font-size: 11.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pipe-meta .sep {
+    width: 3px; height: 3px;
+    background: var(--text-3);
+    border-radius: 50%;
+  }
+  .pipe-val {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pipe-val-num {
+    font-weight: 600;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pipe-val-status {
+    color: var(--text-3);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* Pattern matches */
+  .pattern {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .pattern:first-child { border-top: none; }
+  .pattern:hover { background: var(--bg); }
+  .pattern-h {
+    font-size: 12.5px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .pattern-match {
+    color: var(--brand);
+    font-size: 11.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pattern-match::before {
+    content: '';
+    width: 5px; height: 5px;
+    background: var(--brand);
+    border-radius: 50%;
+  }
+  .pattern-meta {
+    color: var(--text-3);
+    font-size: 11.5px;
+    margin-top: 3px;
+  }
+
+  /* Internal notes */
+  .internal-note {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .internal-note:first-child { border-top: none; padding-top: 0; }
+  .note-av {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .note-body { flex: 1; font-size: 12.5px; line-height: 1.55; }
+  .note-author { font-weight: 500; }
+  .note-time { color: var(--text-3); font-size: 11px; }
+
+  /* ============ PATTERN LIBRARY ============ */
+  .lib-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 1100px) { .lib-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 700px) { .lib-grid { grid-template-columns: 1fr; } }
+
+  .lib-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .lib-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .lib-card-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+  .lib-card-title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.35;
+    letter-spacing: -0.005em;
+    margin-bottom: 8px;
+  }
+  .lib-card-desc {
+    color: var(--text-2);
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .lib-card-foot {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .lib-card-stat {
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .lib-card-stat strong { color: var(--text); font-weight: 600; }
+  .lib-card-confidence {
+    display: flex;
+    gap: 2px;
+  }
+  .lib-card-confidence .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+  .lib-card-confidence .dot.filled { background: var(--text); }
+
+  .lib-h {
+    font-size: 12.5px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin: 28px 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lib-h:first-child { margin-top: 0; }
+
+  .lib-empty {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .lib-empty strong { color: var(--text-2); display: block; margin-bottom: 4px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 5 · Twistag cockpit</div>
+
+<div class="layout">
+
+  <!-- Sidenav -->
+  <aside class="sidenav">
+    <div class="sidenav-logo">
+      <div class="sidenav-logo-mark"></div>
+      <div class="sidenav-brand">Atlas <span class="badge">TS</span></div>
+    </div>
+
+    <div class="sidenav-section">Workspace</div>
+    <div class="sidenav-item active" onclick="setView('overview')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      All clients
+      <span class="count">12</span>
+    </div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Opportunities
+      <span class="count">47</span>
+    </div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Engagements
+      <span class="count">8</span>
+    </div>
+    <div class="sidenav-item" onclick="setView('library')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Pattern library
+      <span class="count">19</span>
+    </div>
+
+    <div class="sidenav-section">Alerts</div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Needs attention
+      <span class="alert-dot"></span>
+    </div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Renewals due (60d)
+      <span class="count">3</span>
+    </div>
+
+    <div class="sidenav-section">Reporting</div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+      Portfolio metrics
+    </div>
+    <div class="sidenav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      QBR materials
+    </div>
+
+    <div class="sidenav-foot">
+      <div class="sidenav-foot-av">RF</div>
+      <div class="sidenav-foot-info">
+        <div class="sidenav-foot-name">Ricardo Fonseca</div>
+        <div class="sidenav-foot-role">Engagement Lead</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">All clients</div>
+        <div class="topbar-meta" id="topbar-meta">12 active engagements · $5.2M ARR · 47 open opportunities</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="view-toggle">
+        <button class="active" id="tab-overview" onclick="setView('overview')">Overview</button>
+        <button id="tab-drill" onclick="setView('drill')">Drill-down</button>
+        <button id="tab-library" onclick="setView('library')">Pattern library</button>
+      </div>
+      <div class="quick-search">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+        <kbd>⌘K</kbd>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ OVERVIEW ============ -->
+      <main class="view active" id="view-overview">
+
+        <!-- Stat row -->
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-label">Active engagements</div>
+            <div class="stat-value">12</div>
+            <div class="stat-sub up">+2 this quarter</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Portfolio ARR</div>
+            <div class="stat-value">$5.2M</div>
+            <div class="stat-sub up">+18% QoQ</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Open opportunities</div>
+            <div class="stat-value">47</div>
+            <div class="stat-sub">12 high-impact</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">FDE projects in flight</div>
+            <div class="stat-value">8</div>
+            <div class="stat-sub">$1.4M booked</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Avg signal quality</div>
+            <div class="stat-value">4.3<span style="font-size: 14px; color: var(--text-3); margin-left: 2px;">/ 5</span></div>
+            <div class="stat-sub up">vs target 4.0</div>
+          </div>
+        </div>
+
+        <!-- Alert banner -->
+        <div class="alert-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+          <div><strong>3 clients need attention:</strong> Nordmark Health (WAC dropping), Vivex Capital portco #2 (sponsor disengaged 11 days), Trentor Industries (signal quality below 3.5 for 2 weeks)</div>
+          <div class="alert-banner-spacer"></div>
+          <a class="alert-banner-link">Review →</a>
+        </div>
+
+        <!-- Client table -->
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="table-title">Active clients <span class="table-title-count">12</span></div>
+            <div class="table-head-spacer"></div>
+            <button class="filter-pill">All segments</button>
+            <button class="filter-pill">Health: any</button>
+            <button class="filter-pill">Sort: by alert</button>
+            <button class="btn btn-secondary">+ New engagement</button>
+          </div>
+          <table class="ctable">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Client</th>
+                <th>Segment</th>
+                <th>Status</th>
+                <th>Health</th>
+                <th>Opps surfaced</th>
+                <th>FDE pipeline</th>
+                <th>ARR</th>
+                <th>Lead</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr onclick="setView('drill')">
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-1">AC</div>
+                    <div>
+                      <div class="client-name">Acme Manufacturing</div>
+                      <div class="client-sub">Mid-market · 450 employees</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S5 Mid-mkt</span></td>
+                <td><span class="badge badge-active">Active sprint</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f good" style="width: 86%"></div></div>
+                    <span class="health-num">86</span>
+                  </div>
+                </td>
+                <td><span class="row-num">12<small>· 3 high</small></span></td>
+                <td><span class="row-num">$152K<small>· 2 in flight</small></span></td>
+                <td><span class="row-num">$90K<small>/yr</small></span></td>
+                <td>RF</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-2">VC</div>
+                    <div>
+                      <div class="client-name">Vivex Capital</div>
+                      <div class="client-sub">PE firm · 4 portcos onboarded</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S2 PE</span></td>
+                <td><span class="badge badge-active">Active</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f good" style="width: 78%"></div></div>
+                    <span class="health-num">78</span>
+                  </div>
+                </td>
+                <td><span class="row-num">23<small>· portfolio</small></span></td>
+                <td><span class="row-num">$340K<small>· 3 in flight</small></span></td>
+                <td><span class="row-num">$280K<small>/yr</small></span></td>
+                <td>RF</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-3">NH</div>
+                    <div>
+                      <div class="client-name">Nordmark Health</div>
+                      <div class="client-sub">Healthcare services · $220M rev</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S5 Mid-mkt</span></td>
+                <td><span class="badge badge-warn">WAC dropping</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f warn" style="width: 42%"></div></div>
+                    <span class="health-num">42</span>
+                  </div>
+                </td>
+                <td><span class="row-num">6<small>· 1 high</small></span></td>
+                <td><span class="row-num">$0<small>· — </small></span></td>
+                <td><span class="row-num">$68K<small>/yr</small></span></td>
+                <td>AT</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-4">TI</div>
+                    <div>
+                      <div class="client-name">Trentor Industries</div>
+                      <div class="client-sub">Industrial · PE-owned · post-close</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S3 Portco</span></td>
+                <td><span class="badge badge-warn">Signal quality</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f warn" style="width: 51%"></div></div>
+                    <span class="health-num">51</span>
+                  </div>
+                </td>
+                <td><span class="row-num">9<small>· 0 high</small></span></td>
+                <td><span class="row-num">$48K<small>· 1 in flight</small></span></td>
+                <td><span class="row-num">$95K<small>/yr</small></span></td>
+                <td>PM</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-5">KS</div>
+                    <div>
+                      <div class="client-name">Kestrel Systems</div>
+                      <div class="client-sub">SaaS scale-up · Series C</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S1 SaaS</span></td>
+                <td><span class="badge badge-active">Active</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f good" style="width: 91%"></div></div>
+                    <span class="health-num">91</span>
+                  </div>
+                </td>
+                <td><span class="row-num">15<small>· 4 high</small></span></td>
+                <td><span class="row-num">$420K<small>· 1 in flight</small></span></td>
+                <td><span class="row-num">$180K<small>/yr</small></span></td>
+                <td>RF</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-6">DC</div>
+                    <div>
+                      <div class="client-name">Deloitte ATS</div>
+                      <div class="client-sub">Channel partner · white-label</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S4 Consulting</span></td>
+                <td><span class="badge badge-active">Active</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f ok" style="width: 73%"></div></div>
+                    <span class="health-num">73</span>
+                  </div>
+                </td>
+                <td><span class="row-num">— <small>via Deloitte</small></span></td>
+                <td><span class="row-num">$280K<small>· rev-share</small></span></td>
+                <td><span class="row-num">$110K<small>/yr</small></span></td>
+                <td>RF</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-1">QV</div>
+                    <div>
+                      <div class="client-name">QVB Consumer Brands</div>
+                      <div class="client-sub">Mid-market · CPG</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S5 Mid-mkt</span></td>
+                <td><span class="badge badge-onboarding">Onboarding</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f" style="background: var(--text-3); width: 100%"></div></div>
+                    <span class="health-num" style="color: var(--text-3);">—</span>
+                  </div>
+                </td>
+                <td><span class="row-num">— <small>day 3</small></span></td>
+                <td><span class="row-num">— <small>—</small></span></td>
+                <td><span class="row-num">$54K<small>/yr</small></span></td>
+                <td>AT</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-logo av-2">BO</div>
+                    <div>
+                      <div class="client-name">Boomerang Logistics</div>
+                      <div class="client-sub">Mid-market · post-PE acq</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="seg-tag">S3 Portco</span></td>
+                <td><span class="badge badge-renewal">Renewal in 42d</span></td>
+                <td>
+                  <div class="health-cell">
+                    <div class="health-bar-w"><div class="health-bar-f good" style="width: 82%"></div></div>
+                    <span class="health-num">82</span>
+                  </div>
+                </td>
+                <td><span class="row-num">8<small>· 2 high</small></span></td>
+                <td><span class="row-num">$120K<small>· 1 shipped</small></span></td>
+                <td><span class="row-num">$85K<small>/yr</small></span></td>
+                <td>PM</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- ============ DRILL-DOWN ============ -->
+      <main class="view" id="view-drill">
+
+        <div class="drill-head">
+          <div class="drill-head-row">
+            <div class="drill-head-logo">AC</div>
+            <div>
+              <div class="drill-head-name">Acme Manufacturing</div>
+              <div class="drill-head-meta">S5 Mid-market · 450 employees · $90K ARR · Atlas client since Apr 2026</div>
+            </div>
+            <div class="drill-actions">
+              <button class="btn btn-secondary">Client-facing view</button>
+              <button class="btn btn-secondary">Generate QBR</button>
+              <button class="btn btn-primary">Add internal note</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-label">Sprint health</div>
+            <div class="stat-value">86</div>
+            <div class="stat-sub up">+4 wk-over-wk</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Active contributors</div>
+            <div class="stat-value">12 / 14</div>
+            <div class="stat-sub">86% participation</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Opportunities</div>
+            <div class="stat-value">12</div>
+            <div class="stat-sub">3 high · 2 approved</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">FDE pipeline</div>
+            <div class="stat-value">$152K</div>
+            <div class="stat-sub up">2 SOWs in flight</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Signal quality</div>
+            <div class="stat-value">4.5<span style="font-size: 14px; color: var(--text-3); margin-left: 2px;">/ 5</span></div>
+            <div class="stat-sub up">strongest in portfolio</div>
+          </div>
+        </div>
+
+        <div class="drill-grid">
+
+          <div>
+            <!-- Opportunity → SOW pipeline -->
+            <div class="card">
+              <div class="card-h">
+                <div class="card-h-title">Opportunity → FDE pipeline</div>
+                <button class="btn btn-ghost">See all 12 →</button>
+              </div>
+              <div>
+                <div class="pipe-row">
+                  <div class="pipe-stage shipped">✓</div>
+                  <div class="pipe-body">
+                    <div class="pipe-title">Approval status visibility in Slack channel</div>
+                    <div class="pipe-meta">
+                      <span>Shipped Jun 1</span>
+                      <span class="sep"></span>
+                      <span>1.5 wks · $28K</span>
+                    </div>
+                  </div>
+                  <div class="pipe-val">
+                    <div class="pipe-val-num">$28K</div>
+                    <div class="pipe-val-status">Booked</div>
+                  </div>
+                </div>
+                <div class="pipe-row">
+                  <div class="pipe-stage delivery">→</div>
+                  <div class="pipe-body">
+                    <div class="pipe-title">CRM enrichment for inbound enterprise leads</div>
+                    <div class="pipe-meta">
+                      <span>In delivery</span>
+                      <span class="sep"></span>
+                      <span>3 wks · target Jul 15</span>
+                    </div>
+                  </div>
+                  <div class="pipe-val">
+                    <div class="pipe-val-num">$54K</div>
+                    <div class="pipe-val-status">Booked</div>
+                  </div>
+                </div>
+                <div class="pipe-row">
+                  <div class="pipe-stage approved">A</div>
+                  <div class="pipe-body">
+                    <div class="pipe-title">Automate enterprise pricing pre-approval workflow</div>
+                    <div class="pipe-meta">
+                      <span>Approved Jun 22</span>
+                      <span class="sep"></span>
+                      <span>SOW signed</span>
+                      <span class="sep"></span>
+                      <span>Kickoff Jul 14</span>
+                    </div>
+                  </div>
+                  <div class="pipe-val">
+                    <div class="pipe-val-num">$72K</div>
+                    <div class="pipe-val-status">+$15K bonus possible</div>
+                  </div>
+                </div>
+                <div class="pipe-row">
+                  <div class="pipe-stage surfaced">S</div>
+                  <div class="pipe-body">
+                    <div class="pipe-title">AI-assisted quote drafting from past similar deals</div>
+                    <div class="pipe-meta">
+                      <span>Surfaced 4d ago</span>
+                      <span class="sep"></span>
+                      <span>Awaiting sponsor review</span>
+                    </div>
+                  </div>
+                  <div class="pipe-val">
+                    <div class="pipe-val-num">$95K – $130K</div>
+                    <div class="pipe-val-status">Estimated</div>
+                  </div>
+                </div>
+                <div class="pipe-row">
+                  <div class="pipe-stage surfaced">S</div>
+                  <div class="pipe-body">
+                    <div class="pipe-title">Centralize invoice term exception SOP</div>
+                    <div class="pipe-meta">
+                      <span>Surfaced 6d ago</span>
+                      <span class="sep"></span>
+                      <span>Finance dept</span>
+                    </div>
+                  </div>
+                  <div class="pipe-val">
+                    <div class="pipe-val-num">$45K – $60K</div>
+                    <div class="pipe-val-status">Estimated</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Internal notes -->
+            <div class="card">
+              <div class="card-h">
+                <div class="card-h-title">Internal notes <span style="color: var(--text-3); font-weight: 400; font-size: 12px; margin-left: 6px;">Twistag-only</span></div>
+                <button class="btn btn-ghost">+ Add note</button>
+              </div>
+              <div class="card-body">
+                <div class="internal-note">
+                  <div class="note-av">RF</div>
+                  <div class="note-body">
+                    <div><span class="note-author">Ricardo Fonseca</span> · <span class="note-time">2 hrs ago</span></div>
+                    <div style="margin-top: 4px; color: var(--text);">Maria mentioned in our 1:1 today that her VP Sales (João) is the biggest blocker to anything bigger than quick-wins. We should lead with the pricing automation opp — that's the one where João's voice is loudest in the transcripts. He'll be self-interested in fixing it.</div>
+                  </div>
+                </div>
+                <div class="internal-note">
+                  <div class="note-av" style="background: linear-gradient(135deg, #16a34a, #15803d);">AT</div>
+                  <div class="note-body">
+                    <div><span class="note-author">Ana Teixeira</span> · <span class="note-time">yesterday</span></div>
+                    <div style="margin-top: 4px; color: var(--text);">Looked at the Salesforce data feed — clean. Won/loss model has enough signal to calibrate the pricing automation impact range. Confident in the $180-240K floor.</div>
+                  </div>
+                </div>
+                <div class="internal-note">
+                  <div class="note-av">RF</div>
+                  <div class="note-body">
+                    <div><span class="note-author">Ricardo Fonseca</span> · <span class="note-time">3 days ago</span></div>
+                    <div style="margin-top: 4px; color: var(--text);">Renewal conversation: Maria asked about Atlas expanding to Customer Success and Finance teams. Quoted $140K for the expanded scope. Decision by Jul 30.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right side -->
+          <aside>
+            <!-- Cross-portfolio patterns -->
+            <div class="card">
+              <div class="card-h">
+                <div class="card-h-title">Patterns matched cross-portfolio <span style="color: var(--brand); font-weight: 400; font-size: 11px; margin-left: 6px;">3 matches</span></div>
+              </div>
+              <div>
+                <div class="pattern">
+                  <div class="pattern-h">Opp: Pricing pre-approval automation</div>
+                  <div class="pattern-match">Matches "Industrial services 2025" pattern</div>
+                  <div class="pattern-meta">Previous outcome: -71% cycle time · +9pts win rate</div>
+                </div>
+                <div class="pattern">
+                  <div class="pattern-h">Opp: AI-assisted quote drafting</div>
+                  <div class="pattern-match">Matches "B2B distributor 2024" pattern</div>
+                  <div class="pattern-meta">Previous outcome: +220bps gross margin</div>
+                </div>
+                <div class="pattern">
+                  <div class="pattern-h">Opp: Approval status visibility (shipped)</div>
+                  <div class="pattern-match">Matches "Quick-win playbook v2"</div>
+                  <div class="pattern-meta">3 prior deploys · avg ship 11 days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client meta -->
+            <div class="card">
+              <div class="card-h">
+                <div class="card-h-title">Engagement details</div>
+              </div>
+              <div class="card-body" style="font-size: 12.5px; line-height: 1.8; color: var(--text-2);">
+                <div style="display: flex; justify-content: space-between;"><span>Sponsor</span><span style="color: var(--text); font-weight: 500;">Maria Costa</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Twistag lead</span><span style="color: var(--text); font-weight: 500;">Ricardo Fonseca</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Tier</span><span style="color: var(--text); font-weight: 500;">Atlas Ship</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>ARR</span><span style="color: var(--text); font-weight: 500;">$90,000</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Renewal</span><span style="color: var(--text); font-weight: 500;">Apr 2027</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Started</span><span style="color: var(--text); font-weight: 500;">Apr 11, 2026</span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Compliance</span><span style="color: var(--text); font-weight: 500;">DPA signed</span></div>
+              </div>
+            </div>
+
+            <!-- Health alerts -->
+            <div class="card">
+              <div class="card-h">
+                <div class="card-h-title">Alerts on this client</div>
+              </div>
+              <div class="card-body">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 12.5px;">
+                  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--warning-soft); color: var(--warning); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">!</div>
+                  <div>2 contributors idle 3+ days. Maria nudged Filipe yesterday.</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 12.5px;">
+                  <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">i</div>
+                  <div>Renewal conversation triggered — Maria asked about expansion to CS + Finance.</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <!-- ============ PATTERN LIBRARY ============ -->
+      <main class="view" id="view-library">
+
+        <div class="lib-h">Most-applied patterns (last 12 months)</div>
+
+        <div class="lib-grid">
+          <div class="lib-card">
+            <span class="lib-card-tag">Bottleneck · approval</span>
+            <div class="lib-card-title">Single-approver pricing bottleneck</div>
+            <div class="lib-card-desc">One executive bottleneck on pricing approval, downstream margin loss via list-price workarounds. Solved with rule-based pre-approval covering top 60-75% of cases.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>4 deploys</strong> · avg -68% cycle time</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-card">
+            <span class="lib-card-tag">Tribal knowledge</span>
+            <div class="lib-card-title">Pricing tribal knowledge aging out</div>
+            <div class="lib-card-desc">Critical pricing context lives in 1-2 senior reps' heads; one nearing departure. Solved with AI agent surfacing rationale from past comparable deals.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>3 deploys</strong> · avg +180bps margin</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-card">
+            <span class="lib-card-tag">Visibility · quick-win</span>
+            <div class="lib-card-title">Approval-status visibility in Slack/Teams</div>
+            <div class="lib-card-desc">Team pings approver in DMs, no shared queue. Solved with channel-based status board, 1-2 week ship.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>6 deploys</strong> · avg 11 days ship</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-card">
+            <span class="lib-card-tag">Handoff · finance</span>
+            <div class="lib-card-title">Invoice term exception SOP missing</div>
+            <div class="lib-card-desc">Finance review adds 1-2 days when deal terms deviate from standard; no central exception record. Solved with decision-rule documentation + lightweight workflow tool.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>3 deploys</strong> · 2-3 wk avg</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-card">
+            <span class="lib-card-tag">Tooling · CRM</span>
+            <div class="lib-card-title">Inbound lead enrichment gap</div>
+            <div class="lib-card-desc">SDRs manually research inbound enterprise leads, hitting rate caps and missing context. Solved with agentic enrichment pipeline pre-routing.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>5 deploys</strong> · -40% qualification time</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-card">
+            <span class="lib-card-tag">Onboarding</span>
+            <div class="lib-card-title">New hire ramp-up SOP shortage</div>
+            <div class="lib-card-desc">Onboarding relies on tribal knowledge + screen-sharing; takes 6-10 weeks. Solved with agentic onboarding bot drawing from captured SOPs.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>2 deploys</strong> · -45% time-to-prod</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lib-h">Emerging patterns (need more deploys to confirm)</div>
+
+        <div class="lib-grid">
+          <div class="lib-card">
+            <span class="lib-card-tag">Forecast accuracy</span>
+            <div class="lib-card-title">Sales forecast drift from pipeline reality</div>
+            <div class="lib-card-desc">Sales pipeline data + sales conversations don't match — VP forecasts off systematically. Hypothesis: agentic pipeline grader catches drift weekly.</div>
+            <div class="lib-card-foot">
+              <div class="lib-card-stat"><strong>1 deploy</strong> · early signal</div>
+              <div class="lib-card-confidence">
+                <span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-empty">
+            <strong>Submit a pattern</strong>
+            See something across 2+ clients? Document it here and trigger a deeper analysis.
+          </div>
+          <div class="lib-empty">
+            <strong>Pattern requests</strong>
+            Engagement leads can request a pattern search — useful when sizing a new opportunity.
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function setView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + view).classList.add('active');
+
+    // Sidenav active state
+    document.querySelectorAll('.sidenav-item').forEach(s => s.classList.remove('active'));
+
+    const titles = {
+      overview: { t: 'All clients', m: '12 active engagements · $5.2M ARR · 47 open opportunities' },
+      drill: { t: 'Acme Manufacturing', m: 'Mid-market · Atlas Ship tier · since Apr 2026' },
+      library: { t: 'Pattern library', m: '19 patterns across 36 deploys · last updated 2 hrs ago' }
+    };
+    document.getElementById('topbar-title').textContent = titles[view].t;
+    document.getElementById('topbar-meta').textContent = titles[view].m;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+</script>
+
+</body>
+</html>

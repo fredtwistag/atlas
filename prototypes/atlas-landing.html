@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Operational discovery for teams that ship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --radius: 8px;
+    --radius-lg: 14px;
+    --serif: 'Fraunces', Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text); color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    z-index: 200;
+  }
+
+  /* Header */
+  .nav {
+    position: sticky;
+    top: 0;
+    background: rgba(250, 250, 250, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 60px;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 9px;
+    font-weight: 600; letter-spacing: -0.01em;
+    font-size: 15px;
+  }
+  .nav-logo-mark {
+    width: 24px; height: 24px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .nav-logo-mark::before {
+    content: ''; position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+  }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+  .nav-links a {
+    color: var(--text-2);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-spacer { flex: 1; }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius);
+    font-weight: 500; font-size: 13.5px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    line-height: 1;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 6px 12px; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-large { padding: 12px 22px; font-size: 14.5px; }
+
+  /* Generic section padding */
+  section {
+    padding: 96px 0;
+  }
+  @media (max-width: 700px) { section { padding: 56px 0; } }
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* Eyebrow / labels */
+  .eyebrow {
+    color: var(--text-3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .eyebrow-brand { color: var(--brand); }
+
+  /* ============ HERO ============ */
+  .hero {
+    padding: 80px 0 110px;
+    text-align: center;
+  }
+  @media (max-width: 700px) { .hero { padding: 48px 0 72px; } }
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: 72px;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1.0;
+    margin-bottom: 28px;
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (max-width: 700px) {
+    .hero h1 { font-size: 44px; letter-spacing: -0.025em; }
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--brand);
+    font-weight: 500;
+  }
+  .hero-sub {
+    color: var(--text-2);
+    font-size: 19px;
+    line-height: 1.55;
+    max-width: 600px;
+    margin: 0 auto 36px;
+  }
+  @media (max-width: 700px) { .hero-sub { font-size: 16px; } }
+  .hero-actions {
+    display: inline-flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Trust strip */
+  .trust {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 0;
+    background: var(--surface);
+  }
+  .trust-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .trust-label {
+    color: var(--text-3);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .trust-logos {
+    display: flex;
+    gap: 28px;
+    color: var(--text-3);
+    flex: 1;
+    flex-wrap: wrap;
+  }
+  .trust-logo {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-2);
+  }
+
+  /* ============ VALUE PROPS ============ */
+  .props {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .props-head {
+    max-width: 760px;
+    margin-bottom: 56px;
+  }
+  .props-h2 {
+    font-family: var(--serif);
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 700px) { .props-h2 { font-size: 36px; } }
+  .props-sub {
+    color: var(--text-2);
+    font-size: 18px;
+    line-height: 1.55;
+    max-width: 580px;
+  }
+  .props-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .props-grid { grid-template-columns: 1fr; gap: 14px; } }
+  .prop {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  .prop-num {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--text-3);
+    font-weight: 500;
+    margin-bottom: 32px;
+  }
+  .prop-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .prop-desc {
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+  .prop-desc strong { color: var(--text); font-weight: 600; }
+
+  /* ============ HOW IT WORKS ============ */
+  .how-head { text-align: center; max-width: 720px; margin: 0 auto 64px; }
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    position: relative;
+  }
+  @media (max-width: 900px) { .how-grid { grid-template-columns: 1fr; } }
+  .how-step {
+    text-align: left;
+  }
+  .how-step-num {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-3);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+  }
+  .how-step-num::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--text-3);
+  }
+  .how-step h3 {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .how-step p {
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+  .how-step p strong { color: var(--text); font-weight: 600; }
+  .how-visual {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-top: 22px;
+    font-family: 'JetBrains Mono', -apple-system, monospace;
+    font-size: 11.5px;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+  .how-visual strong { color: var(--text); font-weight: 600; }
+  .how-visual em {
+    color: var(--brand);
+    font-style: normal;
+    font-weight: 500;
+  }
+  .how-visual .row {
+    padding: 4px 0;
+    display: flex;
+    gap: 8px;
+  }
+  .how-visual .row .arr { color: var(--text-3); }
+
+  /* ============ FOR WHO ============ */
+  .for {
+    background: var(--text);
+    color: var(--surface);
+  }
+  .for-head {
+    max-width: 700px;
+    margin-bottom: 64px;
+  }
+  .for-head .eyebrow { color: rgba(255,255,255,0.5); }
+  .for-head h2 {
+    font-family: var(--serif);
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 700px) { .for-head h2 { font-size: 36px; } }
+  .for-head p {
+    color: rgba(255,255,255,0.7);
+    font-size: 18px;
+    line-height: 1.55;
+  }
+  .for-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 800px) { .for-grid { grid-template-columns: 1fr; } }
+  .for-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  .for-card-eyebrow {
+    color: rgba(255,255,255,0.5);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .for-card-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .for-card-desc {
+    color: rgba(255,255,255,0.7);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .for-card-link {
+    color: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: gap 0.15s;
+  }
+  .for-card-link:hover { gap: 8px; }
+
+  /* ============ OUTCOMES ============ */
+  .outcomes-head { max-width: 760px; margin-bottom: 56px; }
+  .outcomes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 900px) { .outcomes-grid { grid-template-columns: 1fr; } }
+  .outcome {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  .outcome-stat {
+    font-family: var(--serif);
+    font-size: 56px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .outcome-stat .unit {
+    font-size: 22px;
+    color: var(--text-3);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-left: 2px;
+  }
+  .outcome-label {
+    font-weight: 600;
+    font-size: 14.5px;
+    margin-bottom: 10px;
+  }
+  .outcome-context {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* ============ COMPARISON ============ */
+  .vs-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 36px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  @media (max-width: 800px) {
+    .vs-row { grid-template-columns: 1fr; gap: 12px; padding: 20px 24px; }
+  }
+  .vs-col h4 {
+    font-size: 12px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .vs-col p {
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .vs-col p strong { font-weight: 600; }
+  .vs-col.atlas h4 { color: var(--brand); }
+  .vs-sep {
+    text-align: center;
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  /* ============ CTA ============ */
+  .cta {
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .cta h2 {
+    font-family: var(--serif);
+    font-size: 56px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    margin-bottom: 24px;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (max-width: 700px) { .cta h2 { font-size: 40px; } }
+  .cta p {
+    color: var(--text-2);
+    font-size: 17px;
+    line-height: 1.55;
+    max-width: 540px;
+    margin: 0 auto 32px;
+  }
+  .cta-actions {
+    display: inline-flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 56px 0 32px;
+    background: var(--bg);
+  }
+  .foot-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+  .foot-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 36px;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 800px) {
+    .foot-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .foot-col h5 {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--text-3);
+    margin-bottom: 14px;
+  }
+  .foot-col a {
+    display: block;
+    padding: 5px 0;
+    color: var(--text-2);
+    font-size: 13.5px;
+    transition: color 0.15s;
+  }
+  .foot-col a:hover { color: var(--text); }
+  .foot-brand-desc {
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 14px;
+    max-width: 280px;
+  }
+  .foot-bottom {
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 7 · Landing</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo">
+      <div class="nav-logo-mark"></div>
+      Atlas
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#for-who">For who</a>
+      <a href="#outcomes">Outcomes</a>
+      <a href="atlas-pricing.html">Pricing</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-actions">
+      <a class="btn btn-ghost">Sign in</a>
+      <a class="btn btn-primary">Book a call</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>An <em>operational discovery sprint</em> that ends in shipped work.</h1>
+    <p class="hero-sub">Atlas runs short, structured conversations with the team — over 3 weeks, 5 minutes at a time — to surface the bottlenecks and AI-shaped opportunities that hide between your systems. Output: a ranked plan + pre-drafted SOWs for the highest-impact builds.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary btn-large">Book a discovery sprint</a>
+      <a class="btn btn-secondary btn-large">See a sample report</a>
+    </div>
+  </div>
+</section>
+
+<!-- Trust strip -->
+<div class="trust">
+  <div class="trust-inner">
+    <span class="trust-label">Built by Twistag — shipped to production for</span>
+    <div class="trust-logos">
+      <span class="trust-logo">Source.app</span>
+      <span class="trust-logo">NVISO</span>
+      <span class="trust-logo">Aralab</span>
+      <span class="trust-logo">PepTalk</span>
+      <span class="trust-logo">Indie Campers</span>
+      <span class="trust-logo">Defined.ai</span>
+      <span class="trust-logo">Refraction</span>
+    </div>
+  </div>
+</div>
+
+<!-- VALUE PROPS -->
+<section class="props">
+  <div class="container">
+    <div class="props-head">
+      <div class="eyebrow">What Atlas does</div>
+      <h2 class="props-h2">A new way to discover what's actually slowing your team down.</h2>
+      <p class="props-sub">Without the 6-month consulting engagement. Without the all-hands workshop. Without the report nobody reads.</p>
+    </div>
+
+    <div class="props-grid">
+      <div class="prop">
+        <div class="prop-num">01</div>
+        <h3 class="prop-title">Conversations, not workshops.</h3>
+        <p class="prop-desc">Each team member spends <strong>4-6 minutes at a time</strong> in a focused chat with Atlas. No meetings to schedule. No 45-minute interviews to dread. Done when it suits them.</p>
+      </div>
+      <div class="prop">
+        <div class="prop-num">02</div>
+        <h3 class="prop-title">Evidence, not opinions.</h3>
+        <p class="prop-desc">Every opportunity Atlas surfaces is grounded in <strong>real quotes, system signals, and comparable cases</strong>. Click any score to see exactly what evidence supports it.</p>
+      </div>
+      <div class="prop">
+        <div class="prop-num">03</div>
+        <h3 class="prop-title">Outcomes, not slideware.</h3>
+        <p class="prop-desc">You walk away with a ranked roadmap and <strong>pre-drafted SOWs for the highest-impact projects</strong> — ready to approve, ready to ship with Twistag or your own team.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="how-head">
+      <div class="eyebrow">How it works</div>
+      <h2 class="props-h2">From map to ship, in 4 weeks.</h2>
+      <p class="props-sub">A repeatable three-phase rhythm. Same process every time. Different outcome every time.</p>
+    </div>
+
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-step-num">Phase 1</div>
+        <h3>Capture</h3>
+        <p>The manager invites a team. Each person does 4 sessions over 3-4 weeks — <strong>20-25 minutes total of their time</strong>. Atlas asks open questions about workflow, exceptions, frustrations, and tools.</p>
+        <div class="how-visual">
+          <div class="row"><span>→</span><span><strong>Day 1</strong> — sprint launched, invites sent</span></div>
+          <div class="row"><span>→</span><span><strong>Day 7</strong> — first sessions complete</span></div>
+          <div class="row"><span>→</span><span><strong>Day 14</strong> — patterns emerging</span></div>
+          <div class="row"><span>→</span><span><em>Day 21</em> — top opportunities ranked</span></div>
+        </div>
+      </div>
+
+      <div class="how-step">
+        <div class="how-step-num">Phase 2</div>
+        <h3>Surface</h3>
+        <p>Atlas builds an <strong>operational knowledge graph</strong> from the conversations. Each bottleneck, decision dependency, and workaround becomes a node. The scoring engine ranks opportunities by impact, time-to-ship, and confidence.</p>
+        <div class="how-visual">
+          <div class="row"><span>→</span><span><strong>40+ conversations</strong> → 150+ quotes</span></div>
+          <div class="row"><span>→</span><span><strong>Captured patterns</strong> across the team</span></div>
+          <div class="row"><span>→</span><span><strong>5-10 opportunities</strong> ranked</span></div>
+          <div class="row"><span>→</span><span><em>1-3 high-impact</em> · 2-4 quick wins</span></div>
+        </div>
+      </div>
+
+      <div class="how-step">
+        <div class="how-step-num">Phase 3</div>
+        <h3>Ship</h3>
+        <p>The sponsor reviews each opportunity with full evidence. Approve one — you get a <strong>pre-drafted SOW</strong> ready for delivery. Either via Twistag's FDE team or your own engineers. Either way: code, not slides.</p>
+        <div class="how-visual">
+          <div class="row"><span>→</span><span><strong>Click "Approve for FDE"</strong></span></div>
+          <div class="row"><span>→</span><span>SOW drafted in 30 seconds</span></div>
+          <div class="row"><span>→</span><span>Scope alignment in 48 hours</span></div>
+          <div class="row"><span>→</span><span><em>First ship in 2-4 weeks</em></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section style="background: var(--surface); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="how-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+      <div class="eyebrow">Why not what already exists</div>
+      <h2 class="props-h2">Atlas isn't another search bar or another deck.</h2>
+    </div>
+
+    <div class="vs-row">
+      <div class="vs-col">
+        <h4>Enterprise search (Glean, Microsoft Copilot)</h4>
+        <p><strong>Retrieval-first.</strong> Finds what's written down. The bottleneck is — most of what matters isn't written down anywhere.</p>
+      </div>
+      <div class="vs-sep">vs</div>
+      <div class="vs-col atlas">
+        <h4>Atlas</h4>
+        <p><strong>Outbound-first.</strong> Asks the right questions to capture what's only in people's heads. Then makes it queryable.</p>
+      </div>
+    </div>
+
+    <div class="vs-row">
+      <div class="vs-col">
+        <h4>Traditional consulting (MBB, Big 4)</h4>
+        <p><strong>$250K-$1.5M, 3-6 months.</strong> Excellent diagnostics. Slide deck deliverable. Lives in someone's drawer 90 days later.</p>
+      </div>
+      <div class="vs-sep">vs</div>
+      <div class="vs-col atlas">
+        <h4>Atlas</h4>
+        <p><strong>$25K-$95K, 3-4 weeks.</strong> Conversational diagnostics + persistent product + pre-drafted shippable work. Backlog that compounds.</p>
+      </div>
+    </div>
+
+    <div class="vs-row">
+      <div class="vs-col">
+        <h4>Process mining (Celonis, UiPath)</h4>
+        <p><strong>Sees what your systems do.</strong> Misses what people do outside the systems — decisions, exceptions, workarounds in spreadsheets.</p>
+      </div>
+      <div class="vs-sep">vs</div>
+      <div class="vs-col atlas">
+        <h4>Atlas</h4>
+        <p><strong>Sees both.</strong> Conversation captures the human layer. System connectors capture the data layer. Both feed the same operational map.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR WHO -->
+<section id="for-who" class="for">
+  <div class="container">
+    <div class="for-head">
+      <div class="eyebrow">For who</div>
+      <h2>Built for the teams who don't have time for a transformation program.</h2>
+      <p>Mid-market operators, PE portcos in their first 100 days, PE firms direct, and funded SaaS/AI scale-ups looking for a product partner.</p>
+    </div>
+
+    <div class="for-grid">
+      <div class="for-card">
+        <div class="for-card-eyebrow">Mid-market operators</div>
+        <div class="for-card-title">AI that actually ships, not another integrator pitch.</div>
+        <p class="for-card-desc">Founder-led companies $50M-$500M. No CIO, no patience for an 18-month roadmap. We do the discovery and the build, with ROI in quarters not years.</p>
+        <a class="for-card-link">For operators →</a>
+      </div>
+      <div class="for-card">
+        <div class="for-card-eyebrow">PE portcos</div>
+        <div class="for-card-title">Day 1 to day 100 — quick wins shipped, not promised.</div>
+        <p class="for-card-desc">Post-close transformation when the CEO has a clock. Discovery in 3 weeks. First quick wins shipped by day 100. EBITDA bridge updated before the next board.</p>
+        <a class="for-card-link">For portcos →</a>
+      </div>
+      <div class="for-card">
+        <div class="for-card-eyebrow">PE firms (direct)</div>
+        <div class="for-card-title">Value-creation thesis, finally executable.</div>
+        <p class="for-card-desc">Discovery sprints on individual portcos. Direct engagement with operating partners. Repeatable playbook across a portfolio — without consultants in between.</p>
+        <a class="for-card-link">For PE →</a>
+      </div>
+      <div class="for-card">
+        <div class="for-card-eyebrow">Funded tech / SaaS / AI</div>
+        <div class="for-card-title">A product-building partner, not just engineering bandwidth.</div>
+        <p class="for-card-desc">Most of Twistag's revenue comes from co-building SaaS and AI products with founders. Strong opinions on what to ship, what to cut, where value actually lives. Outcome-aligned.</p>
+        <a class="for-card-link">For scale-ups →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OUTCOMES -->
+<section id="outcomes">
+  <div class="container">
+    <div class="outcomes-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+      <div class="eyebrow">Outcomes</div>
+      <h2 class="props-h2">What discovery actually moves.</h2>
+      <p class="props-sub">Averages across Atlas sprints. Numbers from individual engagements vary.</p>
+    </div>
+
+    <div class="outcomes-grid">
+      <div class="outcome">
+        <div class="outcome-stat">86<span class="unit">%</span></div>
+        <div class="outcome-label">Average team participation</div>
+        <div class="outcome-context">Across all Atlas sprints. Most contributors complete every session — the 6-minute format makes it work.</div>
+      </div>
+      <div class="outcome">
+        <div class="outcome-stat">$<span style="font-size: 52px;">720K</span></div>
+        <div class="outcome-label">Median est. annual impact, top 5</div>
+        <div class="outcome-context">For mid-market clients. Combined across the top 5 opportunities in a typical sprint. Ranges from $400K to $1.4M.</div>
+      </div>
+      <div class="outcome">
+        <div class="outcome-stat">4.6<span class="unit">/ 5</span></div>
+        <div class="outcome-label">Signal quality, sponsor-rated</div>
+        <div class="outcome-context">"Comparable to a senior consultant interview" — what sponsors tell us when they compare Atlas output to MBB diagnostic reports they've paid for.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="container">
+    <h2>The first opportunity surfaces within a week.</h2>
+    <p>Sprint mode is fixed-fee, 3-4 weeks. We'll tell you what we'd cost upfront, what to expect, and what would justify killing the project if it isn't working.</p>
+    <div class="cta-actions">
+      <a class="btn btn-primary btn-large">Book a 20-min intro</a>
+      <a class="btn btn-secondary btn-large" href="atlas-pricing.html">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <a class="nav-logo">
+          <div class="nav-logo-mark"></div>
+          Atlas
+        </a>
+        <p class="foot-brand-desc">A persistent operational discovery copilot. Built by Twistag for operators, portcos, and partners that need to ship.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Product</h5>
+        <a>How it works</a>
+        <a href="atlas-pricing.html">Pricing</a>
+        <a>Sample report</a>
+        <a>Changelog</a>
+      </div>
+      <div class="foot-col">
+        <h5>For</h5>
+        <a>Mid-market</a>
+        <a>PE portcos</a>
+        <a>PE firms</a>
+        <a>Consulting partners</a>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <a>About Twistag</a>
+        <a>Privacy</a>
+        <a>Security · SOC 2</a>
+        <a>Contact</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Twistag. Atlas is a product of Twistag.</span>
+      <span>Made in Lisbon · GDPR compliant</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

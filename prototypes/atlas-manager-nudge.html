@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Nudge Laggards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --text: #09090b;
+    --text-2: #52525b;
+    --text-3: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --brand: #4f46e5;
+    --brand-soft: #eef2ff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  textarea, input { font-family: inherit; font-size: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  .iter-label {
+    position: fixed;
+    top: 16px; right: 16px;
+    background: var(--text); color: var(--surface);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    z-index: 200;
+  }
+
+  .topnav {
+    height: 52px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; gap: 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 600; letter-spacing: -0.01em; font-size: 14px;
+  }
+  .logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text); border-radius: 5px; position: relative;
+  }
+  .logo-mark::before {
+    content: ''; position: absolute; inset: 4px;
+    border: 1.5px solid var(--surface); border-radius: 2px;
+  }
+  .breadcrumb { color: var(--text-2); font-size: 13px; display: flex; gap: 6px; }
+  .breadcrumb-sep { color: var(--text-3); }
+  .breadcrumb-current { color: var(--text); font-weight: 500; }
+  .nav-spacer { flex: 1; }
+  .close-btn {
+    color: var(--text-2);
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius);
+    font-weight: 500; font-size: 13px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--text); color: var(--surface); }
+  .btn-primary:hover { background: #1f1f23; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn-ghost { color: var(--text-2); padding: 6px 10px; }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
+  .page {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 0;
+    height: calc(100vh - 52px);
+  }
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; height: auto; }
+    .preview-side { border-left: none; border-top: 1px solid var(--border); }
+  }
+
+  .compose {
+    padding: 36px 40px;
+    overflow-y: auto;
+  }
+  @media (max-width: 700px) { .compose { padding: 24px 20px; } }
+
+  /* Context card */
+  .ctx-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .ctx-av {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .ctx-body { flex: 1; min-width: 0; }
+  .ctx-name {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .ctx-role {
+    color: var(--text-2);
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .ctx-stat-row {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-size: 13px;
+  }
+  .ctx-stat-label {
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .ctx-stat-val { color: var(--text); font-weight: 500; }
+  .ctx-stat-val.warn { color: var(--warning); }
+
+  /* Title */
+  .compose-eyebrow {
+    color: var(--text-3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .compose-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .compose-sub {
+    color: var(--text-2);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* AI suggestion notice */
+  .ai-notice {
+    background: var(--brand-soft);
+    border: 1px solid #c7d2fe;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--brand);
+    font-size: 12.5px;
+  }
+  .ai-notice .dot {
+    width: 6px; height: 6px;
+    background: var(--brand);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ai-notice button {
+    color: var(--brand);
+    font-weight: 600;
+    margin-left: auto;
+    font-size: 12px;
+  }
+  .ai-notice button:hover { text-decoration: underline; }
+
+  /* Field */
+  .field { margin-bottom: 20px; }
+  .field-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 200px;
+    resize: vertical;
+    font-size: 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .textarea:focus {
+    outline: none;
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .field-hint {
+    color: var(--text-3);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  /* Channel toggle */
+  .channels {
+    display: flex;
+    gap: 8px;
+  }
+  .channel-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .channel-card.selected {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(9,9,11,0.05);
+  }
+  .channel-card:hover { border-color: var(--border-strong); }
+  .channel-icon {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .channel-card.selected .channel-icon {
+    background: var(--text);
+    color: var(--surface);
+  }
+  .channel-info { flex: 1; }
+  .channel-title { font-weight: 500; font-size: 13.5px; margin-bottom: 2px; }
+  .channel-desc { color: var(--text-2); font-size: 12px; line-height: 1.5; }
+
+  /* Variables hint */
+  .var-hint {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .var-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .var-chip:hover { background: var(--surface); color: var(--text); }
+
+  /* Compose nav */
+  .compose-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .compose-nav-spacer { flex: 1; }
+  .compose-nav-meta {
+    color: var(--text-3);
+    font-size: 12.5px;
+  }
+
+  /* Preview side */
+  .preview-side {
+    background: var(--surface-2);
+    border-left: 1px solid var(--border);
+    padding: 36px 32px;
+    overflow-y: auto;
+  }
+  .preview-label {
+    color: var(--text-3);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .preview-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Email preview */
+  .email-prev {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .email-prev-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .email-prev-av {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 12px;
+  }
+  .email-prev-from { font-weight: 600; font-size: 13.5px; }
+  .email-prev-from span { color: var(--text-3); font-weight: 400; font-size: 12px; }
+  .email-prev-to { color: var(--text-2); font-size: 12px; margin-top: 1px; }
+  .email-prev-time {
+    margin-left: auto;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .email-prev-subj {
+    padding: 16px 18px 4px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .email-prev-body {
+    padding: 0 18px 22px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .email-prev-body p { margin-bottom: 12px; }
+  .email-prev-meta-grid {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin: 14px 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    font-size: 12.5px;
+  }
+  .email-prev-meta-label {
+    color: var(--text-3);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .email-prev-meta-val { font-weight: 500; }
+  .email-prev-cta {
+    display: inline-block;
+    background: var(--text);
+    color: var(--surface);
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13px;
+    margin: 8px 0;
+  }
+  .email-prev-foot {
+    padding: 12px 18px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  /* Slack/Teams alt preview */
+  .alt-preview {
+    margin-top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+  }
+  .alt-preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .alt-preview-msg {
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text);
+    font-family: 'JetBrains Mono', -apple-system, monospace;
+    white-space: pre-wrap;
+  }
+  .alt-copy-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-weight: 500;
+    font-size: 12.5px;
+    transition: all 0.15s;
+  }
+  .alt-copy-btn:hover { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<div class="iter-label">Iter 4 · Nudge composer</div>
+
+<nav class="topnav">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <span>Atlas</span>
+  </div>
+  <div class="breadcrumb">
+    <span>Acme Manufacturing</span>
+    <span class="breadcrumb-sep">/</span>
+    <span>Operations Discovery</span>
+    <span class="breadcrumb-sep">/</span>
+    <span class="breadcrumb-current">Nudge Filipe</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <button class="close-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    Cancel
+  </button>
+</nav>
+
+<div class="page">
+
+  <div class="compose">
+
+    <!-- Context -->
+    <div class="ctx-card">
+      <div class="ctx-av">FL</div>
+      <div class="ctx-body">
+        <div class="ctx-name">Filipe Lopes</div>
+        <div class="ctx-role">Account Executive · Operations team</div>
+        <div class="ctx-stat-row">
+          <div>
+            <div class="ctx-stat-label">Status</div>
+            <div class="ctx-stat-val warn">Idle 4 days</div>
+          </div>
+          <div>
+            <div class="ctx-stat-label">Completion</div>
+            <div class="ctx-stat-val">1 of 4 (25%)</div>
+          </div>
+          <div>
+            <div class="ctx-stat-label">Last session</div>
+            <div class="ctx-stat-val">Jun 4 · 6 min</div>
+          </div>
+          <div>
+            <div class="ctx-stat-label">Next due</div>
+            <div class="ctx-stat-val warn">Today</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compose-eyebrow">Compose nudge</div>
+    <h1 class="compose-title">Send a reminder that doesn't feel pushy</h1>
+    <p class="compose-sub">Atlas drafted this based on Filipe's progress and his last conversation. Edit anything, or send as-is.</p>
+
+    <!-- AI notice -->
+    <div class="ai-notice">
+      <span class="dot"></span>
+      <span>Draft personalized using Filipe's last session — references his comment about quote rework so the nudge feels relevant, not generic.</span>
+      <button>Regenerate</button>
+    </div>
+
+    <!-- Channel -->
+    <div class="field">
+      <label class="field-label">How to send</label>
+      <div class="channels">
+        <button class="channel-card selected">
+          <div class="channel-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="channel-info">
+            <div class="channel-title">Email</div>
+            <div class="channel-desc">filipe.lopes@acme.com</div>
+          </div>
+        </button>
+        <button class="channel-card">
+          <div class="channel-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="channel-info">
+            <div class="channel-title">Copy link for Slack / Teams</div>
+            <div class="channel-desc">Paste it in your internal channel</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Subject -->
+    <div class="field">
+      <label class="field-label">Subject</label>
+      <input class="input" value="Filipe — quick follow-up on session 2 (4 min)" />
+    </div>
+
+    <!-- Body -->
+    <div class="field">
+      <label class="field-label">Message</label>
+      <textarea class="textarea">Hey Filipe,
+
+I noticed your second Atlas session is still pending — wanted to check in directly rather than let the reminder emails pile up.
+
+When we talked at standup last week you mentioned the quote rework eating your Wednesdays. Session 2 is exactly about that — exception handling and the workarounds we all use when the standard flow breaks. 4 minutes, when it suits you.
+
+If something's blocking it (or you'd rather skip), tell me directly and I'll mark it as opted-out. No pressure.
+
+Thanks,
+Maria</textarea>
+      <div class="field-hint">Atlas pulled in the "quote rework" reference from Filipe's last session — feel free to remove if too specific.</div>
+      <div class="var-hint">
+        <span class="var-chip">{{first_name}}</span>
+        <span class="var-chip">{{session_topic}}</span>
+        <span class="var-chip">{{time_estimate}}</span>
+        <span class="var-chip">{{last_session_callback}}</span>
+      </div>
+    </div>
+
+    <!-- Compose nav -->
+    <div class="compose-nav">
+      <span class="compose-nav-meta">Atlas won't auto-send. You always click.</span>
+      <div class="compose-nav-spacer"></div>
+      <button class="btn btn-ghost">Save as template</button>
+      <button class="btn btn-secondary">Schedule for tomorrow</button>
+      <button class="btn btn-primary">Send now</button>
+    </div>
+  </div>
+
+  <!-- Preview side -->
+  <aside class="preview-side">
+    <div class="preview-label">Live preview · what Filipe sees</div>
+
+    <div class="email-prev">
+      <div class="email-prev-head">
+        <div class="email-prev-av">A</div>
+        <div>
+          <div class="email-prev-from">Atlas <span>on behalf of Maria Costa</span></div>
+          <div class="email-prev-to">to filipe.lopes@acme.com</div>
+        </div>
+        <div class="email-prev-time">in 2 min</div>
+      </div>
+      <h3 class="email-prev-subj">Filipe — quick follow-up on session 2 (4 min)</h3>
+      <div class="email-prev-body">
+        <p>Hey Filipe,</p>
+        <p>I noticed your second Atlas session is still pending — wanted to check in directly rather than let the reminder emails pile up.</p>
+        <p>When we talked at standup last week you mentioned the quote rework eating your Wednesdays. Session 2 is exactly about that — exception handling and the workarounds we all use when the standard flow breaks. 4 minutes, when it suits you.</p>
+
+        <div class="email-prev-meta-grid">
+          <div>
+            <div class="email-prev-meta-label">Time</div>
+            <div class="email-prev-meta-val">~4 min</div>
+          </div>
+          <div>
+            <div class="email-prev-meta-label">Topic</div>
+            <div class="email-prev-meta-val">Exception handling</div>
+          </div>
+        </div>
+
+        <a class="email-prev-cta">Start session →</a>
+
+        <p>If something's blocking it (or you'd rather skip), tell me directly and I'll mark it as opted-out. No pressure.</p>
+        <p>Thanks,<br/>Maria</p>
+      </div>
+      <div class="email-prev-foot">
+        Atlas · Acme · <a style="color: var(--text-3);">Privacy</a> · <a style="color: var(--text-3);">Pause notifications</a>
+      </div>
+    </div>
+
+    <div class="alt-preview">
+      <div class="alt-preview-title">Or — paste this in your team's Slack / Teams</div>
+      <div class="alt-preview-msg">@filipe — quick nudge re: Atlas session 2. We talked about quote rework last week; this session is about exactly that. 4 min when you can: atlas.acme.com/s/abc123</div>
+      <button class="alt-copy-btn">
+        Copy to clipboard
+      </button>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+  document.querySelectorAll('.channel-card').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.channel-card').forEach(x => x.classList.remove('selected'));
+      c.classList.add('selected');
+    });
+  });
+</script>
+
+</body>
+</html>
