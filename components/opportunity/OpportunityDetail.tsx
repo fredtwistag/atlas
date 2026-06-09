@@ -10,12 +10,13 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-  X,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
 import { usdRange, usdShort } from "@/lib/data";
@@ -230,12 +231,7 @@ export function OpportunityDetail({
                       {d.score}/10
                     </span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{ width: `${d.score * 10}%` }}
-                    />
-                  </div>
+                  <ProgressBar value={d.score * 10} />
                   <p className="mt-1 text-xs leading-relaxed text-text-3">
                     {d.reasoning}
                   </p>
@@ -269,95 +265,65 @@ export function OpportunityDetail({
       </div>
 
       {/* Approve sheet */}
-      {sheetOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-          <button
-            className="absolute inset-0 bg-text/30 backdrop-blur-sm"
-            onClick={() => setSheetOpen(false)}
-            aria-label="Close"
+      <Sheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        eyebrow="Auto-drafted SOW"
+        title="Approve for FDE engagement"
+        footer={
+          <>
+            <span className="text-xs text-text-3">
+              Editable before send. Generated in ~30s from the evidence.
+            </span>
+            <Button
+              variant="brand"
+              onClick={() => {
+                setApproved(true);
+                setSheetOpen(false);
+              }}
+            >
+              Send to Twistag
+            </Button>
+          </>
+        }
+      >
+        <Field label="Engagement title" value={sow.title} />
+        <Field label="Scope" value={sow.scope} multiline />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
+          <Field
+            label="Fixed price"
+            value={usdShort(sow.priceUsd).replace("K", ",000")}
           />
-          <div className="relative z-10 flex h-full w-full max-w-xl flex-col bg-surface shadow-lg">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.06em] text-brand">
-                  Auto-drafted SOW
-                </div>
-                <h2 className="font-serif text-xl font-medium tracking-tight">
-                  Approve for FDE engagement
-                </h2>
-              </div>
-              <button
-                onClick={() => setSheetOpen(false)}
-                className="rounded p-1.5 text-text-3 hover:bg-surface-2 hover:text-text"
+        </div>
+
+        <ListField label="Inclusions" items={sow.inclusions} tone="success" />
+        <ListField label="Exclusions" items={sow.exclusions} tone="neutral" />
+
+        <div>
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
+            Team
+          </div>
+          <div className="space-y-1.5">
+            {sow.team.map((t) => (
+              <div
+                key={t.role}
+                className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-              <Field label="Engagement title" value={sow.title} />
-              <Field label="Scope" value={sow.scope} multiline />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
-                <Field
-                  label="Fixed price"
-                  value={usdShort(sow.priceUsd).replace("K", ",000")}
-                />
+                <span className="font-medium">{t.role}</span>
+                <span className="text-text-3">{t.allocation}</span>
               </div>
-
-              <ListField
-                label="Inclusions"
-                items={sow.inclusions}
-                tone="success"
-              />
-              <ListField
-                label="Exclusions"
-                items={sow.exclusions}
-                tone="neutral"
-              />
-
-              <div>
-                <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-                  Team
-                </div>
-                <div className="space-y-1.5">
-                  {sow.team.map((t) => (
-                    <div
-                      key={t.role}
-                      className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm"
-                    >
-                      <span className="font-medium">{t.role}</span>
-                      <span className="text-text-3">{t.allocation}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <ListField
-                label="Success metrics"
-                items={sow.successMetrics}
-                tone="brand"
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3 border-t border-border px-6 py-4">
-              <span className="text-xs text-text-3">
-                Editable before send. Generated in ~30s from the evidence.
-              </span>
-              <Button
-                variant="brand"
-                onClick={() => {
-                  setApproved(true);
-                  setSheetOpen(false);
-                }}
-              >
-                Send to Twistag
-              </Button>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+
+        <ListField
+          label="Success metrics"
+          items={sow.successMetrics}
+          tone="brand"
+        />
+      </Sheet>
     </main>
   );
 }
