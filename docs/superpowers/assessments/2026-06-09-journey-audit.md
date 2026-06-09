@@ -34,7 +34,7 @@ Fix order: **P0 connection pooling → P1 auth gating + persist the approve/SOW 
 
 ### P0 — Critical (app-wide flakiness; fix first)
 
-**C1. DB connection-pool exhaustion → intermittent 500s everywhere.**
+**C1. DB connection-pool exhaustion → intermittent 500s everywhere.** — ✅ FIXED (2026-06-09, merge `c1b0faf`): app now uses the transaction pooler (`:6543`) + `prepare:false` + tuned pool; migrations on `DIRECT_URL` (`:5432`). Verified: `npm run db:proof:pool` (40/40 concurrent) + 32/32 concurrent dashboard loads, zero 500s.
 - **Symptom:** `PostgresError (EMAXCONNSESSION): max clients reached in session mode - pool_size: 15`. During the audit, normal navigation (esp. the manager dashboard) repeatedly 500'd; only a server restart + wait recovered it.
 - **Root cause:** `DATABASE_URL` points at the Supabase **session-mode pooler** (`...pooler.supabase.com:5432`). Session mode pins one upstream connection per client for its whole life. The `postgres` client in `db/client.ts` uses `{ max: 10 }` with **no `idle_timeout`/`max_lifetime`**, so idle connections accumulate to the 15-client cap. Worsened by **~5 concurrent DB contexts per dashboard load** (layout `getCurrentUser` + `sprint.get` + `sprint.progress` + `opportunity.listForSprint` + `sprint.activity`, each opening its own `withTenantContext` transaction).
 - **Impact:** Flaky in dev; **would be far worse on Vercel serverless** (every lambda opens its own pool). This undermines every other journey.
