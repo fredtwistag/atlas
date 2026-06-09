@@ -8,6 +8,10 @@ import {
   date,
   bigserial,
   unique,
+  integer,
+  numeric,
+  doublePrecision,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
@@ -102,3 +106,135 @@ export const sprints = pgTable("sprints", {
     .defaultNow(),
   closedAt: timestamp("closed_at", { withTimezone: true }),
 });
+
+export const topics = pgTable("topics", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  orderIdx: integer("order_idx").notNull(),
+  questionCount: integer("question_count").notNull(),
+  estMinutes: integer("est_minutes").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const sprintParticipants = pgTable(
+  "sprint_participants",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    sprintId: uuid("sprint_id")
+      .notNull()
+      .references(() => sprints.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    status: text("status").notNull(),
+    sessionsCompleted: integer("sessions_completed").notNull().default(0),
+    sessionsTotal: integer("sessions_total").notNull().default(4),
+    lastActiveLabel: text("last_active_label"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.sprintId, t.userId] }) }),
+);
+
+export const sessions = pgTable("sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  topicId: uuid("topic_id").references(() => topics.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  status: text("status").notNull(),
+  totalSeconds: integer("total_seconds"),
+  messagesCount: integer("messages_count").notNull().default(0),
+  captureCount: integer("capture_count").notNull().default(0),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  editWindowEndsAt: timestamp("edit_window_ends_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const captures = pgTable("captures", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sessionId: uuid("session_id").references(() => sessions.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  kind: text("kind").notNull(),
+  summary: text("summary").notNull(),
+  sourceQuote: text("source_quote").notNull(),
+  tags: text("tags").array().notNull().default([]),
+  isEdited: boolean("is_edited").notNull().default(false),
+  isRemoved: boolean("is_removed").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const opportunities = pgTable("opportunities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  departments: text("departments").array().notNull().default([]),
+  impactLow: integer("impact_low").notNull(),
+  impactHigh: integer("impact_high").notNull(),
+  timeToShipWeeksLow: integer("time_to_ship_weeks_low").notNull(),
+  timeToShipWeeksHigh: integer("time_to_ship_weeks_high").notNull(),
+  confidenceScore: integer("confidence_score").notNull(),
+  compositeScore: numeric("composite_score", {
+    precision: 3,
+    scale: 1,
+  }).notNull(),
+  dimensionScores: jsonb("dimension_scores").notNull(),
+  rationale: text("rationale").notNull(),
+  status: text("status").notNull(),
+  contributorCount: integer("contributor_count").notNull().default(0),
+  patternMatch: jsonb("pattern_match"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const opportunityEvidence = pgTable(
+  "opportunity_evidence",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    opportunityId: uuid("opportunity_id")
+      .notNull()
+      .references(() => opportunities.id),
+    captureId: uuid("capture_id")
+      .notNull()
+      .references(() => captures.id),
+    weight: doublePrecision("weight").notNull().default(1),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.opportunityId, t.captureId] }) }),
+);
