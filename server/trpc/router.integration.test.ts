@@ -326,3 +326,30 @@ describe("session.myDashboard / session.get", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("twistag.clientList", () => {
+  it("aggregates clients across tenants for a twistag session", async () => {
+    // SPRINT_A (TENANT_A) + SPRINT_B (TENANT_B) + their opportunities exist
+    // from the outer beforeEach.
+    const api = createCaller({
+      session: {
+        kind: "twistag",
+        twistagRole: "twistag_admin",
+        userId: "00000000-0000-4000-8000-0000000000ff",
+      },
+    });
+    const clients = await api.twistag.clientList();
+    expect(clients.length).toBeGreaterThanOrEqual(2);
+    const names = clients.map((c) => c.name).sort();
+    expect(names).toContain("Tenant A");
+    expect(names).toContain("Tenant B");
+    const a = clients.find((c) => c.name === "Tenant A")!;
+    expect(a.opportunities).toBeGreaterThanOrEqual(1);
+    expect(["healthy", "watch", "at_risk"]).toContain(a.health);
+  });
+
+  it("rejects a tenant session (twistagProcedure)", async () => {
+    const api = asTenant(TENANT_A);
+    await expect(api.twistag.clientList()).rejects.toThrow();
+  });
+});
