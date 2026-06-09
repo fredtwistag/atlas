@@ -145,10 +145,14 @@
 - **Refs:** `prototypes/atlas-ic-journey.html` screen 1
 - **DoD:** Sprint launch sends emails to N participants in <60s.
 
-### ATL-204 · Sprint launch flow
+### ATL-204 · Sprint launch flow — PARTIALLY DONE (2026-06-09, merge 6cdb2de)
 - **AC:** `sprint.launch` tRPC procedure: marks sprint active, creates session rows for each participant × topic, queues invitation emails via Inngest.
 - **Refs:** PRD F1.4
 - **DoD:** End-to-end: create sprint via wizard, click launch, observe DB rows + email queue.
+- **Status:** `sprint.launch` (managerProcedure) ships and creates sprint + topics +
+  participants + sessions under RLS; launched via a **simple one-page form** (not the
+  5-step wizard — deferred). **Invitation emails NOT queued** (Inngest/Resend deferred —
+  see ATL-205). Browser-verified end-to-end (DB rows created; redirect to dashboard).
 
 ### ATL-205 · Inngest worker setup
 - **AC:** Inngest configured in dev + Vercel; first job (`magic.link.send`) runs from event.
