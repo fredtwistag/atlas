@@ -24,12 +24,13 @@ interface LiveCapture {
 }
 
 export function ConversationView({
-  // sessionId is part of the public API (the real respond() will need it) but
-  // the scripted demo engine doesn't read it yet.
+  sessionId,
   topicTitle,
+  onComplete,
 }: {
   sessionId: string;
   topicTitle: string;
+  onComplete?: (sessionId: string) => Promise<void>;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: "m-0", role: "assistant", content: conversationScript[0].assistant },
@@ -41,6 +42,7 @@ export function ConversationView({
   const [done, setDone] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
+  const completedRef = useRef(false);
   const lastStep = conversationScript.length - 1;
   const progress = Math.round((step / lastStep) * 100);
 
@@ -52,6 +54,13 @@ export function ConversationView({
       behavior: "smooth",
     });
   }, [messages, thinking]);
+
+  useEffect(() => {
+    if (done && !completedRef.current && onComplete) {
+      completedRef.current = true;
+      void onComplete(sessionId);
+    }
+  }, [done, onComplete, sessionId]);
 
   function send() {
     const text = draft.trim();
