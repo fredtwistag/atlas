@@ -11,12 +11,16 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ButtonLink } from "@/components/ui/Button";
+import type { Metadata } from "next";
 import { db } from "@/lib/data";
+import { getCurrentUser } from "@/lib/session";
 
-export default function IcHomePage() {
-  const me = db.me();
-  const sprint = db.sprint.get();
-  const sessions = db.session.mine();
+export const metadata: Metadata = { title: "My sprint · Atlas" };
+
+export default async function IcHomePage() {
+  const me = await getCurrentUser();
+  const sprint = await db.sprint.get();
+  const sessions = await db.session.mine();
 
   const completed = sessions.filter((s) => s.status === "completed");
   const next = sessions.find((s) => s.status !== "completed");
@@ -106,12 +110,17 @@ export default function IcHomePage() {
                   {sprint.topics.find((t) => t.id === next.topicId)?.title}
                 </h2>
                 <p className="mt-1.5 max-w-md text-md text-text-2">
-                  {sprint.topics.find((t) => t.id === next.topicId)?.description}
+                  {
+                    sprint.topics.find((t) => t.id === next.topicId)
+                      ?.description
+                  }
                 </p>
                 <div className="mt-3 flex items-center gap-1.5 text-sm text-text-2">
                   <Clock className="h-3.5 w-3.5" />
                   About{" "}
-                  {sprint.topics.find((t) => t.id === next.topicId)?.estMinutes}{" "}
+                  {
+                    sprint.topics.find((t) => t.id === next.topicId)?.estMinutes
+                  }{" "}
                   minutes
                 </div>
               </div>

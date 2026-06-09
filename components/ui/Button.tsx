@@ -39,8 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-interface ButtonLinkProps
-  extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+interface ButtonLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
   variant?: Variant;
   size?: Size;

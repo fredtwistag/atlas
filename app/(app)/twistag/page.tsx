@@ -1,22 +1,17 @@
 import Link from "next/link";
 import { AlertTriangle, Building2, CircleDot, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import type { Metadata } from "next";
 import { db } from "@/lib/data";
-import type { ClientSummary } from "@/lib/types";
+import { clientHealthMeta } from "@/lib/ui-maps";
 
-const healthMeta: Record<
-  ClientSummary["health"],
-  { label: string; tone: "success" | "warning" | "danger" }
-> = {
-  healthy: { label: "Healthy", tone: "success" },
-  watch: { label: "Watch", tone: "warning" },
-  at_risk: { label: "At risk", tone: "danger" },
-};
+export const metadata: Metadata = { title: "Clients · Atlas" };
 
-export default function TwistagCockpit() {
-  const clients = db.twistag.clientList();
+export default async function TwistagCockpit() {
+  const clients = await db.twistag.clientList();
   const alerts = clients.filter((c) => c.alert);
 
   const totals = {
@@ -82,19 +77,28 @@ export default function TwistagCockpit() {
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Building2, label: "Active clients", value: totals.active },
-          { icon: CircleDot, label: "Open opportunities", value: totals.opportunities },
-          { icon: TrendingUp, label: "Approved for FDE", value: totals.approved },
-          { icon: TrendingUp, label: "Avg completion", value: `${totals.avgCompletion}%` },
+          {
+            icon: CircleDot,
+            label: "Open opportunities",
+            value: totals.opportunities,
+          },
+          {
+            icon: TrendingUp,
+            label: "Approved for FDE",
+            value: totals.approved,
+          },
+          {
+            icon: TrendingUp,
+            label: "Avg completion",
+            value: `${totals.avgCompletion}%`,
+          },
         ].map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-              <s.icon className="h-3.5 w-3.5" />
-              {s.label}
-            </div>
-            <div className="font-serif text-3xl font-medium tracking-tight">
-              {s.value}
-            </div>
-          </Card>
+          <StatCard
+            key={s.label}
+            icon={s.icon}
+            label={s.label}
+            value={s.value}
+          />
         ))}
       </div>
 
@@ -108,12 +112,14 @@ export default function TwistagCockpit() {
               <th className="px-4 py-2.5 font-semibold">Health</th>
               <th className="px-4 py-2.5 font-semibold">Completion</th>
               <th className="px-4 py-2.5 text-center font-semibold">Opps</th>
-              <th className="px-4 py-2.5 text-center font-semibold">Approved</th>
+              <th className="px-4 py-2.5 text-center font-semibold">
+                Approved
+              </th>
             </tr>
           </thead>
           <tbody>
             {clients.map((c) => {
-              const meta = healthMeta[c.health];
+              const meta = clientHealthMeta[c.health];
               const isLive = c.tenantId === "spr-northwind-q2";
               return (
                 <tr
@@ -162,8 +168,8 @@ export default function TwistagCockpit() {
         </table>
       </Card>
       <p className="mt-3 px-1 text-xs text-text-3">
-        Only Northwind Logistics is wired with live data in this demo. The others
-        illustrate the multi-client overview.
+        Only Northwind Logistics is wired with live data in this demo. The
+        others illustrate the multi-client overview.
       </p>
     </main>
   );

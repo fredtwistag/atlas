@@ -30,10 +30,7 @@ export function Label({
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn(
-        "mb-1.5 block text-sm font-medium text-text-2",
-        className,
-      )}
+      className={cn("mb-1.5 block text-sm font-medium text-text-2", className)}
       {...props}
     />
   );

@@ -1,30 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  ArrowUpRight,
-  CircleDot,
-  FileText,
-  Users,
-} from "lucide-react";
+import { Activity, CircleDot, FileText, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
-import { ScoreBadge } from "@/components/ScoreBadge";
-import { db, usdRange } from "@/lib/data";
-import type { ParticipantStatus } from "@/lib/types";
+import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { db } from "@/lib/data";
+import { participantStatusMeta } from "@/lib/ui-maps";
 
-const statusMeta: Record<
-  ParticipantStatus,
-  { label: string; tone: "success" | "brand" | "warning" | "neutral" }
-> = {
-  completed: { label: "Complete", tone: "success" },
-  in_progress: { label: "In progress", tone: "brand" },
-  idle: { label: "Idle", tone: "warning" },
-  not_started: { label: "Not started", tone: "neutral" },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const sprint = await db.sprint.get(id);
+  return { title: `${sprint.name} · Atlas` };
+}
 
 export default async function ManagerDashboard({
   params,
@@ -32,10 +27,10 @@ export default async function ManagerDashboard({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sprint = db.sprint.get(id);
-  const p = db.sprint.progress(id);
-  const opps = db.opportunity.listForSprint(id);
-  const activity = db.sprint.activity();
+  const sprint = await db.sprint.get(id);
+  const p = await db.sprint.progress(id);
+  const opps = await db.opportunity.listForSprint(id);
+  const activity = await db.sprint.activity();
 
   const stats = [
     {
@@ -98,16 +93,13 @@ export default async function ManagerDashboard({
       {/* Stat strip */}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-              <s.icon className="h-3.5 w-3.5" />
-              {s.label}
-            </div>
-            <div className="font-serif text-3xl font-medium tracking-tight">
-              {s.value}
-            </div>
-            <div className="mt-1 text-sm text-text-3">{s.sub}</div>
-          </Card>
+          <StatCard
+            key={s.label}
+            icon={s.icon}
+            label={s.label}
+            value={s.value}
+            sub={s.sub}
+          />
         ))}
       </div>
 
@@ -124,12 +116,14 @@ export default async function ManagerDashboard({
                   <th className="px-4 py-2.5 font-semibold">Contributor</th>
                   <th className="px-4 py-2.5 font-semibold">Progress</th>
                   <th className="px-4 py-2.5 font-semibold">Status</th>
-                  <th className="px-4 py-2.5 text-right font-semibold">Last active</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">
+                    Last active
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sprint.participants.map((pt) => {
-                  const meta = statusMeta[pt.status];
+                  const meta = participantStatusMeta[pt.status];
                   const pct = Math.round(
                     (pt.sessionsCompleted / pt.sessionsTotal) * 100,
                   );
@@ -205,7 +199,9 @@ export default async function ManagerDashboard({
                 <div className="flex-1 text-[13px] leading-snug text-text-2">
                   {a.label}
                 </div>
-                <span className="shrink-0 text-xs text-text-3">{a.timeLabel}</span>
+                <span className="shrink-0 text-xs text-text-3">
+                  {a.timeLabel}
+                </span>
               </div>
             ))}
           </Card>
@@ -217,36 +213,17 @@ export default async function ManagerDashboard({
             <h2 className="text-sm font-semibold text-text-2">
               Opportunities surfacing
             </h2>
-            <span className="text-xs text-text-3">ranked by composite score</span>
+            <span className="text-xs text-text-3">
+              ranked by composite score
+            </span>
           </div>
           <div className="space-y-2.5">
             {opps.map((o) => (
-              <Link key={o.id} href={`/sprint/${id}/opportunity/${o.id}`}>
-                <Card className="group p-4 transition-all hover:border-border-strong hover:shadow">
-                  <div className="flex items-start justify-between gap-3">
-                    <ScoreBadge score={o.compositeScore} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-md font-semibold leading-snug">
-                          {o.title}
-                        </h3>
-                        <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-text-3 transition-colors group-hover:text-brand" />
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Badge tone="success">
-                          {usdRange(o.impactLow, o.impactHigh)}/yr
-                        </Badge>
-                        <Badge tone="outline">
-                          {o.timeToShipWeeksLow}–{o.timeToShipWeeksHigh} wks
-                        </Badge>
-                        <Badge tone="neutral">
-                          {o.contributorCount} voices
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+              <OpportunityCard
+                key={o.id}
+                opp={o}
+                href={`/sprint/${id}/opportunity/${o.id}`}
+              />
             ))}
           </div>
           <p className="mt-3 px-1 text-xs leading-relaxed text-text-3">

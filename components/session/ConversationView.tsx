@@ -8,6 +8,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { conversationScript } from "@/lib/data";
+import { captureKindTone } from "@/lib/ui-maps";
+import type { CaptureKind } from "@/lib/types";
 
 interface ChatMsg {
   id: string;
@@ -21,18 +23,9 @@ interface LiveCapture {
   summary: string;
 }
 
-const kindTone: Record<string, "brand" | "warning" | "neutral" | "danger"> = {
-  bottleneck: "danger",
-  handoff: "warning",
-  frustration: "warning",
-  workaround: "brand",
-  tooling: "neutral",
-  sop: "neutral",
-  decision: "brand",
-};
-
 export function ConversationView({
-  sessionId,
+  // sessionId is part of the public API (the real respond() will need it) but
+  // the scripted demo engine doesn't read it yet.
   topicTitle,
 }: {
   sessionId: string;
@@ -52,7 +45,9 @@ export function ConversationView({
   const progress = Math.round((step / lastStep) * 100);
 
   useEffect(() => {
-    threadRef.current?.scrollTo({
+    // Guard scrollTo: not implemented in jsdom (tests) and absent in some
+    // older browsers.
+    threadRef.current?.scrollTo?.({
       top: threadRef.current.scrollHeight,
       behavior: "smooth",
     });
@@ -88,7 +83,11 @@ export function ConversationView({
       if (incoming) {
         setMessages((m) => [
           ...m,
-          { id: `a-${nextStep}`, role: "assistant", content: incoming.assistant },
+          {
+            id: `a-${nextStep}`,
+            role: "assistant",
+            content: incoming.assistant,
+          },
         ]);
         setStep(nextStep);
         if (nextStep >= lastStep) setDone(true);
@@ -116,7 +115,10 @@ export function ConversationView({
           </Link>
         </div>
 
-        <div ref={threadRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <div
+          ref={threadRef}
+          className="flex-1 space-y-4 overflow-y-auto px-5 py-5"
+        >
           {messages.map((m) => (
             <div
               key={m.id}
@@ -178,6 +180,7 @@ export function ConversationView({
                   }
                 }}
                 rows={1}
+                aria-label="Your message"
                 placeholder="Type how it really works… (Enter to send)"
                 className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-surface px-3.5 py-2.5 text-md leading-relaxed placeholder:text-text-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
               />
@@ -210,7 +213,11 @@ export function ConversationView({
             </div>
           </div>
         </div>
-        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+        <div
+          className="flex-1 space-y-2 overflow-y-auto p-3"
+          aria-live="polite"
+          aria-label="Captures heard so far"
+        >
           {captures.length === 0 ? (
             <p className="px-1 py-4 text-sm leading-relaxed text-text-3">
               As you describe how the work really happens, the moments worth
@@ -222,7 +229,10 @@ export function ConversationView({
                 key={c.id}
                 className="rounded-lg border border-border bg-bg p-3"
               >
-                <Badge tone={kindTone[c.kind] ?? "neutral"} className="mb-1.5">
+                <Badge
+                  tone={captureKindTone[c.kind as CaptureKind] ?? "neutral"}
+                  className="mb-1.5"
+                >
                   {c.kind}
                 </Badge>
                 <p className="text-[13px] leading-relaxed text-text">

@@ -67,8 +67,8 @@ export default function PricingPage() {
           Priced to the outcome, not the hour.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-text-2">
-          Wave 1 is Sprint mode only. We tell you the cost upfront and what would
-          justify killing the project if it isn&apos;t working.
+          Wave 1 is Sprint mode only. We tell you the cost upfront and what
+          would justify killing the project if it isn&apos;t working.
         </p>
       </section>
 
@@ -97,7 +97,10 @@ export default function PricingPage() {
               <p className="mt-3 text-md text-text-2">{t.tagline}</p>
               <ul className="mt-4 flex-1 space-y-2">
                 {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-text-2">
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-sm text-text-2"
+                  >
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
                     {f}
                   </li>
@@ -114,7 +117,10 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mx-auto mt-8 max-w-xl text-center text-sm text-text-3">
-          <Link href="/" className="font-medium text-brand hover:text-brand-hover">
+          <Link
+            href="/"
+            className="font-medium text-brand hover:text-brand-hover"
+          >
             ← Back home
           </Link>
         </p>

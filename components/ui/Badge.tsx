@@ -1,12 +1,6 @@
 import { cn } from "@/lib/cn";
 
-type Tone =
-  | "neutral"
-  | "brand"
-  | "success"
-  | "warning"
-  | "danger"
-  | "outline";
+type Tone = "neutral" | "brand" | "success" | "warning" | "danger" | "outline";
 
 const tones: Record<Tone, string> = {
   neutral: "bg-surface-2 text-text-2 border-transparent",

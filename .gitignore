@@ -30,3 +30,6 @@ yarn-error.log*
 
 # claude code local overrides (machine-specific)
 .claude/settings.local.json
+
+# this is an npm project — no yarn lockfile
+yarn.lock
