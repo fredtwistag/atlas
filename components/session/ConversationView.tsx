@@ -45,7 +45,9 @@ export function ConversationView({
   const progress = Math.round((step / lastStep) * 100);
 
   useEffect(() => {
-    threadRef.current?.scrollTo({
+    // Guard scrollTo: not implemented in jsdom (tests) and absent in some
+    // older browsers.
+    threadRef.current?.scrollTo?.({
       top: threadRef.current.scrollHeight,
       behavior: "smooth",
     });
