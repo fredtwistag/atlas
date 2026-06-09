@@ -43,12 +43,11 @@
     0 10px 30px -10px rgba(0, 0, 0, 0.18), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
 
   /* ============ TYPOGRAPHY ============ */
+  /* Font families are provided by next/font (app/fonts.ts) as CSS variables. */
   --font-sans:
-    "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  --font-serif: "Fraunces Variable", "Fraunces", Georgia, serif;
-  --font-mono:
-    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 
   --font-features: "cv02", "cv03", "cv04", "cv11", "ss01";
 
