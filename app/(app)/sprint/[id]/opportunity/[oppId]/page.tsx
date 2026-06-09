@@ -8,7 +8,7 @@ export default async function OpportunityPage({
   params: Promise<{ id: string; oppId: string }>;
 }) {
   const { id, oppId } = await params;
-  const opp = db.opportunity.get(oppId);
+  const opp = await db.opportunity.get(oppId);
   if (!opp) notFound();
 
   return <OpportunityDetail sprintId={id} opp={opp} sow={sowDraftFor(opp)} />;

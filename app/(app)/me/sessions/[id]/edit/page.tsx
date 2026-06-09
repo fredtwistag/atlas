@@ -57,7 +57,7 @@ export default async function EditSessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = db.session.get(id);
+  const session = await db.session.get(id);
   if (!session) notFound();
 
   return (

@@ -9,9 +9,9 @@ export default async function FinalReport({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sprint = db.sprint.get(id);
-  const p = db.sprint.progress(id);
-  const opps = db.opportunity.listForSprint(id);
+  const sprint = await db.sprint.get(id);
+  const p = await db.sprint.progress(id);
+  const opps = await db.opportunity.listForSprint(id);
 
   const topFive = opps.slice(0, 5);
   const totalLow = topFive.reduce((s, o) => s + o.impactLow, 0);

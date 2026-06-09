@@ -8,7 +8,7 @@ export default async function NudgePage({
   params: Promise<{ id: string; participantId: string }>;
 }) {
   const { id, participantId } = await params;
-  const sprint = db.sprint.get(id);
+  const sprint = await db.sprint.get(id);
   const participant = sprint.participants.find(
     (p) => p.user.id === participantId,
   );

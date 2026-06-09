@@ -16,10 +16,10 @@ export default async function ManagerDashboard({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sprint = db.sprint.get(id);
-  const p = db.sprint.progress(id);
-  const opps = db.opportunity.listForSprint(id);
-  const activity = db.sprint.activity();
+  const sprint = await db.sprint.get(id);
+  const p = await db.sprint.progress(id);
+  const opps = await db.opportunity.listForSprint(id);
+  const activity = await db.sprint.activity();
 
   const stats = [
     {

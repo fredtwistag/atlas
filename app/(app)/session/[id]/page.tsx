@@ -8,8 +8,8 @@ export default async function SessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = db.session.get(id);
-  const sprint = db.sprint.get();
+  const session = await db.session.get(id);
+  const sprint = await db.sprint.get();
   // The demo's interactive script is anchored on the "One change" / next topic;
   // fall back to a sensible title if the id isn't one of the seeded sessions.
   const topicTitle =

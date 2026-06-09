@@ -7,8 +7,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { db } from "@/lib/data";
 import { clientHealthMeta } from "@/lib/ui-maps";
 
-export default function TwistagCockpit() {
-  const clients = db.twistag.clientList();
+export default async function TwistagCockpit() {
+  const clients = await db.twistag.clientList();
   const alerts = clients.filter((c) => c.alert);
 
   const totals = {

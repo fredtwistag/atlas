@@ -973,23 +973,23 @@ export const conversationScript: ScriptStep[] = [
 
 export const db = {
   sprint: {
-    get: (_id?: string): Sprint => sprint,
-    progress: (_id?: string): SprintProgress => progress,
-    activity: (): ActivityItem[] => activity,
+    get: async (_id?: string): Promise<Sprint> => sprint,
+    progress: async (_id?: string): Promise<SprintProgress> => progress,
+    activity: async (): Promise<ActivityItem[]> => activity,
   },
   session: {
-    mine: (): Session[] => mySessions,
-    get: (id: string): Session | undefined =>
+    mine: async (): Promise<Session[]> => mySessions,
+    get: async (id: string): Promise<Session | undefined> =>
       mySessions.find((s) => s.id === id),
   },
   opportunity: {
-    listForSprint: (_sprintId?: string): Opportunity[] =>
+    listForSprint: async (_sprintId?: string): Promise<Opportunity[]> =>
       [...opportunities].sort((a, b) => b.compositeScore - a.compositeScore),
-    get: (id: string): Opportunity | undefined =>
+    get: async (id: string): Promise<Opportunity | undefined> =>
       opportunities.find((o) => o.id === id),
   },
   twistag: {
-    clientList: (): ClientSummary[] => clients,
+    clientList: async (): Promise<ClientSummary[]> => clients,
   },
 };
 
