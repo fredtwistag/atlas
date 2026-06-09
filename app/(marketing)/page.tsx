@@ -403,12 +403,13 @@ export default function LandingPage() {
                   {heading}
                 </h5>
                 {(links as string[]).map((l) => (
-                  <span
+                  <a
                     key={l}
-                    className="block cursor-pointer py-1.5 text-[13.5px] text-text-2 transition-colors hover:text-text"
+                    href="#"
+                    className="block py-1.5 text-[13.5px] text-text-2 transition-colors hover:text-text"
                   >
                     {l}
-                  </span>
+                  </a>
                 ))}
               </div>
             ))}

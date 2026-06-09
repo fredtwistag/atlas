@@ -178,6 +178,7 @@ export function ConversationView({
                   }
                 }}
                 rows={1}
+                aria-label="Your message"
                 placeholder="Type how it really works… (Enter to send)"
                 className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-surface px-3.5 py-2.5 text-md leading-relaxed placeholder:text-text-3 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
               />
@@ -210,7 +211,11 @@ export function ConversationView({
             </div>
           </div>
         </div>
-        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+        <div
+          className="flex-1 space-y-2 overflow-y-auto p-3"
+          aria-live="polite"
+          aria-label="Captures heard so far"
+        >
           {captures.length === 0 ? (
             <p className="px-1 py-4 text-sm leading-relaxed text-text-3">
               As you describe how the work really happens, the moments worth

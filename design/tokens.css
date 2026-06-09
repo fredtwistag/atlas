@@ -11,7 +11,8 @@
   /* ============ FOREGROUND ============ */
   --text: #09090b;
   --text-2: #52525b;
-  --text-3: #a1a1aa;
+  --text-3: #71717a; /* AA on white (~4.6:1) — for muted text */
+  --text-faint: #a1a1aa; /* decorative only: hairlines, inactive icons */
 
   /* ============ BORDERS ============ */
   --border: #e4e4e7;

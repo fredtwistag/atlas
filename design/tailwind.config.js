@@ -22,6 +22,7 @@ module.exports = {
         text: "var(--text)",
         "text-2": "var(--text-2)",
         "text-3": "var(--text-3)",
+        "text-faint": "var(--text-faint)",
         border: "var(--border)",
         "border-strong": "var(--border-strong)",
         brand: {
