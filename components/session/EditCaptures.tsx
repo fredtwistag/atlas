@@ -72,10 +72,7 @@ export function EditCaptures({
 
       <div className="space-y-2.5">
         {caps.map((c) => (
-          <Card
-            key={c.id}
-            className={cn("p-4", c.removed && "opacity-50")}
-          >
+          <Card key={c.id} className={cn("p-4", c.removed && "opacity-50")}>
             <div className="mb-2 flex items-center justify-between">
               <Badge tone="neutral">{c.kind}</Badge>
               <div className="flex items-center gap-1">
@@ -116,7 +113,11 @@ export function EditCaptures({
                   autoFocus
                 />
                 <div className="mt-2 flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditing(null)}
+                  >
                     Cancel
                   </Button>
                   <Button size="sm" variant="brand" onClick={() => save(c.id)}>

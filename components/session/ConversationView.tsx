@@ -32,7 +32,8 @@ const kindTone: Record<string, "brand" | "warning" | "neutral" | "danger"> = {
 };
 
 export function ConversationView({
-  sessionId,
+  // sessionId is part of the public API (the real respond() will need it) but
+  // the scripted demo engine doesn't read it yet.
   topicTitle,
 }: {
   sessionId: string;
@@ -88,7 +89,11 @@ export function ConversationView({
       if (incoming) {
         setMessages((m) => [
           ...m,
-          { id: `a-${nextStep}`, role: "assistant", content: incoming.assistant },
+          {
+            id: `a-${nextStep}`,
+            role: "assistant",
+            content: incoming.assistant,
+          },
         ]);
         setStep(nextStep);
         if (nextStep >= lastStep) setDone(true);
@@ -116,7 +121,10 @@ export function ConversationView({
           </Link>
         </div>
 
-        <div ref={threadRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <div
+          ref={threadRef}
+          className="flex-1 space-y-4 overflow-y-auto px-5 py-5"
+        >
           {messages.map((m) => (
             <div
               key={m.id}

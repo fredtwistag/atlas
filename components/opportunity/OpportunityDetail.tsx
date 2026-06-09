@@ -37,9 +37,14 @@ export function OpportunityDetail({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [approved, setApproved] = useState(false);
 
-  const confidenceLabel = ["—", "Very low", "Low", "Moderate", "High", "Very high"][
-    opp.confidenceScore
-  ];
+  const confidenceLabel = [
+    "—",
+    "Very low",
+    "Low",
+    "Moderate",
+    "High",
+    "Very high",
+  ][opp.confidenceScore];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
@@ -102,7 +107,9 @@ export function OpportunityDetail({
               <m.icon className="h-3.5 w-3.5" />
               {m.label}
             </div>
-            <div className="text-lg font-semibold tracking-tight">{m.value}</div>
+            <div className="text-lg font-semibold tracking-tight">
+              {m.value}
+            </div>
           </Card>
         ))}
       </div>
@@ -114,7 +121,9 @@ export function OpportunityDetail({
             <h2 className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold">
               <Sparkles className="h-4 w-4 text-brand" /> Why this surfaced
             </h2>
-            <p className="text-md leading-relaxed text-text-2">{opp.rationale}</p>
+            <p className="text-md leading-relaxed text-text-2">
+              {opp.rationale}
+            </p>
           </Card>
 
           {/* Tabs */}
@@ -164,8 +173,8 @@ export function OpportunityDetail({
               ))}
               <p className="px-1 text-xs leading-relaxed text-text-3">
                 Quotes are attributed by role only. Internal records link each
-                quote to its contributor for that person&apos;s own edit window —
-                never shown here.
+                quote to its contributor for that person&apos;s own edit window
+                — never shown here.
               </p>
             </div>
           )}
@@ -221,7 +230,9 @@ export function OpportunityDetail({
                 <div key={d.key}>
                   <div className="mb-1 flex items-center justify-between text-[13px]">
                     <span className="font-medium text-text-2">{d.label}</span>
-                    <span className="font-semibold tabular-nums">{d.score}/10</span>
+                    <span className="font-semibold tabular-nums">
+                      {d.score}/10
+                    </span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
                     <div
@@ -244,8 +255,8 @@ export function OpportunityDetail({
                 Approved for FDE
               </p>
               <p className="mt-1 text-sm text-text-2">
-                SOW draft sent to the Twistag engagement team. They&apos;ll align
-                scope within 48 hours.
+                SOW draft sent to the Twistag engagement team. They&apos;ll
+                align scope within 48 hours.
               </p>
             </Card>
           ) : (
@@ -299,8 +310,16 @@ export function OpportunityDetail({
                 />
               </div>
 
-              <ListField label="Inclusions" items={sow.inclusions} tone="success" />
-              <ListField label="Exclusions" items={sow.exclusions} tone="neutral" />
+              <ListField
+                label="Inclusions"
+                items={sow.inclusions}
+                tone="success"
+              />
+              <ListField
+                label="Exclusions"
+                items={sow.exclusions}
+                tone="neutral"
+              />
 
               <div>
                 <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">

@@ -20,7 +20,8 @@ export default function ComponentsShowcase() {
               Tier-1 components
             </h1>
             <p className="mt-1 text-md text-text-2">
-              The starter design-system set (ATL-018), wired to the Atlas tokens.
+              The starter design-system set (ATL-018), wired to the Atlas
+              tokens.
             </p>
           </div>
           <ButtonLink href="/" variant="secondary">

@@ -29,7 +29,9 @@ export function NudgeComposer({
   const draft = `Hi ${first},\n\nNo pressure at all — just a nudge that your Atlas discovery sessions are open whenever you have a spare five minutes. You're ${sessionsCompleted} of ${sessionsTotal} done, and the last couple are short.\n\nYour take on how things actually run is genuinely useful here. Thanks!`;
 
   const [channel, setChannel] = useState<"email" | "slack">("email");
-  const [subject, setSubject] = useState("A quick nudge on your Atlas sessions");
+  const [subject, setSubject] = useState(
+    "A quick nudge on your Atlas sessions",
+  );
   const [body, setBody] = useState(draft);
   const [sent, setSent] = useState(false);
 

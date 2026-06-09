@@ -79,8 +79,8 @@ export default async function FinalReport({
               {usdShort(totalLow)}–{usdShort(totalHigh)}
             </strong>
             . The single most-cited friction — a manual credit-hold release that
-            stalls roughly 140 orders a month — was corroborated independently by
-            five contributors across Finance, Order Ops, and Warehouse.
+            stalls roughly 140 orders a month — was corroborated independently
+            by five contributors across Finance, Order Ops, and Warehouse.
           </p>
           <div className="my-6 grid grid-cols-3 gap-3">
             {[
@@ -104,12 +104,12 @@ export default async function FinalReport({
         {/* Methodology */}
         <Section title="How we got here">
           <p>
-            Atlas runs discovery as conversation, not workshops. Each participant
-            completed up to four short sessions on their own schedule, covering
-            how work flows, where it breaks, the tools involved, and the one
-            change they&apos;d make. An extraction pass lifted concrete moments —
-            bottlenecks, workarounds, handoffs — from each reply, attributed by
-            role, never by name.
+            Atlas runs discovery as conversation, not workshops. Each
+            participant completed up to four short sessions on their own
+            schedule, covering how work flows, where it breaks, the tools
+            involved, and the one change they&apos;d make. An extraction pass
+            lifted concrete moments — bottlenecks, workarounds, handoffs — from
+            each reply, attributed by role, never by name.
           </p>
           <p>
             Captures were clustered by similarity and scored across five
@@ -174,8 +174,8 @@ export default async function FinalReport({
           <p>
             Each opportunity above links to its full evidence and a pre-drafted
             SOW. Approve one and the Twistag engagement team aligns scope within
-            48 hours; the first ship typically lands in 2–4 weeks. Nothing here is
-            a slide — it&apos;s a backlog ready to execute.
+            48 hours; the first ship typically lands in 2–4 weeks. Nothing here
+            is a slide — it&apos;s a backlog ready to execute.
           </p>
         </Section>
 

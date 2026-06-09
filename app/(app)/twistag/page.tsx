@@ -82,9 +82,21 @@ export default function TwistagCockpit() {
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { icon: Building2, label: "Active clients", value: totals.active },
-          { icon: CircleDot, label: "Open opportunities", value: totals.opportunities },
-          { icon: TrendingUp, label: "Approved for FDE", value: totals.approved },
-          { icon: TrendingUp, label: "Avg completion", value: `${totals.avgCompletion}%` },
+          {
+            icon: CircleDot,
+            label: "Open opportunities",
+            value: totals.opportunities,
+          },
+          {
+            icon: TrendingUp,
+            label: "Approved for FDE",
+            value: totals.approved,
+          },
+          {
+            icon: TrendingUp,
+            label: "Avg completion",
+            value: `${totals.avgCompletion}%`,
+          },
         ].map((s) => (
           <Card key={s.label} className="p-4">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
@@ -108,7 +120,9 @@ export default function TwistagCockpit() {
               <th className="px-4 py-2.5 font-semibold">Health</th>
               <th className="px-4 py-2.5 font-semibold">Completion</th>
               <th className="px-4 py-2.5 text-center font-semibold">Opps</th>
-              <th className="px-4 py-2.5 text-center font-semibold">Approved</th>
+              <th className="px-4 py-2.5 text-center font-semibold">
+                Approved
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -162,8 +176,8 @@ export default function TwistagCockpit() {
         </table>
       </Card>
       <p className="mt-3 px-1 text-xs text-text-3">
-        Only Northwind Logistics is wired with live data in this demo. The others
-        illustrate the multi-client overview.
+        Only Northwind Logistics is wired with live data in this demo. The
+        others illustrate the multi-client overview.
       </p>
     </main>
   );

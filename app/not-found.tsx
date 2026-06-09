@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 

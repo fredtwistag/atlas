@@ -13,7 +13,11 @@ import { cn } from "@/lib/cn";
  */
 const PERSONAS = [
   { label: "IC", href: "/me", match: ["/me", "/session"] },
-  { label: "Manager / Sponsor", href: "/sprint/spr-northwind-q2", match: ["/sprint"] },
+  {
+    label: "Manager / Sponsor",
+    href: "/sprint/spr-northwind-q2",
+    match: ["/sprint"],
+  },
   { label: "Twistag", href: "/twistag", match: ["/twistag"] },
 ];
 

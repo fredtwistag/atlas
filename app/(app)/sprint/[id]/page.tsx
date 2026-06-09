@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   Activity,
-  ArrowRight,
   ArrowUpRight,
   CircleDot,
   FileText,
@@ -124,7 +123,9 @@ export default async function ManagerDashboard({
                   <th className="px-4 py-2.5 font-semibold">Contributor</th>
                   <th className="px-4 py-2.5 font-semibold">Progress</th>
                   <th className="px-4 py-2.5 font-semibold">Status</th>
-                  <th className="px-4 py-2.5 text-right font-semibold">Last active</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">
+                    Last active
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -205,7 +206,9 @@ export default async function ManagerDashboard({
                 <div className="flex-1 text-[13px] leading-snug text-text-2">
                   {a.label}
                 </div>
-                <span className="shrink-0 text-xs text-text-3">{a.timeLabel}</span>
+                <span className="shrink-0 text-xs text-text-3">
+                  {a.timeLabel}
+                </span>
               </div>
             ))}
           </Card>
@@ -217,7 +220,9 @@ export default async function ManagerDashboard({
             <h2 className="text-sm font-semibold text-text-2">
               Opportunities surfacing
             </h2>
-            <span className="text-xs text-text-3">ranked by composite score</span>
+            <span className="text-xs text-text-3">
+              ranked by composite score
+            </span>
           </div>
           <div className="space-y-2.5">
             {opps.map((o) => (

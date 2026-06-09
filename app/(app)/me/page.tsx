@@ -106,12 +106,17 @@ export default function IcHomePage() {
                   {sprint.topics.find((t) => t.id === next.topicId)?.title}
                 </h2>
                 <p className="mt-1.5 max-w-md text-md text-text-2">
-                  {sprint.topics.find((t) => t.id === next.topicId)?.description}
+                  {
+                    sprint.topics.find((t) => t.id === next.topicId)
+                      ?.description
+                  }
                 </p>
                 <div className="mt-3 flex items-center gap-1.5 text-sm text-text-2">
                   <Clock className="h-3.5 w-3.5" />
                   About{" "}
-                  {sprint.topics.find((t) => t.id === next.topicId)?.estMinutes}{" "}
+                  {
+                    sprint.topics.find((t) => t.id === next.topicId)?.estMinutes
+                  }{" "}
                   minutes
                 </div>
               </div>

@@ -22,7 +22,11 @@ export type ParticipantStatus =
   | "completed"
   | "idle";
 
-export type SessionStatus = "not_started" | "in_progress" | "paused" | "completed";
+export type SessionStatus =
+  | "not_started"
+  | "in_progress"
+  | "paused"
+  | "completed";
 
 export type CaptureKind =
   | "bottleneck"
