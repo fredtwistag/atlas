@@ -33,3 +33,6 @@ yarn-error.log*
 
 # this is an npm project — no yarn lockfile
 yarn.lock
+
+# embedded-postgres test data
+.pgdata-test
