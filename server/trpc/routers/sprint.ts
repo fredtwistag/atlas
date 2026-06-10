@@ -311,6 +311,7 @@ export const sprintRouter = router({
             status: sprintParticipants.status,
             sessionsCompleted: sprintParticipants.sessionsCompleted,
             sessionsTotal: sprintParticipants.sessionsTotal,
+            lastActiveLabel: sprintParticipants.lastActiveLabel,
           })
           .from(sprintParticipants)
           .innerJoin(users, eq(sprintParticipants.userId, users.id))
@@ -321,12 +322,34 @@ export const sprintRouter = router({
             ),
           );
         if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const sessionRows = await tx
+          .select({
+            topicTitle: topics.title,
+            status: sessions.status,
+            orderIdx: topics.orderIdx,
+          })
+          .from(sessions)
+          .leftJoin(topics, eq(sessions.topicId, topics.id))
+          .where(
+            and(
+              eq(sessions.sprintId, input.sprintId),
+              eq(sessions.userId, input.userId),
+            ),
+          )
+          .orderBy(topics.orderIdx);
+
         return {
           name: row.name,
           title: row.title ?? "Contributor",
           status: row.status,
           sessionsCompleted: row.sessionsCompleted,
           sessionsTotal: row.sessionsTotal,
+          lastActiveLabel: row.lastActiveLabel ?? "",
+          sessions: sessionRows.map((s) => ({
+            topicTitle: s.topicTitle ?? "Session",
+            status: s.status,
+          })),
         };
       }),
     ),
