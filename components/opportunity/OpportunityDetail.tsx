@@ -28,14 +28,17 @@ export function OpportunityDetail({
   sprintId,
   opp,
   sow,
+  onApprove,
 }: {
   sprintId: string;
   opp: Opportunity;
   sow: SowDraft;
+  onApprove?: (sprintId: string, oppId: string) => Promise<void>;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [approved, setApproved] = useState(false);
+  const [approved, setApproved] = useState(opp.status === "approved");
+  const [approving, setApproving] = useState(false);
 
   const confidenceLabel = [
     "—",
@@ -277,12 +280,19 @@ export function OpportunityDetail({
             </span>
             <Button
               variant="brand"
-              onClick={() => {
-                setApproved(true);
-                setSheetOpen(false);
+              disabled={approving}
+              onClick={async () => {
+                setApproving(true);
+                try {
+                  await onApprove?.(sprintId, opp.id);
+                  setApproved(true);
+                  setSheetOpen(false);
+                } finally {
+                  setApproving(false);
+                }
               }}
             >
-              Send to Twistag
+              {approving ? "Sending…" : "Send to Twistag"}
             </Button>
           </>
         }
