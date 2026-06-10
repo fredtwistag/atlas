@@ -11,7 +11,8 @@ import type { NudgeResult } from "@/app/(app)/sprint/[id]/participant/[participa
 
 /** The nudge composer card. Embedded in the participant detail page, which owns
  *  the contributor header — this renders only the editable draft + send. The
- *  send is real and audited; email delivery ships with the email phase. */
+ *  send is real and audited, and emails the participant a link to their
+ *  sessions; a 48-hour per-person cooldown applies. */
 export function NudgeComposer({
   sprintId,
   userId,
@@ -60,11 +61,10 @@ export function NudgeComposer({
         className="border-success/40 bg-success-soft p-6 text-center"
       >
         <Check className="mx-auto mb-2 h-7 w-7 text-success" />
-        <p className="font-semibold text-success">Nudge logged</p>
+        <p className="font-semibold text-success">Nudge sent</p>
         <p className="mt-1 text-md text-text-2">
-          Recorded to the audit trail, and a 48-hour cooldown now applies before
-          another reminder. Email delivery ships with the email phase — for now,
-          reach out directly with your draft.
+          Emailed to {name.split(" ")[0]} and recorded to the audit trail. A
+          48-hour cooldown now applies before another reminder.
         </p>
         <Link
           href={`/sprint/${sprintId}`}
@@ -148,7 +148,7 @@ export function NudgeComposer({
           aria-busy={pending}
           onClick={send}
         >
-          {pending ? "Logging…" : "Log nudge"}
+          {pending ? "Sending…" : "Send nudge"}
         </Button>
       </div>
     </Card>

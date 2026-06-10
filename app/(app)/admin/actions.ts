@@ -1,5 +1,6 @@
 "use server";
 
+import { createElement } from "react";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
@@ -7,6 +8,9 @@ import { withServiceRole } from "@/db/client";
 import { tenants, users, invitations } from "@/db/schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InviteOrgSchema } from "@/lib/invitations";
+import { generateInviteLink } from "@/services/email/invite-link";
+import { sendEmail } from "@/services/email/send";
+import { InviteEmail, inviteSubject } from "@/emails/InviteEmail";
 
 /** Super-admin creates an organization (tenant) and invites its manager. */
 export async function inviteOrganization(formData: FormData): Promise<void> {
@@ -65,6 +69,30 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
     throw new Error(error.message);
   }
 
+  // Send the manager their "workspace is ready" invite. The tenant + rows are
+  // already saved, so a send failure only changes the redirect (retry by
+  // re-inviting the org, or the manager can request a sign-in link directly).
+  let delivered = true;
+  try {
+    const confirmUrl = await generateInviteLink(managerEmail);
+    await sendEmail({
+      to: managerEmail,
+      subject: inviteSubject("manager", "The Atlas team", orgName),
+      react: createElement(InviteEmail, {
+        role: "manager",
+        orgName,
+        inviterName: "The Atlas team",
+        confirmUrl,
+      }),
+    });
+  } catch {
+    delivered = false;
+  }
+
   revalidatePath("/admin");
-  redirect(`/admin?invited=${encodeURIComponent(managerEmail)}`);
+  redirect(
+    delivered
+      ? `/admin?invited=${encodeURIComponent(managerEmail)}`
+      : "/admin?error=email",
+  );
 }

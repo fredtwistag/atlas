@@ -52,14 +52,17 @@ export default async function AdminPage({
       {invited && (
         <div className="mb-5 flex items-center gap-2 rounded-lg border border-success/40 bg-success-soft px-4 py-3 text-md text-text-2">
           <Check className="h-4 w-4 text-success" />
-          Invited <strong>{invited}</strong> as manager. Sign in as them from{" "}
-          <a href="/sign-in/dev" className="font-medium text-brand">
-            Dev sign-in
-          </a>
-          .
+          Invited <strong>{invited}</strong> as manager — their workspace invite
+          is on its way.
         </div>
       )}
-      {error && (
+      {error === "email" && (
+        <div className="mb-5 rounded-lg border border-warning/40 bg-warning-soft px-4 py-3 text-md text-text-2">
+          We created the organization but couldn&apos;t send the manager&apos;s
+          invite email. Re-invite the organization to retry.
+        </div>
+      )}
+      {error && error !== "email" && (
         <div className="mb-5 rounded-lg border border-danger/40 bg-danger-soft px-4 py-3 text-md text-danger">
           That didn&apos;t look right — check the fields and try again.
         </div>

@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { eq, desc, and, ne, gt, inArray } from "drizzle-orm";
@@ -17,6 +18,11 @@ import {
 import { computeProgress } from "@/lib/dashboard-map";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { LaunchSprintSchema } from "@/lib/schemas";
+import { appUrl } from "@/lib/app-url";
+import { generateInviteLink } from "@/services/email/invite-link";
+import { sendEmail } from "@/services/email/send";
+import { InviteEmail, inviteSubject } from "@/emails/InviteEmail";
+import { NudgeEmail } from "@/emails/NudgeEmail";
 import type {
   Sprint,
   Participant,
@@ -99,11 +105,11 @@ export const sprintRouter = router({
     ),
 
   /**
-   * Log a nudge to a participant. Real and audited, but email delivery ships
-   * with the email phase — this records the intent and enforces a 48-hour
-   * per-person cooldown. Runs as service_role so it can both read the audit
-   * trail and write to it; every check is explicitly tenant-scoped since RLS
-   * is bypassed.
+   * Send a nudge to a participant. Audited, with a 48-hour per-person cooldown.
+   * Runs as service_role so it can both read the audit trail and write to it;
+   * every check is explicitly tenant-scoped since RLS is bypassed. The email is
+   * sent INSIDE the transaction so a delivery failure rolls back the audit row
+   * and the cooldown isn't burned without a message actually going out.
    */
   nudge: managerProcedure
     .input(
@@ -122,7 +128,7 @@ export const sprintRouter = router({
           const tenantId = ctx.session.tenantId;
 
           const [target] = await tx
-            .select({ id: users.id })
+            .select({ id: users.id, email: users.email, name: users.name })
             .from(users)
             .where(
               and(eq(users.id, input.userId), eq(users.tenantId, tenantId)),
@@ -169,6 +175,33 @@ export const sprintRouter = router({
             metadata: { channel: input.channel, actor: ctx.session.userId },
           });
 
+          // Email channel only (Slack is v1.5). A throw here rolls the tx back.
+          if (input.channel === "email") {
+            const [sender] = await tx
+              .select({ name: users.name })
+              .from(users)
+              .where(
+                and(
+                  eq(users.id, ctx.session.userId),
+                  eq(users.tenantId, tenantId),
+                ),
+              );
+            const [tenant] = await tx
+              .select({ name: tenants.name })
+              .from(tenants)
+              .where(eq(tenants.id, tenantId));
+            await sendEmail({
+              to: target.email,
+              subject: input.subject ?? "A quick nudge on your Atlas sessions",
+              react: createElement(NudgeEmail, {
+                senderName: sender?.name ?? "Your manager",
+                orgName: tenant?.name ?? "Atlas",
+                body: input.body,
+                ctaUrl: `${appUrl()}/me`,
+              }),
+            });
+          }
+
           return { ok: true as const };
         },
       ),
@@ -176,8 +209,8 @@ export const sprintRouter = router({
 
   launch: managerProcedure
     .input(LaunchSprintSchema)
-    .mutation(({ ctx, input }) =>
-      withTenantContext(ctx.session, async (tx): Promise<string> => {
+    .mutation(async ({ ctx, input }) => {
+      const launched = await withTenantContext(ctx.session, async (tx) => {
         const selectedTemplates = TOPIC_TEMPLATES.filter((t) =>
           input.topicKeys.includes(t.key),
         );
@@ -188,10 +221,12 @@ export const sprintRouter = router({
           });
         }
 
-        // Selected members (for sponsorId + scope_department).
+        // Selected members (for sponsorId, scope_department, and IC invites).
         const members = await tx
           .select({
             id: users.id,
+            name: users.name,
+            email: users.email,
             role: users.role,
             department: users.department,
           })
@@ -262,9 +297,54 @@ export const sprintRouter = router({
         );
         await tx.insert(sessions).values(sessionValues);
 
-        return sprint.id;
-      }),
-    ),
+        const [tenant] = await tx
+          .select({ name: tenants.name })
+          .from(tenants)
+          .where(eq(tenants.id, ctx.session.tenantId));
+        const [manager] = await tx
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, ctx.session.userId));
+
+        return {
+          sprintId: sprint.id,
+          ics: members
+            .filter((m) => m.role === "ic")
+            .map((m) => ({ email: m.email, name: m.name })),
+          orgName: tenant?.name ?? "your organization",
+          inviterName: manager?.name ?? "Your manager",
+          topics: selectedTemplates.map((t) => ({
+            title: t.title,
+            estMinutes: t.estMinutes,
+          })),
+        };
+      });
+
+      // Post-commit, best-effort: tell each IC their sprint is live, with a
+      // topic preview. A failed send never undoes the launch (#3 / ATL-203).
+      await Promise.allSettled(
+        launched.ics.map(async (ic) => {
+          const confirmUrl = await generateInviteLink(ic.email);
+          await sendEmail({
+            to: ic.email,
+            subject: inviteSubject(
+              "ic",
+              launched.inviterName,
+              launched.orgName,
+            ),
+            react: createElement(InviteEmail, {
+              role: "ic",
+              orgName: launched.orgName,
+              inviterName: launched.inviterName,
+              confirmUrl,
+              topics: launched.topics,
+            }),
+          });
+        }),
+      );
+
+      return launched.sprintId;
+    }),
 
   get: tenantProcedure.input(idInput).query(({ ctx, input }) =>
     withTenantContext(ctx.session, async (tx): Promise<Sprint> => {

@@ -26,6 +26,8 @@
     "db:seed:dashboard": "tsx --env-file=.env.local db/seed-dashboard.ts"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "@tanstack/react-query": "^5.101.0",
@@ -40,6 +42,7 @@
     "postgres": "^3.4.9",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "resend": "^6.12.4",
     "superjson": "^2.2.6",
     "tailwind-merge": "^2.6.0",
     "zod": "^4.4.3"

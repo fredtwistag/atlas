@@ -52,14 +52,16 @@ export default async function TeamPage({
       {invited && (
         <div className="mb-5 flex items-center gap-2 rounded-lg border border-success/40 bg-success-soft px-4 py-3 text-md text-text-2">
           <Check className="h-4 w-4 text-success" />
-          Invited <strong>{invited}</strong>. They can sign in from{" "}
-          <a href="/sign-in/dev" className="font-medium text-brand">
-            Dev sign-in
-          </a>
-          .
+          Invited <strong>{invited}</strong> — their invite email is on its way.
         </div>
       )}
-      {error && (
+      {error === "email" && (
+        <div className="mb-5 rounded-lg border border-warning/40 bg-warning-soft px-4 py-3 text-md text-text-2">
+          We saved the invite but couldn&apos;t send the email. Use{" "}
+          <strong>Resend invite</strong> below to retry.
+        </div>
+      )}
+      {error === "invalid" && (
         <div className="mb-5 rounded-lg border border-danger/40 bg-danger-soft px-4 py-3 text-md text-danger">
           Check the fields and try again.
         </div>
