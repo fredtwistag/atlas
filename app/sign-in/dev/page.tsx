@@ -4,16 +4,11 @@ import { withServiceRole } from "@/db/client";
 import { twistagUsers, users, tenants } from "@/db/schema";
 import { Logo } from "@/components/Logo";
 import { Avatar } from "@/components/ui/Avatar";
+import { landingPathFor } from "@/lib/landing";
 import { devSignIn } from "../actions";
 
 export const metadata = { title: "Dev sign-in · Atlas" };
 export const dynamic = "force-dynamic";
-
-function nextFor(role: string): string {
-  if (role.startsWith("twistag")) return "/admin";
-  if (role === "manager" || role === "sponsor") return "/team";
-  return "/me";
-}
 
 export default async function DevSignIn() {
   if (process.env.NODE_ENV === "production") notFound();
@@ -54,7 +49,7 @@ export default async function DevSignIn() {
             name={s.name}
             email={s.email}
             sub={s.role}
-            next={nextFor(s.role)}
+            next={landingPathFor(s.role)}
           />
         ))}
         {staff.length === 0 && <Empty>No Twistag staff seeded yet.</Empty>}
@@ -67,7 +62,7 @@ export default async function DevSignIn() {
             name={m.name}
             email={m.email}
             sub={`${m.role} · ${m.tenant ?? "—"}`}
-            next={nextFor(m.role)}
+            next={landingPathFor(m.role)}
           />
         ))}
         {members.length === 0 && <Empty>No members yet.</Empty>}
