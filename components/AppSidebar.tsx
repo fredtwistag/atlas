@@ -13,6 +13,8 @@ import {
   BarChart3,
   Boxes,
   LogOut,
+  Check,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./Logo";
@@ -182,19 +184,34 @@ function activeItem(persona: Persona, pathname: string): NavItem | null {
  * Left navigation rail. Presentational: `onNavigate` lets the mobile drawer
  * close itself when a link is tapped.
  */
+export type SidebarSession = {
+  id: string;
+  topicTitle: string;
+  status: string;
+};
+
 export function AppSidebar({
   user,
   sprintId = null,
+  icSessions = [],
   onNavigate,
 }: {
   user: { name: string; title: string };
   sprintId?: string | null;
+  icSessions?: SidebarSession[];
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const personas = buildPersonas(sprintId);
   const persona = activePersona(personas, pathname);
   const active = activeItem(persona, pathname);
+
+  // The IC sees their real session checklist; "up next" is the first incomplete.
+  const showIcSessions = persona.id === "IC" && icSessions.length > 0;
+  const nextIcIdx = icSessions.findIndex((s) => s.status !== "completed");
+
+  const rowBase =
+    "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-medium transition-colors";
 
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -204,67 +221,162 @@ export function AppSidebar({
 
       {/* Grouped nav */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-3">
-        {persona.groups.map((group) => (
-          <div key={group.label}>
-            <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
-              {group.label}
+        {showIcSessions ? (
+          <>
+            <div>
+              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+                Your sprint
+              </div>
+              <div className="space-y-0.5">
+                <Link
+                  href="/me"
+                  onClick={onNavigate}
+                  aria-current={pathname === "/me" ? "page" : undefined}
+                  className={cn(
+                    rowBase,
+                    pathname === "/me"
+                      ? "bg-surface-2 text-text"
+                      : "text-text-2 hover:bg-surface-2 hover:text-text",
+                  )}
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 truncate">Overview</span>
+                </Link>
+              </div>
             </div>
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = item === active;
-                const content = (
-                  <>
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.count != null ? (
-                      <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-text-3">
-                        {item.count}
-                      </span>
-                    ) : null}
-                    {item.alert ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-danger" />
-                    ) : null}
-                  </>
-                );
-
-                const base =
-                  "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-medium transition-colors";
-
-                // Items without an href are demo placeholders — rendered muted
-                // and non-interactive rather than as dead links.
-                if (!item.href) {
+            <div>
+              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+                Sessions
+              </div>
+              <div className="space-y-0.5">
+                {icSessions.map((s, i) => {
+                  const completed = s.status === "completed";
+                  const isCurrent = !completed && i === nextIcIdx;
+                  const href = completed
+                    ? `/me/sessions/${s.id}/edit`
+                    : isCurrent
+                      ? `/session/${s.id}`
+                      : undefined;
+                  const isActive = pathname.includes(s.id);
+                  const indicator = (
+                    <span
+                      className={cn(
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+                        completed
+                          ? "bg-success text-white"
+                          : isCurrent
+                            ? "bg-brand text-white"
+                            : "bg-surface-2 text-text-3",
+                      )}
+                    >
+                      {completed ? (
+                        <Check className="h-2.5 w-2.5" />
+                      ) : isCurrent ? (
+                        <span className="text-[9px] font-semibold">
+                          {i + 1}
+                        </span>
+                      ) : (
+                        <Lock className="h-2 w-2" />
+                      )}
+                    </span>
+                  );
+                  const content = (
+                    <>
+                      {indicator}
+                      <span className="flex-1 truncate">{s.topicTitle}</span>
+                    </>
+                  );
+                  if (!href) {
+                    return (
+                      <div
+                        key={s.id}
+                        className={cn(rowBase, "cursor-default text-text-faint")}
+                        aria-disabled
+                      >
+                        {content}
+                      </div>
+                    );
+                  }
                   return (
-                    <div
-                      key={item.label}
-                      className={cn(base, "cursor-default text-text-faint")}
-                      aria-disabled
+                    <Link
+                      key={s.id}
+                      href={href}
+                      onClick={onNavigate}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        rowBase,
+                        isActive
+                          ? "bg-surface-2 text-text"
+                          : "text-text-2 hover:bg-surface-2 hover:text-text",
+                      )}
                     >
                       {content}
-                    </div>
+                    </Link>
                   );
-                }
-
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={onNavigate}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      base,
-                      isActive
-                        ? "bg-surface-2 text-text"
-                        : "text-text-2 hover:bg-surface-2 hover:text-text",
-                    )}
-                  >
-                    {content}
-                  </Link>
-                );
-              })}
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          </>
+        ) : (
+          persona.groups.map((group) => (
+            <div key={group.label}>
+              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+                {group.label}
+              </div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item === active;
+                  const content = (
+                    <>
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.count != null ? (
+                        <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-text-3">
+                          {item.count}
+                        </span>
+                      ) : null}
+                      {item.alert ? (
+                        <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+                      ) : null}
+                    </>
+                  );
+
+                  // Items without an href are demo placeholders — rendered muted
+                  // and non-interactive rather than as dead links.
+                  if (!item.href) {
+                    return (
+                      <div
+                        key={item.label}
+                        className={cn(rowBase, "cursor-default text-text-faint")}
+                        aria-disabled
+                      >
+                        {content}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        rowBase,
+                        isActive
+                          ? "bg-surface-2 text-text"
+                          : "text-text-2 hover:bg-surface-2 hover:text-text",
+                      )}
+                    >
+                      {content}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </nav>
 
       {/* User footer */}

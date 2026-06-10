@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { AppSidebar } from "./AppSidebar";
+import { AppSidebar, type SidebarSession } from "./AppSidebar";
 import { Logo } from "./Logo";
 
 /**
@@ -14,10 +14,12 @@ import { Logo } from "./Logo";
 export function AppShell({
   user,
   sprintId = null,
+  icSessions = [],
   children,
 }: {
   user: { name: string; title: string };
   sprintId?: string | null;
+  icSessions?: SidebarSession[];
   children: React.ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -42,7 +44,7 @@ export function AppShell({
     <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[220px_1fr]">
       {/* Desktop rail */}
       <aside className="sticky top-0 hidden h-screen border-r border-border lg:block">
-        <AppSidebar user={user} sprintId={sprintId} />
+        <AppSidebar user={user} sprintId={sprintId} icSessions={icSessions} />
       </aside>
 
       {/* Mobile top bar */}
@@ -82,6 +84,7 @@ export function AppShell({
             <AppSidebar
               user={user}
               sprintId={sprintId}
+              icSessions={icSessions}
               onNavigate={() => setDrawerOpen(false)}
             />
           </div>
