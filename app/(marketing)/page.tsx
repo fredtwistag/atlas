@@ -34,7 +34,7 @@ export default function LandingPage() {
             >
               Sign in
             </Link>
-            <ButtonLink href="/sprint/spr-northwind-q2" variant="primary">
+            <ButtonLink href="/sign-in" variant="primary">
               See the product
             </ButtonLink>
           </div>
@@ -59,14 +59,14 @@ export default function LandingPage() {
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-2.5">
             <ButtonLink
-              href="/sprint/spr-northwind-q2"
+              href="/sign-in"
               variant="primary"
               size="lg"
             >
               See a live sprint
             </ButtonLink>
             <ButtonLink
-              href="/sprint/spr-northwind-q2/report"
+              href="/sign-in"
               variant="secondary"
               size="lg"
             >
@@ -363,7 +363,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
             <ButtonLink
-              href="/sprint/spr-northwind-q2"
+              href="/sign-in"
               variant="primary"
               size="lg"
             >

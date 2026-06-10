@@ -13,9 +13,11 @@ import { Logo } from "./Logo";
  */
 export function AppShell({
   user,
+  sprintId = null,
   children,
 }: {
   user: { name: string; title: string };
+  sprintId?: string | null;
   children: React.ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -40,7 +42,7 @@ export function AppShell({
     <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[220px_1fr]">
       {/* Desktop rail */}
       <aside className="sticky top-0 hidden h-screen border-r border-border lg:block">
-        <AppSidebar user={user} />
+        <AppSidebar user={user} sprintId={sprintId} />
       </aside>
 
       {/* Mobile top bar */}
@@ -77,7 +79,11 @@ export function AppShell({
             >
               <X className="h-4 w-4" />
             </button>
-            <AppSidebar user={user} onNavigate={() => setDrawerOpen(false)} />
+            <AppSidebar
+              user={user}
+              sprintId={sprintId}
+              onNavigate={() => setDrawerOpen(false)}
+            />
           </div>
         </div>
       ) : null}
