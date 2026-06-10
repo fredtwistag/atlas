@@ -16,7 +16,7 @@ export default function NotFound() {
         <ButtonLink href="/" variant="primary">
           Home
         </ButtonLink>
-        <ButtonLink href="/sprint/spr-northwind-q2" variant="secondary">
+        <ButtonLink href="/sign-in" variant="secondary">
           Open the demo sprint
         </ButtonLink>
       </div>

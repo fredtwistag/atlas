@@ -19,12 +19,6 @@ import { Avatar } from "./ui/Avatar";
 import { cn } from "@/lib/cn";
 
 /**
- * The demo sprint everything points at. In the backend phase the active sprint
- * comes from the route / JWT; today it's a constant so the demo is navigable.
- */
-const SPRINT_ID = "spr-northwind-q2";
-
-/**
  * Persona switcher — not part of the real product (auth + JWT role decide the
  * view). It exists so the demo is navigable across the IC, manager/sponsor, and
  * Twistag perspectives. Each persona owns its own nav information architecture.
@@ -47,105 +41,107 @@ type NavItem = {
   alert?: boolean;
 };
 
-const PERSONAS: Persona[] = [
-  {
-    id: "IC",
-    short: "IC",
-    home: "/me",
-    match: ["/me", "/session"],
-    groups: [
-      {
-        label: "Your sprint",
-        items: [
-          {
-            label: "My sessions",
-            icon: MessageSquare,
-            href: "/me",
-            match: ["/me", "/session"],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "Manager",
-    short: "Manager",
-    home: `/sprint`,
-    match: ["/sprint"],
-    groups: [
-      {
-        label: "Sprint",
-        items: [
-          {
-            label: "Overview",
-            icon: LayoutDashboard,
-            href: `/sprint`,
-            match: [`/sprint`],
-          },
-          {
-            label: "Opportunities",
-            icon: Lightbulb,
-            href: `/sprint/${SPRINT_ID}/opportunity`,
-            match: [`/sprint/${SPRINT_ID}/opportunity`],
-          },
-          {
-            label: "Report",
-            icon: FileText,
-            href: `/sprint/${SPRINT_ID}/report`,
-            match: [`/sprint/${SPRINT_ID}/report`],
-          },
-        ],
-      },
-      {
-        label: "Team",
-        items: [
-          {
-            label: "Participants",
-            icon: Users,
-            href: `/sprint/${SPRINT_ID}/nudge`,
-            match: [`/sprint/${SPRINT_ID}/nudge`],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "Twistag",
-    short: "Twistag",
-    home: "/twistag",
-    match: ["/twistag"],
-    groups: [
-      {
-        label: "Workspace",
-        items: [
-          {
-            label: "All clients",
-            icon: Boxes,
-            href: "/twistag",
-            match: ["/twistag"],
-            count: 12,
-          },
-          { label: "Opportunities", icon: Lightbulb, count: 47 },
-          { label: "Engagements", icon: Layers, count: 8 },
-          { label: "Pattern library", icon: Boxes, count: 19 },
-        ],
-      },
-      {
-        label: "Alerts",
-        items: [{ label: "Needs attention", icon: Bell, alert: true }],
-      },
-      {
-        label: "Reporting",
-        items: [{ label: "Portfolio metrics", icon: BarChart3 }],
-      },
-    ],
-  },
-];
+/**
+ * Build the persona nav for the tenant's current sprint id (null when there's
+ * no active sprint — the manager then sees Overview, which routes to the launch
+ * form). Only real, working routes are linked.
+ */
+function buildPersonas(sprintId: string | null): Persona[] {
+  const sprintItems: NavItem[] = [
+    {
+      label: "Overview",
+      icon: LayoutDashboard,
+      href: "/sprint",
+      match: ["/sprint"],
+    },
+  ];
+  if (sprintId) {
+    sprintItems.push({
+      label: "Report",
+      icon: FileText,
+      href: `/sprint/${sprintId}/report`,
+      match: [`/sprint/${sprintId}/report`],
+    });
+  }
 
-function activePersona(pathname: string): Persona {
+  return [
+    {
+      id: "IC",
+      short: "IC",
+      home: "/me",
+      match: ["/me", "/session"],
+      groups: [
+        {
+          label: "Your sprint",
+          items: [
+            {
+              label: "My sessions",
+              icon: MessageSquare,
+              href: "/me",
+              match: ["/me", "/session"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "Manager",
+      short: "Manager",
+      home: "/sprint",
+      match: ["/sprint", "/team"],
+      groups: [
+        { label: "Sprint", items: sprintItems },
+        {
+          label: "Team",
+          items: [
+            {
+              label: "Participants",
+              icon: Users,
+              href: "/team",
+              match: ["/team"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "Twistag",
+      short: "Twistag",
+      home: "/twistag",
+      match: ["/twistag"],
+      groups: [
+        {
+          label: "Workspace",
+          items: [
+            {
+              label: "All clients",
+              icon: Boxes,
+              href: "/twistag",
+              match: ["/twistag"],
+              count: 12,
+            },
+            { label: "Opportunities", icon: Lightbulb, count: 47 },
+            { label: "Engagements", icon: Layers, count: 8 },
+            { label: "Pattern library", icon: Boxes, count: 19 },
+          ],
+        },
+        {
+          label: "Alerts",
+          items: [{ label: "Needs attention", icon: Bell, alert: true }],
+        },
+        {
+          label: "Reporting",
+          items: [{ label: "Portfolio metrics", icon: BarChart3 }],
+        },
+      ],
+    },
+  ];
+}
+
+function activePersona(personas: Persona[], pathname: string): Persona {
   return (
-    PERSONAS.find((p) => p.match.some((m) => pathname.startsWith(m))) ??
-    PERSONAS[0]
+    personas.find((p) => p.match.some((m) => pathname.startsWith(m))) ??
+    personas[0]
   );
 }
 
@@ -186,13 +182,16 @@ function activeItem(persona: Persona, pathname: string): NavItem | null {
  */
 export function AppSidebar({
   user,
+  sprintId = null,
   onNavigate,
 }: {
   user: { name: string; title: string };
+  sprintId?: string | null;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const persona = activePersona(pathname);
+  const personas = buildPersonas(sprintId);
+  const persona = activePersona(personas, pathname);
   const active = activeItem(persona, pathname);
 
   return (
@@ -207,7 +206,7 @@ export function AppSidebar({
           Viewing as
         </div>
         <div className="flex gap-0.5 rounded-md border border-border bg-bg p-0.5">
-          {PERSONAS.map((p) => {
+          {personas.map((p) => {
             const active = p.id === persona.id;
             return (
               <Link

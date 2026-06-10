@@ -585,3 +585,55 @@ describe("session.editView", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("sprint.get — sponsor/manager attribution", () => {
+  const SPONSOR = "cccccccc-cccc-4ccc-8ccc-cccccccc0001";
+  const MANAGER = "cccccccc-cccc-4ccc-8ccc-cccccccc0002";
+  const SPR = "cccccccc-cccc-4ccc-8ccc-cccccccc0010";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: SPONSOR,
+          tenantId: TENANT_A,
+          email: "sp@a.example",
+          name: "Dana Sponsor",
+          role: "sponsor",
+          department: "Executive",
+          title: "COO",
+        },
+        {
+          id: MANAGER,
+          tenantId: TENANT_A,
+          email: "mg@a.example",
+          name: "Marc Manager",
+          role: "manager",
+          department: "Ops",
+          title: "VP Operations",
+        },
+      ]),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprints).values({
+        id: SPR,
+        tenantId: TENANT_A,
+        name: "S2",
+        primaryFocus: "ops",
+        startDate: "2026-05-18",
+        endDate: "2026-06-12",
+        cadence: "weekly",
+        status: "active",
+        managerId: MANAGER,
+        sponsorId: SPONSOR,
+      }),
+    );
+  });
+
+  it("resolves sponsor/manager even when they are not participants", async () => {
+    const s = await asManager(TENANT_A, MANAGER).sprint.get({ id: SPR });
+    expect(s.sponsor.name).toBe("Dana Sponsor");
+    expect(s.sponsor.title).toBe("COO");
+    expect(s.manager.name).toBe("Marc Manager");
+  });
+});

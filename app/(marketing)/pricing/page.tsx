@@ -56,7 +56,7 @@ export default function PricingPage() {
         <div className="mx-auto flex h-[60px] max-w-[1180px] items-center px-7">
           <Logo />
           <div className="flex-1" />
-          <ButtonLink href="/sprint/spr-northwind-q2" variant="primary">
+          <ButtonLink href="/sign-in" variant="primary">
             See the product
           </ButtonLink>
         </div>
@@ -107,7 +107,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <ButtonLink
-                href="/sprint/spr-northwind-q2"
+                href="/sign-in"
                 variant={t.highlight ? "brand" : "secondary"}
                 className="mt-5 w-full"
               >

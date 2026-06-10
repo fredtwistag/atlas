@@ -191,8 +191,32 @@ export const sprintRouter = router({
         capturesContributed: 0,
       }));
 
-      const manager = participants.find((p) => p.user.id === s.managerId)?.user;
-      const sponsor = participants.find((p) => p.user.id === s.sponsorId)?.user;
+      // Sponsor/manager are usually NOT participants, so resolve them from the
+      // users table directly (fast-path via participants when they are one).
+      const resolveUser = async (
+        userId: string | null,
+      ): Promise<Participant["user"] | undefined> => {
+        if (!userId) return undefined;
+        const inParticipants = participants.find(
+          (p) => p.user.id === userId,
+        )?.user;
+        if (inParticipants) return inParticipants;
+        const [u] = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, userId));
+        if (!u) return undefined;
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role as Participant["user"]["role"],
+          department: u.department ?? "",
+          title: u.title ?? "",
+        };
+      };
+      const manager = await resolveUser(s.managerId);
+      const sponsor = await resolveUser(s.sponsorId);
 
       const start = new Date(s.startDate + "T00:00:00Z");
       const end = new Date(s.endDate + "T00:00:00Z");
