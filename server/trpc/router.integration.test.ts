@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { eq } from "drizzle-orm";
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
 import {
@@ -8,6 +9,7 @@ import {
   topics,
   sprintParticipants,
   sessions,
+  sowDrafts,
 } from "@/db/schema";
 import {
   seedRow,
@@ -351,5 +353,92 @@ describe("twistag.clientList", () => {
   it("rejects a tenant session (twistagProcedure)", async () => {
     const api = asTenant(TENANT_A);
     await expect(api.twistag.clientList()).rejects.toThrow();
+  });
+});
+
+describe("opportunity.approve", () => {
+  const OPP_ID = "99999999-9999-4999-8999-99999999a001";
+  const MGR = "99999999-9999-4999-8999-99999999a0ff";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MGR,
+        tenantId: TENANT_A,
+        email: "mgr2@a.example",
+        name: "Mgr2",
+        role: "manager",
+        department: "Ops",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(opportunities).values({
+        id: OPP_ID,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "Approve me",
+        description: "d",
+        category: "c",
+        impactLow: 1,
+        impactHigh: 2,
+        timeToShipWeeksLow: 1,
+        timeToShipWeeksHigh: 4,
+        confidenceScore: 5,
+        compositeScore: "8.0",
+        dimensionScores: [],
+        rationale: "r",
+        status: "surfaced",
+      }),
+    );
+  });
+
+  it("manager approve persists a sow_draft + flips status", async () => {
+    const api = asManager(TENANT_A, MGR);
+    const res = await api.opportunity.approve({ id: OPP_ID });
+    expect(res.status).toBe("approved");
+    expect(res.sowDraft.durationWeeks).toBe(4);
+
+    const opp = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.id, OPP_ID)),
+    );
+    expect(opp[0].status).toBe("approved");
+    expect(opp[0].approvedBy).toBe(MGR);
+
+    const drafts = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sowDrafts).where(eq(sowDrafts.opportunityId, OPP_ID)),
+    );
+    expect(drafts).toHaveLength(1);
+  });
+
+  it("is idempotent on re-approve (no duplicate draft)", async () => {
+    const api = asManager(TENANT_A, MGR);
+    await api.opportunity.approve({ id: OPP_ID });
+    await api.opportunity.approve({ id: OPP_ID });
+    const drafts = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sowDrafts).where(eq(sowDrafts.opportunityId, OPP_ID)),
+    );
+    expect(drafts).toHaveLength(1);
+  });
+
+  it("rejects an IC session", async () => {
+    const api = asIc(TENANT_A, MGR);
+    await expect(api.opportunity.approve({ id: OPP_ID })).rejects.toThrow();
+  });
+
+  it("tenant B cannot approve tenant A's opportunity", async () => {
+    const MGR_B = "99999999-9999-4999-8999-99999999b0ff";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MGR_B,
+        tenantId: TENANT_B,
+        email: "mgrb@b.example",
+        name: "MgrB",
+        role: "manager",
+        department: "Ops",
+      }),
+    );
+    await expect(
+      asManager(TENANT_B, MGR_B).opportunity.approve({ id: OPP_ID }),
+    ).rejects.toThrow();
   });
 });
