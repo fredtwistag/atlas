@@ -40,3 +40,15 @@
     }
   }
 }
+
+@media print {
+  /* Hide app chrome and anything opted out of print, so the saved PDF is just
+     the report article. */
+  [data-app-chrome],
+  [data-print-hide] {
+    display: none !important;
+  }
+  main {
+    max-width: none !important;
+  }
+}

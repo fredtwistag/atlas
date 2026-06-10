@@ -479,6 +479,37 @@ describe("sprint.participant", () => {
         sessionsTotal: 4,
       }),
     );
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0d01",
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "How work flows",
+        description: "d",
+        orderIdx: 1,
+        questionCount: 5,
+        estMinutes: 6,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        topicId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0d01",
+        userId: PUSER,
+        status: "completed",
+      }),
+    );
+  });
+
+  it("includes the participant's per-session breakdown", async () => {
+    const p = await asManager(TENANT_A, PMGR).sprint.participant({
+      sprintId: SPRINT_A,
+      userId: PUSER,
+    });
+    expect(p.sessions).toEqual([
+      { topicTitle: "How work flows", status: "completed" },
+    ]);
   });
 
   it("returns a participant's nudge view", async () => {
