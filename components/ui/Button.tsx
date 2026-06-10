@@ -21,8 +21,9 @@ const sizes: Record<Size, string> = {
   sm: "h-8 px-3 text-[13px]",
   md: "h-9 px-4 text-[13.5px]",
   lg: "h-11 px-5 text-[14.5px]",
-  // ≥44px square hit area for icon-only buttons (WCAG 2.5.5).
-  icon: "h-11 w-11 p-0",
+  // ≥44px square hit area for icon-only buttons (WCAG 2.5.5). Pixel-based, not
+  // h-11 — the app's root font is 14px, so rem units would render only ~38px.
+  icon: "h-[44px] w-[44px] p-0",
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

@@ -105,7 +105,7 @@ export function ConversationView({
   }
 
   return (
-    <div className="grid h-[calc(100vh-3.5rem)] grid-cols-1 lg:h-screen lg:grid-cols-[1fr_300px]">
+    <div className="grid h-[calc(100dvh-3.5rem)] grid-cols-1 lg:h-[100dvh] lg:grid-cols-[1fr_300px]">
       {/* Thread — clean, full-height, no card chrome */}
       <div className="flex min-h-0 flex-col">
         <div className="flex items-center justify-between px-6 py-4">
@@ -117,7 +117,7 @@ export function ConversationView({
           </div>
           <Link
             href="/me"
-            className="grid h-11 w-11 place-items-center rounded-md text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
+            className="grid h-[44px] w-[44px] place-items-center rounded-md text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
             aria-label="Pause and exit"
           >
             <X className="h-4 w-4" />

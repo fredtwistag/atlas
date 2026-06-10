@@ -94,7 +94,7 @@ export function MemberRow({
                 title="Remove member"
                 disabled={pending}
                 onClick={() => setConfirmOpen(true)}
-                className="grid h-11 w-11 place-items-center rounded-sm text-text-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+                className="grid h-[44px] w-[44px] place-items-center rounded-sm text-text-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
