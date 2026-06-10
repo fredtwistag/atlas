@@ -11,6 +11,7 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["**/*.integration.test.ts"],
+    exclude: ["**/node_modules/**", ".next", ".claude/**"],
     globalSetup: ["./db/test/globalSetup.ts"],
     env: { DATABASE_URL: TEST_DB_URL, DATABASE_URL_TEST: TEST_DB_URL },
     fileParallelism: false,

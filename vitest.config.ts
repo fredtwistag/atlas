@@ -10,9 +10,10 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
     exclude: [
-      "node_modules",
+      "**/node_modules/**",
       ".next",
       "prototypes",
+      ".claude/**",
       "**/*.integration.test.ts",
     ],
   },
