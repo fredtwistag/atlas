@@ -520,3 +520,68 @@ describe("sprint.participant", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("session.editView", () => {
+  const EUSER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbb0001";
+  const EOTHER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbb0002";
+  const ETOPIC = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbb0010";
+  const ESES = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbb0020";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: EUSER,
+          tenantId: TENANT_A,
+          email: "e@a.example",
+          name: "Ed",
+          role: "ic",
+          department: "Ops",
+        },
+        {
+          id: EOTHER,
+          tenantId: TENANT_A,
+          email: "e2@a.example",
+          name: "Eve",
+          role: "ic",
+          department: "Ops",
+        },
+      ]),
+    );
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: ETOPIC,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "How work flows",
+        description: "d",
+        orderIdx: 1,
+        questionCount: 5,
+        estMinutes: 6,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        id: ESES,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        topicId: ETOPIC,
+        userId: EUSER,
+        status: "completed",
+      }),
+    );
+  });
+
+  it("returns the owner's session edit view (captures empty for now)", async () => {
+    const v = await asIc(TENANT_A, EUSER).session.editView({ id: ESES });
+    expect(v.topicTitle).toBe("How work flows");
+    expect(Array.isArray(v.captures)).toBe(true);
+    expect(v.captures).toHaveLength(0);
+  });
+
+  it("another user in the tenant cannot read it (NOT_FOUND)", async () => {
+    await expect(
+      asIc(TENANT_A, EOTHER).session.editView({ id: ESES }),
+    ).rejects.toThrow();
+  });
+});
