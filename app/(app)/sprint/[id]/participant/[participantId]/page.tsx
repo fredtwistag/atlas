@@ -100,8 +100,6 @@ export default async function ParticipantPage({
           <NudgeComposer
             sprintId={id}
             name={p.name}
-            role={p.title}
-            status={p.status}
             sessionsCompleted={p.sessionsCompleted}
             sessionsTotal={p.sessionsTotal}
           />
