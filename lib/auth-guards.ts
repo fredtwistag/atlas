@@ -24,3 +24,13 @@ export async function requireManagerOrSponsor(): Promise<TenantSession> {
   }
   return session;
 }
+
+type TwistagSession = { kind: "twistag"; twistagRole: string; userId: string };
+
+/** Require a Twistag (cross-tenant) session. Tenant users → /me; none → /sign-in. */
+export async function requireTwistagSession(): Promise<TwistagSession> {
+  const session = await getSession();
+  if (!session) redirect("/sign-in");
+  if (session.kind !== "twistag") redirect("/me");
+  return session;
+}

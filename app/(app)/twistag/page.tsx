@@ -7,11 +7,13 @@ import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
 import type { Metadata } from "next";
 import { getApi } from "@/server/trpc/caller";
 import { clientHealthMeta } from "@/lib/ui-maps";
+import { requireTwistagSession } from "@/lib/auth-guards";
 
 export const metadata: Metadata = { title: "Clients · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function TwistagCockpit() {
+  await requireTwistagSession();
   const api = await getApi();
   const clients = await api.twistag.clientList();
   const alerts = clients.filter((c) => c.alert);
