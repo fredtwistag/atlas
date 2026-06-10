@@ -43,6 +43,7 @@ type NavItem = {
   match?: string[];
   count?: number;
   alert?: boolean;
+  soon?: boolean;
 };
 
 /**
@@ -122,20 +123,19 @@ function buildPersonas(sprintId: string | null): Persona[] {
               icon: Boxes,
               href: "/twistag",
               match: ["/twistag"],
-              count: 12,
             },
-            { label: "Opportunities", icon: Lightbulb, count: 47 },
-            { label: "Engagements", icon: Layers, count: 8 },
-            { label: "Pattern library", icon: Boxes, count: 19 },
+            { label: "Opportunities", icon: Lightbulb, soon: true },
+            { label: "Engagements", icon: Layers, soon: true },
+            { label: "Pattern library", icon: Boxes, soon: true },
           ],
         },
         {
           label: "Alerts",
-          items: [{ label: "Needs attention", icon: Bell, alert: true }],
+          items: [{ label: "Needs attention", icon: Bell, soon: true }],
         },
         {
           label: "Reporting",
-          items: [{ label: "Portfolio metrics", icon: BarChart3 }],
+          items: [{ label: "Portfolio metrics", icon: BarChart3, soon: true }],
         },
       ],
     },
@@ -334,6 +334,11 @@ export function AppSidebar({
                       {item.count != null ? (
                         <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-text-3">
                           {item.count}
+                        </span>
+                      ) : null}
+                      {item.soon ? (
+                        <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.04em] text-text-faint">
+                          Soon
                         </span>
                       ) : null}
                       {item.alert ? (

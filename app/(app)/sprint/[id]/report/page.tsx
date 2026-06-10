@@ -17,7 +17,8 @@ export default async function FinalReport({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireManagerOrSponsor();
+  const session = await requireManagerOrSponsor();
+  const isSponsor = session.role === "sponsor";
   const api = await getApi();
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();
@@ -40,8 +41,17 @@ export default async function FinalReport({
         className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur"
       >
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-2.5">
-          <BackLink href={`/sprint/${id}`}>Back to sprint</BackLink>
-          <PrintButton />
+          <BackLink href={`/sprint/${id}`}>
+            {isSponsor ? "Go to dashboard" : "Back to sprint"}
+          </BackLink>
+          <div className="flex items-center gap-3">
+            {isSponsor ? (
+              <span className="text-xs font-medium text-text-3">
+                Sponsor view
+              </span>
+            ) : null}
+            <PrintButton />
+          </div>
         </div>
       </div>
 
@@ -127,17 +137,24 @@ export default async function FinalReport({
 
         {/* Ranked opportunities */}
         <Section title="Opportunities, ranked">
-          <div className="not-prose space-y-3">
-            {opps.map((o, i) => (
-              <OpportunityCard
-                key={o.id}
-                opp={o}
-                href={`/sprint/${id}/opportunity/${o.id}`}
-                rank={i + 1}
-                meta="category"
-              />
-            ))}
-          </div>
+          {opps.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border bg-surface px-4 py-6 text-center text-sm text-text-3">
+              No opportunities surfaced yet. They appear here as Atlas extracts
+              and scores captures from completed sessions.
+            </p>
+          ) : (
+            <div className="not-prose space-y-3">
+              {opps.map((o, i) => (
+                <OpportunityCard
+                  key={o.id}
+                  opp={o}
+                  href={`/sprint/${id}/opportunity/${o.id}`}
+                  rank={i + 1}
+                  meta="category"
+                />
+              ))}
+            </div>
+          )}
         </Section>
 
         {/* Roadmap */}
@@ -147,11 +164,13 @@ export default async function FinalReport({
               title="Quick wins"
               caption="Ship in ≤ 3 weeks"
               items={quickWins.map((o) => o.title)}
+              empty="No quick wins yet — short-cycle fixes land here as they surface."
             />
             <RoadmapColumn
               title="High-impact builds"
               caption="Score ≥ 7.5"
               items={highImpact.map((o) => o.title)}
+              empty="No high-impact builds yet — top-scored opportunities land here."
             />
           </div>
         </Section>
@@ -196,23 +215,29 @@ function RoadmapColumn({
   title,
   caption,
   items,
+  empty,
 }: {
   title: string;
   caption: string;
   items: string[];
+  empty: string;
 }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-5">
       <h3 className="text-md font-semibold">{title}</h3>
       <p className="mb-3 text-xs text-text-3">{caption}</p>
-      <ul className="space-y-2">
-        {items.map((it) => (
-          <li key={it} className="flex items-start gap-2 text-sm text-text-2">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
-            {it}
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="text-sm text-text-3">{empty}</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((it) => (
+            <li key={it} className="flex items-start gap-2 text-sm text-text-2">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+              {it}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

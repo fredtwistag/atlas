@@ -4,11 +4,17 @@ import { getSession } from "@/lib/session";
 import { withTenantContext } from "@/db/client";
 import { users, invitations } from "@/db/schema";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
 import { Input, Label } from "@/components/ui/Input";
-import { inviteMember } from "./actions";
+import { MemberRow } from "@/components/manager/MemberRow";
+import { PendingInviteRow } from "@/components/manager/PendingInviteRow";
+import {
+  inviteMember,
+  updateMemberRoleAction,
+  removeMemberAction,
+  resendInviteAction,
+  cancelInviteAction,
+} from "./actions";
 
 export const metadata = { title: "Team · Atlas" };
 
@@ -66,21 +72,17 @@ export default async function TeamPage({
           </h2>
           <div className="space-y-2">
             {members.map((m) => (
-              <Card
+              <MemberRow
                 key={m.id}
-                className="flex items-center justify-between px-5 py-3"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Avatar name={m.name} size="sm" />
-                  <div>
-                    <div className="font-medium leading-tight">{m.name}</div>
-                    <div className="text-xs text-text-3">{m.email}</div>
-                  </div>
-                </div>
-                <Badge tone={m.role === "manager" ? "brand" : "neutral"}>
-                  {m.role}
-                </Badge>
-              </Card>
+                id={m.id}
+                name={m.name}
+                email={m.email}
+                role={m.role}
+                isSelf={m.id === session.userId}
+                canManage
+                onUpdateRole={updateMemberRoleAction}
+                onRemove={removeMemberAction}
+              />
             ))}
           </div>
 
@@ -92,13 +94,14 @@ export default async function TeamPage({
               </h2>
               <div className="space-y-2">
                 {pending.map((i) => (
-                  <Card
+                  <PendingInviteRow
                     key={i.id}
-                    className="flex items-center justify-between px-5 py-3 text-sm"
-                  >
-                    <span>{i.email}</span>
-                    <Badge tone="warning">{i.role} · pending</Badge>
-                  </Card>
+                    id={i.id}
+                    email={i.email}
+                    role={i.role}
+                    onResend={resendInviteAction}
+                    onCancel={cancelInviteAction}
+                  />
                 ))}
               </div>
             </>

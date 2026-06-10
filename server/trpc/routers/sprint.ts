@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, ne, gt, inArray } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
-import { withTenantContext } from "@/db/client";
+import { withTenantContext, withServiceRole } from "@/db/client";
 import {
   sprints,
   topics,
@@ -12,6 +12,7 @@ import {
   tenants,
   opportunities,
   captures,
+  auditLog,
 } from "@/db/schema";
 import { computeProgress } from "@/lib/dashboard-map";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
@@ -38,14 +39,140 @@ function fmtDate(d: string): string {
 export const sprintRouter = router({
   currentForTenant: tenantProcedure.query(({ ctx }) =>
     withTenantContext(ctx.session, async (tx) => {
+      // The "current" sprint is the most recent one that isn't completed, so a
+      // closed sprint frees the tenant to launch a new one.
       const rows = await tx
         .select({ id: sprints.id })
         .from(sprints)
+        .where(ne(sprints.status, "completed"))
         .orderBy(desc(sprints.createdAt))
         .limit(1);
       return rows[0]?.id ?? null;
     }),
   ),
+
+  close: managerProcedure.input(idInput).mutation(({ ctx, input }) =>
+    withTenantContext(ctx.session, async (tx) => {
+      const [existing] = await tx
+        .select({ id: sprints.id })
+        .from(sprints)
+        .where(eq(sprints.id, input.id));
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+      await tx
+        .update(sprints)
+        .set({ status: "completed", closedAt: new Date() })
+        .where(eq(sprints.id, input.id));
+      return { id: input.id, status: "completed" as const };
+    }),
+  ),
+
+  update: managerProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().min(2).max(120).optional(),
+        primaryFocus: z.string().min(2).max(160).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [existing] = await tx
+          .select({ id: sprints.id })
+          .from(sprints)
+          .where(eq(sprints.id, input.id));
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const patch: Partial<{ name: string; primaryFocus: string }> = {};
+        if (input.name !== undefined) patch.name = input.name;
+        if (input.primaryFocus !== undefined)
+          patch.primaryFocus = input.primaryFocus;
+        if (Object.keys(patch).length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Nothing to update.",
+          });
+        }
+
+        await tx.update(sprints).set(patch).where(eq(sprints.id, input.id));
+        return { id: input.id };
+      }),
+    ),
+
+  /**
+   * Log a nudge to a participant. Real and audited, but email delivery ships
+   * with the email phase — this records the intent and enforces a 48-hour
+   * per-person cooldown. Runs as service_role so it can both read the audit
+   * trail and write to it; every check is explicitly tenant-scoped since RLS
+   * is bypassed.
+   */
+  nudge: managerProcedure
+    .input(
+      z.object({
+        sprintId: z.string().uuid(),
+        userId: z.string().uuid(),
+        channel: z.enum(["email", "slack"]).default("email"),
+        subject: z.string().max(200).optional(),
+        body: z.string().min(1).max(5000),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      withServiceRole(
+        { action: "nudge.send", actor: ctx.session.userId },
+        async (tx) => {
+          const tenantId = ctx.session.tenantId;
+
+          const [target] = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(
+              and(eq(users.id, input.userId), eq(users.tenantId, tenantId)),
+            );
+          if (!target) throw new TRPCError({ code: "NOT_FOUND" });
+
+          const [spr] = await tx
+            .select({ id: sprints.id })
+            .from(sprints)
+            .where(
+              and(
+                eq(sprints.id, input.sprintId),
+                eq(sprints.tenantId, tenantId),
+              ),
+            );
+          if (!spr) throw new TRPCError({ code: "NOT_FOUND" });
+
+          const cutoff = new Date(Date.now() - 2 * DAY);
+          const recent = await tx
+            .select({ id: auditLog.id })
+            .from(auditLog)
+            .where(
+              and(
+                eq(auditLog.action, "nudge.sent"),
+                eq(auditLog.tenantId, tenantId),
+                eq(auditLog.userId, input.userId),
+                gt(auditLog.at, cutoff),
+              ),
+            )
+            .limit(1);
+          if (recent.length > 0) {
+            throw new TRPCError({
+              code: "TOO_MANY_REQUESTS",
+              message:
+                "A nudge was already sent to this person in the last 48 hours.",
+            });
+          }
+
+          await tx.insert(auditLog).values({
+            tenantId,
+            userId: input.userId,
+            action: "nudge.sent",
+            targetId: input.sprintId,
+            metadata: { channel: input.channel, actor: ctx.session.userId },
+          });
+
+          return { ok: true as const };
+        },
+      ),
+    ),
 
   launch: managerProcedure
     .input(LaunchSprintSchema)

@@ -5,6 +5,7 @@ import { getApi } from "@/server/trpc/caller";
 import { withTenantContext } from "@/db/client";
 import { users } from "@/db/schema";
 import { LaunchSprintForm } from "@/components/sprint/LaunchSprintForm";
+import { sprintLandingPath } from "@/lib/sprint-landing";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,9 @@ export default async function SprintIndex({
 
   const api = await getApi();
   const id = await api.sprint.currentForTenant();
-  if (id) redirect(`/sprint/${id}`);
+  // Once we know the sprint id, sponsors land on the executive report and
+  // managers on the operational dashboard.
+  if (id) redirect(sprintLandingPath(session.role, id));
 
   // No active sprint. ICs see a wait message; managers/sponsors see the form.
   if (!(session.role === "manager" || session.role === "sponsor")) {

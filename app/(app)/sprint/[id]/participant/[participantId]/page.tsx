@@ -7,6 +7,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { NudgeComposer } from "@/components/manager/NudgeComposer";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
+import { sendNudgeAction } from "./actions";
 import { participantStatusMeta } from "@/lib/ui-maps";
 import type { ParticipantStatus } from "@/lib/types";
 
@@ -99,9 +100,11 @@ export default async function ParticipantPage({
           <h2 className="mb-2 text-sm font-semibold text-text-2">Nudge</h2>
           <NudgeComposer
             sprintId={id}
+            userId={participantId}
             name={p.name}
             sessionsCompleted={p.sessionsCompleted}
             sessionsTotal={p.sessionsTotal}
+            onSend={sendNudgeAction}
           />
         </div>
       </div>

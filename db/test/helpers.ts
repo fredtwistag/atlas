@@ -29,14 +29,18 @@ export function seedRow<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
 
 /** Truncate tenant-scoped tables + tenants between tests (service role). */
 export async function resetDb(): Promise<void> {
-  await withServiceRole({ action: "test.reset", actor: "test" }, (tx) =>
-    tx.execute(
+  await withServiceRole({ action: "test.reset", actor: "test" }, async (tx) => {
+    await tx.execute(
       sql`TRUNCATE public.opportunity_evidence, public.opportunities, public.captures,
           public.sessions, public.sprint_participants, public.topics,
           public.invitations, public.sprints, public.users, public.tenants
           RESTART IDENTITY CASCADE`,
-    ),
-  );
+    );
+    // audit_log uses a bigserial whose sequence service_role doesn't own, so
+    // RESTART IDENTITY is out — a plain DELETE clears it for deterministic
+    // audit-based assertions (the id is never asserted on).
+    await tx.execute(sql`DELETE FROM public.audit_log`);
+  });
 }
 
 /** Seed the two baseline tenants. */

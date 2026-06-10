@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Activity, CircleDot, FileText, Users } from "lucide-react";
+import { Activity, CheckCircle2, CircleDot, FileText, Settings, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { TeamProgress } from "@/components/manager/TeamProgress";
+import { PageContainer } from "@/components/ui/PageContainer";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
@@ -78,7 +79,7 @@ export default async function ManagerDashboard({
   ];
 
   return (
-    <main className="w-full px-6 py-8 lg:px-8">
+    <PageContainer>
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -89,9 +90,15 @@ export default async function ManagerDashboard({
             {sprint.name}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-text-2">
-            <Badge tone="brand">
-              <CircleDot className="h-3 w-3" /> Active
-            </Badge>
+            {sprint.status === "completed" ? (
+              <Badge tone="neutral">
+                <CheckCircle2 className="h-3 w-3" /> Completed
+              </Badge>
+            ) : (
+              <Badge tone="brand">
+                <CircleDot className="h-3 w-3" /> Active
+              </Badge>
+            )}
             <span>
               Day {sprint.dayOf} of {sprint.dayTotal}
             </span>
@@ -103,9 +110,14 @@ export default async function ManagerDashboard({
             <span>{sprint.primaryFocus}</span>
           </div>
         </div>
-        <ButtonLink href={`/sprint/${id}/report`} variant="secondary">
-          <FileText className="h-4 w-4" /> Preview report
-        </ButtonLink>
+        <div className="flex items-center gap-2">
+          <ButtonLink href={`/sprint/${id}/settings`} variant="secondary">
+            <Settings className="h-4 w-4" /> Settings
+          </ButtonLink>
+          <ButtonLink href={`/sprint/${id}/report`} variant="secondary">
+            <FileText className="h-4 w-4" /> Preview report
+          </ButtonLink>
+        </div>
       </div>
 
       {/* Stat strip */}
@@ -183,6 +195,6 @@ export default async function ManagerDashboard({
           </p>
         </div>
       </div>
-    </main>
+    </PageContainer>
   );
 }

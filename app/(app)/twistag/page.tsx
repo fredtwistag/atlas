@@ -4,6 +4,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
+import { PageContainer } from "@/components/ui/PageContainer";
 import type { Metadata } from "next";
 import { getApi } from "@/server/trpc/caller";
 import { clientHealthMeta } from "@/lib/ui-maps";
@@ -28,7 +29,7 @@ export default async function TwistagCockpit() {
   };
 
   return (
-    <main className="w-full px-6 py-8 lg:px-8">
+    <PageContainer>
       <div className="mb-6">
         <div className="mb-1 text-sm font-medium text-text-3">
           Twistag · engagement cockpit
@@ -149,6 +150,6 @@ export default async function TwistagCockpit() {
         Live across every client you lead. Health and completion update as
         participants finish their sessions.
       </p>
-    </main>
+    </PageContainer>
   );
 }

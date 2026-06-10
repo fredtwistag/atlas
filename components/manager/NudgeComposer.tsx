@@ -1,25 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, Mail, MessageSquare, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Textarea, Label, Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
+import type { NudgeResult } from "@/app/(app)/sprint/[id]/participant/[participantId]/actions";
 
 /** The nudge composer card. Embedded in the participant detail page, which owns
- *  the contributor header — this renders only the editable draft + send. */
+ *  the contributor header — this renders only the editable draft + send. The
+ *  send is real and audited; email delivery ships with the email phase. */
 export function NudgeComposer({
   sprintId,
+  userId,
   name,
   sessionsCompleted,
   sessionsTotal,
+  onSend,
 }: {
   sprintId: string;
+  userId: string;
   name: string;
   sessionsCompleted: number;
   sessionsTotal: number;
+  onSend: (
+    sprintId: string,
+    userId: string,
+    input: { channel: "email" | "slack"; subject?: string; body: string },
+  ) => Promise<NudgeResult>;
 }) {
   const first = name.split(" ")[0];
   const draft = `Hi ${first},\n\nNo pressure at all — just a nudge that your Atlas discovery sessions are open whenever you have a spare five minutes. You're ${sessionsCompleted} of ${sessionsTotal} done, and the last couple are short.\n\nYour take on how things actually run is genuinely useful here. Thanks!`;
@@ -30,15 +40,27 @@ export function NudgeComposer({
   );
   const [body, setBody] = useState(draft);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  function send() {
+    setError(null);
+    start(async () => {
+      const result = await onSend(sprintId, userId, { channel, subject, body });
+      if (result.ok) setSent(true);
+      else setError(result.error);
+    });
+  }
 
   if (sent) {
     return (
       <Card className="border-success/40 bg-success-soft p-6 text-center">
         <Check className="mx-auto mb-2 h-7 w-7 text-success" />
-        <p className="font-semibold text-success">Nudge sent</p>
+        <p className="font-semibold text-success">Nudge logged</p>
         <p className="mt-1 text-md text-text-2">
-          Delivered via {channel}. Logged to the audit trail. A 48-hour cooldown
-          now applies before another reminder.
+          Recorded to the audit trail, and a 48-hour cooldown now applies before
+          another reminder. Email delivery ships with the email phase — for now,
+          reach out directly with your draft.
         </p>
         <Link
           href={`/sprint/${sprintId}`}
@@ -106,12 +128,18 @@ export function NudgeComposer({
         />
       </div>
 
+      {error && (
+        <p className="mb-3 text-[13px] text-danger" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs text-text-3">
           No quotes or capture content is ever included in a nudge.
         </span>
-        <Button variant="brand" onClick={() => setSent(true)}>
-          Send nudge
+        <Button variant="brand" disabled={pending} onClick={send}>
+          {pending ? "Logging…" : "Log nudge"}
         </Button>
       </div>
     </Card>

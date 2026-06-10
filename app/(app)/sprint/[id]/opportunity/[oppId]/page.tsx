@@ -27,7 +27,7 @@ export default async function OpportunityPage({
   params: Promise<{ id: string; oppId: string }>;
 }) {
   const { id, oppId } = await params;
-  await requireManagerOrSponsor();
+  const session = await requireManagerOrSponsor();
   const api = await getApi();
   const opp = await api.opportunity.get({ id: oppId }).catch(() => null);
   if (!opp) notFound();
@@ -37,6 +37,7 @@ export default async function OpportunityPage({
       sprintId={id}
       opp={opp}
       sow={sowDraftFor(opp)}
+      approverRole={session.role}
       onApprove={approveOpportunity}
     />
   );

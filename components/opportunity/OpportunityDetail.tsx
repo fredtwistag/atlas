@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
+import { PageContainer } from "@/components/ui/PageContainer";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
@@ -28,17 +29,24 @@ export function OpportunityDetail({
   sprintId,
   opp,
   sow,
+  approverRole,
   onApprove,
 }: {
   sprintId: string;
   opp: Opportunity;
   sow: SowDraft;
+  approverRole?: string;
   onApprove?: (sprintId: string, oppId: string) => Promise<void>;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [approved, setApproved] = useState(opp.status === "approved");
   const [approving, setApproving] = useState(false);
+
+  const isSponsor = approverRole === "sponsor";
+  const approveLabel = isSponsor
+    ? "Approve as sponsor"
+    : "Approve for FDE engagement";
 
   const confidenceLabel = [
     "—",
@@ -50,7 +58,7 @@ export function OpportunityDetail({
   ][opp.confidenceScore];
 
   return (
-    <main className="w-full px-6 py-8 lg:px-8">
+    <PageContainer>
       <div className="mb-5">
         <BackLink href={`/sprint/${sprintId}`}>Back to sprint</BackLink>
       </div>
@@ -261,7 +269,7 @@ export function OpportunityDetail({
               className="w-full"
               onClick={() => setSheetOpen(true)}
             >
-              Approve for FDE engagement <ChevronRight className="h-4 w-4" />
+              {approveLabel} <ChevronRight className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -272,7 +280,7 @@ export function OpportunityDetail({
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         eyebrow="Auto-drafted SOW"
-        title="Approve for FDE engagement"
+        title={approveLabel}
         footer={
           <>
             <span className="text-xs text-text-3">
@@ -334,7 +342,7 @@ export function OpportunityDetail({
           tone="brand"
         />
       </Sheet>
-    </main>
+    </PageContainer>
   );
 }
 

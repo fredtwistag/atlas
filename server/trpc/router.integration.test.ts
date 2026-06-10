@@ -10,6 +10,7 @@ import {
   sprintParticipants,
   sessions,
   sowDrafts,
+  auditLog,
 } from "@/db/schema";
 import {
   seedRow,
@@ -425,6 +426,35 @@ describe("opportunity.approve", () => {
     await expect(api.opportunity.approve({ id: OPP_ID })).rejects.toThrow();
   });
 
+  it("a sponsor can also approve (shared managerProcedure)", async () => {
+    const SPONSOR = "99999999-9999-4999-8999-99999999a0aa";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: SPONSOR,
+        tenantId: TENANT_A,
+        email: "sponsor@a.example",
+        name: "Sponsor",
+        role: "sponsor",
+        department: "Exec",
+      }),
+    );
+    const api = createCaller({
+      session: {
+        kind: "tenant",
+        tenantId: TENANT_A,
+        userId: SPONSOR,
+        role: "sponsor",
+      },
+    });
+    const res = await api.opportunity.approve({ id: OPP_ID });
+    expect(res.status).toBe("approved");
+    const opp = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.id, OPP_ID)),
+    );
+    expect(opp[0].status).toBe("approved");
+    expect(opp[0].approvedBy).toBe(SPONSOR);
+  });
+
   it("tenant B cannot approve tenant A's opportunity", async () => {
     const MGR_B = "99999999-9999-4999-8999-99999999b0ff";
     await seedRow((tx) =>
@@ -613,6 +643,172 @@ describe("session.editView", () => {
   it("another user in the tenant cannot read it (NOT_FOUND)", async () => {
     await expect(
       asIc(TENANT_A, EOTHER).session.editView({ id: ESES }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("sprint.nudge", () => {
+  const NMGR = "eeeeeeee-eeee-4eee-8eee-eeeeeeee00ff";
+  const NIC = "eeeeeeee-eeee-4eee-8eee-eeeeeeee0001";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: NMGR,
+          tenantId: TENANT_A,
+          email: "nm@a.example",
+          name: "Nudge Mgr",
+          role: "manager",
+          department: "Ops",
+        },
+        {
+          id: NIC,
+          tenantId: TENANT_A,
+          email: "ni@a.example",
+          name: "Nudge IC",
+          role: "ic",
+          department: "Ops",
+        },
+      ]),
+    );
+  });
+
+  async function nudgeRows() {
+    return seedRow((tx) =>
+      tx
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, "nudge.sent")),
+    );
+  }
+
+  it("writes a nudge.sent audit row scoped to tenant + user", async () => {
+    const res = await asManager(TENANT_A, NMGR).sprint.nudge({
+      sprintId: SPRINT_A,
+      userId: NIC,
+      channel: "email",
+      body: "Just a friendly nudge.",
+    });
+    expect(res.ok).toBe(true);
+    const rows = await nudgeRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].tenantId).toBe(TENANT_A);
+    expect(rows[0].userId).toBe(NIC);
+    expect(rows[0].targetId).toBe(SPRINT_A);
+  });
+
+  it("rejects a second nudge within 48h (cooldown)", async () => {
+    await asManager(TENANT_A, NMGR).sprint.nudge({
+      sprintId: SPRINT_A,
+      userId: NIC,
+      channel: "email",
+      body: "First nudge.",
+    });
+    await expect(
+      asManager(TENANT_A, NMGR).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: NIC,
+        channel: "email",
+        body: "Second nudge.",
+      }),
+    ).rejects.toThrow();
+    expect(await nudgeRows()).toHaveLength(1);
+  });
+
+  it("rejects an IC session", async () => {
+    await expect(
+      asIc(TENANT_A, NIC).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: NIC,
+        channel: "email",
+        body: "x",
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("is cross-tenant rejected (B manager cannot nudge an A user)", async () => {
+    const MGRB = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeb0ff";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MGRB,
+        tenantId: TENANT_B,
+        email: "nmb@b.example",
+        name: "MgrB",
+        role: "manager",
+        department: "Ops",
+      }),
+    );
+    await expect(
+      asManager(TENANT_B, MGRB).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: NIC,
+        channel: "email",
+        body: "x",
+      }),
+    ).rejects.toThrow();
+    expect(await nudgeRows()).toHaveLength(0);
+  });
+});
+
+describe("sprint lifecycle — close / update / currentForTenant", () => {
+  it("close flips status to completed and stamps closedAt", async () => {
+    await asTenant(TENANT_A).sprint.close({ id: SPRINT_A });
+    const rows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sprints).where(eq(sprints.id, SPRINT_A)),
+    );
+    expect(rows[0].status).toBe("completed");
+    expect(rows[0].closedAt).not.toBeNull();
+  });
+
+  it("close is cross-tenant rejected (B cannot close A's sprint)", async () => {
+    await expect(
+      asTenant(TENANT_B).sprint.close({ id: SPRINT_A }),
+    ).rejects.toThrow();
+    const rows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sprints).where(eq(sprints.id, SPRINT_A)),
+    );
+    expect(rows[0].status).toBe("active");
+  });
+
+  it("close rejects an IC session", async () => {
+    await expect(
+      asIc(TENANT_A, IC_A1).sprint.close({ id: SPRINT_A }),
+    ).rejects.toThrow();
+  });
+
+  it("currentForTenant excludes completed sprints", async () => {
+    expect(await asTenant(TENANT_A).sprint.currentForTenant()).toBe(SPRINT_A);
+    await asTenant(TENANT_A).sprint.close({ id: SPRINT_A });
+    expect(await asTenant(TENANT_A).sprint.currentForTenant()).toBeNull();
+  });
+
+  it("update edits name and primaryFocus", async () => {
+    await asTenant(TENANT_A).sprint.update({
+      id: SPRINT_A,
+      name: "Renamed Sprint",
+      primaryFocus: "Quote-to-cash",
+    });
+    const rows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sprints).where(eq(sprints.id, SPRINT_A)),
+    );
+    expect(rows[0].name).toBe("Renamed Sprint");
+    expect(rows[0].primaryFocus).toBe("Quote-to-cash");
+  });
+
+  it("update is cross-tenant rejected", async () => {
+    await expect(
+      asTenant(TENANT_B).sprint.update({ id: SPRINT_A, name: "Hijacked" }),
+    ).rejects.toThrow();
+    const rows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(sprints).where(eq(sprints.id, SPRINT_A)),
+    );
+    expect(rows[0].name).toBe("S");
+  });
+
+  it("update rejects an IC session", async () => {
+    await expect(
+      asIc(TENANT_A, IC_A1).sprint.update({ id: SPRINT_A, name: "Nope" }),
     ).rejects.toThrow();
   });
 });
