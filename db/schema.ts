@@ -220,6 +220,8 @@ export const opportunities = pgTable("opportunities", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  approvedBy: uuid("approved_by").references(() => users.id),
 });
 
 export const opportunityEvidence = pgTable(
@@ -238,3 +240,28 @@ export const opportunityEvidence = pgTable(
   },
   (t) => ({ pk: primaryKey({ columns: [t.opportunityId, t.captureId] }) }),
 );
+
+export const sowDrafts = pgTable("sow_drafts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  opportunityId: uuid("opportunity_id")
+    .notNull()
+    .references(() => opportunities.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  title: text("title").notNull(),
+  scope: text("scope").notNull(),
+  inclusions: text("inclusions").array().notNull().default([]),
+  exclusions: text("exclusions").array().notNull().default([]),
+  team: jsonb("team").notNull(),
+  durationWeeks: integer("duration_weeks").notNull(),
+  priceUsd: integer("price_usd").notNull(),
+  successMetrics: text("success_metrics").array().notNull().default([]),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

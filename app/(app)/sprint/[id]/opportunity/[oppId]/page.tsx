@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { OpportunityDetail } from "@/components/opportunity/OpportunityDetail";
 import { sowDraftFor } from "@/lib/data";
 import { getApi } from "@/server/trpc/caller";
+import { requireManagerOrSponsor } from "@/lib/auth-guards";
+import { approveOpportunity } from "./actions";
 
 export async function generateMetadata({
   params,
@@ -25,9 +27,17 @@ export default async function OpportunityPage({
   params: Promise<{ id: string; oppId: string }>;
 }) {
   const { id, oppId } = await params;
+  await requireManagerOrSponsor();
   const api = await getApi();
   const opp = await api.opportunity.get({ id: oppId }).catch(() => null);
   if (!opp) notFound();
 
-  return <OpportunityDetail sprintId={id} opp={opp} sow={sowDraftFor(opp)} />;
+  return (
+    <OpportunityDetail
+      sprintId={id}
+      opp={opp}
+      sow={sowDraftFor(opp)}
+      onApprove={approveOpportunity}
+    />
+  );
 }

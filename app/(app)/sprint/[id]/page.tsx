@@ -12,6 +12,7 @@ import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
 import { participantStatusMeta } from "@/lib/ui-maps";
+import { requireManagerOrSponsor } from "@/lib/auth-guards";
 
 export async function generateMetadata({
   params,
@@ -34,6 +35,7 @@ export default async function ManagerDashboard({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireManagerOrSponsor();
   const api = await getApi();
 
   const sprint = await api.sprint.get({ id }).catch(() => null);

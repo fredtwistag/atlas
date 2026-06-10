@@ -9,6 +9,7 @@ import {
   sessions,
   sprintParticipants,
   tenants,
+  captures,
 } from "@/db/schema";
 import type { MyDashboard, SessionStatus } from "@/lib/types";
 
@@ -104,6 +105,51 @@ export const sessionRouter = router({
         return {
           id: row.id,
           topicTitle: row.topicTitle ?? "Discovery session",
+        };
+      }),
+    ),
+
+  editView: tenantProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [s] = await tx
+          .select({
+            id: sessions.id,
+            completedAt: sessions.completedAt,
+            editWindowEndsAt: sessions.editWindowEndsAt,
+            topicTitle: topics.title,
+          })
+          .from(sessions)
+          .leftJoin(topics, eq(sessions.topicId, topics.id))
+          .where(
+            and(
+              eq(sessions.id, input.id),
+              eq(sessions.userId, ctx.session.userId),
+            ),
+          );
+        if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const caps = await tx
+          .select({
+            id: captures.id,
+            kind: captures.kind,
+            summary: captures.summary,
+          })
+          .from(captures)
+          .where(
+            and(
+              eq(captures.sessionId, input.id),
+              eq(captures.userId, ctx.session.userId),
+              eq(captures.isRemoved, false),
+            ),
+          );
+
+        return {
+          topicTitle: s.topicTitle ?? "Discovery session",
+          completedAt: fmtTs(s.completedAt),
+          editWindowEndsAt: fmtTs(s.editWindowEndsAt),
+          captures: caps,
         };
       }),
     ),

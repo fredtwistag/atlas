@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { NudgeComposer } from "@/components/manager/NudgeComposer";
-import { db } from "@/lib/data";
+import { getApi } from "@/server/trpc/caller";
+import { requireManagerOrSponsor } from "@/lib/auth-guards";
+
+export const dynamic = "force-dynamic";
 
 export default async function NudgePage({
   params,
@@ -8,20 +11,21 @@ export default async function NudgePage({
   params: Promise<{ id: string; participantId: string }>;
 }) {
   const { id, participantId } = await params;
-  const sprint = await db.sprint.get(id);
-  const participant = sprint.participants.find(
-    (p) => p.user.id === participantId,
-  );
-  if (!participant) notFound();
+  await requireManagerOrSponsor();
+  const api = await getApi();
+  const p = await api.sprint
+    .participant({ sprintId: id, userId: participantId })
+    .catch(() => null);
+  if (!p) notFound();
 
   return (
     <NudgeComposer
       sprintId={id}
-      name={participant.user.name}
-      role={participant.user.title}
-      status={participant.status}
-      sessionsCompleted={participant.sessionsCompleted}
-      sessionsTotal={participant.sessionsTotal}
+      name={p.name}
+      role={p.title}
+      status={p.status}
+      sessionsCompleted={p.sessionsCompleted}
+      sessionsTotal={p.sessionsTotal}
     />
   );
 }
