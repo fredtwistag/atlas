@@ -58,18 +58,10 @@ export default function LandingPage() {
             ranked plan + pre-drafted SOWs for the highest-impact builds.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-2.5">
-            <ButtonLink
-              href="/sign-in"
-              variant="primary"
-              size="lg"
-            >
+            <ButtonLink href="/sign-in" variant="primary" size="lg">
               See a live sprint
             </ButtonLink>
-            <ButtonLink
-              href="/sign-in"
-              variant="secondary"
-              size="lg"
-            >
+            <ButtonLink href="/sign-in" variant="secondary" size="lg">
               See a sample report
             </ButtonLink>
           </div>
@@ -362,11 +354,7 @@ export default function LandingPage() {
             killing the project if it isn&apos;t working.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
-            <ButtonLink
-              href="/sign-in"
-              variant="primary"
-              size="lg"
-            >
+            <ButtonLink href="/sign-in" variant="primary" size="lg">
               Explore a live sprint <ArrowRight className="h-4 w-4" />
             </ButtonLink>
             <ButtonLink href="/pricing" variant="secondary" size="lg">

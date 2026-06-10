@@ -40,10 +40,13 @@ npm run build        # production build (all routes typecheck + compile)
 npm test             # Vitest unit + component suite
 npm run lint         # ESLint (next/core-web-vitals)
 npm run typecheck    # tsc --noEmit
+npm run verify       # the full CI gate locally: typecheck + lint + test + test:integration + build
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck + lint + test + build on every push and PR,
-plus a separate job for the database adversarial RLS tests.
+CI (`.github/workflows/ci.yml`) runs format:check + typecheck + lint + test + build on every
+push and PR, plus a separate job for the database adversarial RLS tests. `npm run verify`
+runs the same gate locally (minus format:check — run `npm run format:check` separately, or
+`npm run format` to fix).
 
 ### Database (slice 1: schema + RLS)
 

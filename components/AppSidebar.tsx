@@ -290,7 +290,10 @@ export function AppSidebar({
                     return (
                       <div
                         key={s.id}
-                        className={cn(rowBase, "cursor-default text-text-faint")}
+                        className={cn(
+                          rowBase,
+                          "cursor-default text-text-faint",
+                        )}
                         aria-disabled
                       >
                         {content}
@@ -353,7 +356,10 @@ export function AppSidebar({
                     return (
                       <div
                         key={item.label}
-                        className={cn(rowBase, "cursor-default text-text-faint")}
+                        className={cn(
+                          rowBase,
+                          "cursor-default text-text-faint",
+                        )}
                         aria-disabled
                       >
                         {content}

@@ -677,10 +677,7 @@ describe("sprint.nudge", () => {
 
   async function nudgeRows() {
     return seedRow((tx) =>
-      tx
-        .select()
-        .from(auditLog)
-        .where(eq(auditLog.action, "nudge.sent")),
+      tx.select().from(auditLog).where(eq(auditLog.action, "nudge.sent")),
     );
   }
 

@@ -113,7 +113,11 @@ describe("updateMemberRole", () => {
 
   it("rejects a non-manager caller", async () => {
     await expect(
-      updateMemberRole({ tenantId: TENANT_A, userId: IC, role: "ic" }, MGR2, "ic"),
+      updateMemberRole(
+        { tenantId: TENANT_A, userId: IC, role: "ic" },
+        MGR2,
+        "ic",
+      ),
     ).rejects.toThrow();
   });
 
@@ -236,7 +240,12 @@ describe("removeMemberRecord", () => {
       ),
     ).rejects.toThrow();
     // sponsor-driven removal of the last manager is blocked by the guard:
-    await expect(removeMemberRecord({ tenantId: TENANT_A, userId: SPONSOR, role: "sponsor" }, MGR)).rejects.toThrow();
+    await expect(
+      removeMemberRecord(
+        { tenantId: TENANT_A, userId: SPONSOR, role: "sponsor" },
+        MGR,
+      ),
+    ).rejects.toThrow();
     expect(await roleOf(MGR)).toBe("manager");
   });
 
@@ -275,7 +284,10 @@ describe("cancelInvitation", () => {
   });
 
   it("is cross-tenant no-op (B manager cannot cancel A's invite)", async () => {
-    await cancelInvitation({ tenantId: TENANT_B, userId: MGR_B, role: "manager" }, INV);
+    await cancelInvitation(
+      { tenantId: TENANT_B, userId: MGR_B, role: "manager" },
+      INV,
+    );
     const rows = await asUser({ tenantId: TENANT_A, role: "manager" }, (tx) =>
       tx.select().from(invitations).where(eq(invitations.id, INV)),
     );

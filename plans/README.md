@@ -21,13 +21,13 @@ dev-server preview verification at 375 / 768 / 1280 px with screenshots.
 | [001](001-captures-scope.md) | Scope captures count to sprint | A1 | `server/trpc/routers/sprint.ts` | Done |
 | [002](002-auth-redirect.md) | Validate post-login redirect | A2 | `app/auth/callback/route.ts` | Done |
 | [003](003-parallel-lookups.md) | Parallelize manager/sponsor lookups | A9 | `server/trpc/routers/sprint.ts` | Done |
-| [004](004-confirm-dialog.md) | Accessible ConfirmDialog | B3 | `components/ui/ConfirmDialog.tsx`, `MemberRow.tsx`, `CloseSprintButton.tsx` | Todo |
-| [005](005-opportunity-tablist.md) | Opportunity tabs → real tablist | B4 | `components/opportunity/OpportunityDetail.tsx` | Todo |
-| [006](006-icon-tap-targets.md) | ≥44px icon tap targets | B5 | `components/ui/Button.tsx` + icon buttons | Todo |
-| [007](007-aria-live-status.md) | Announce async status | B7 | `NudgeComposer.tsx`, `LaunchSprintForm.tsx`, `ConversationView.tsx` | Todo |
-| [008](008-tablet-reflow.md) | Tablet reflow + stat breakpoints | C6a/C6b | `OpportunityDetail.tsx`, `sprint/[id]/page.tsx`, `twistag/page.tsx` | Todo |
-| [009](009-mock-data-quarantine.md) | Quarantine mock data | D8 | `lib/format.ts`, shipped routes/components | Todo |
-| [010](010-verify-script-ci.md) | verify script + CI format gate | D10 | `package.json`, `.github/workflows/ci.yml`, `README.md` | Todo |
+| [004](004-confirm-dialog.md) | Accessible ConfirmDialog | B3 | `components/ui/ConfirmDialog.tsx`, `MemberRow.tsx`, `CloseSprintButton.tsx` | Done |
+| [005](005-opportunity-tablist.md) | Opportunity tabs → real tablist | B4 | `components/opportunity/OpportunityDetail.tsx` | Done |
+| [006](006-icon-tap-targets.md) | ≥44px icon tap targets | B5 | `components/ui/Button.tsx` + icon buttons | Done |
+| [007](007-aria-live-status.md) | Announce async status | B7 | `NudgeComposer.tsx`, `LaunchSprintForm.tsx`, `ConversationView.tsx` | Done |
+| [008](008-tablet-reflow.md) | Tablet reflow + stat breakpoints | C6a/C6b | `OpportunityDetail.tsx`, `sprint/[id]/page.tsx`, `twistag/page.tsx` | Done |
+| [009](009-mock-data-quarantine.md) | Quarantine mock data | D8 | `lib/format.ts`, shipped routes/components | Done |
+| [010](010-verify-script-ci.md) | verify script + CI format gate | D10 | `package.json`, `.github/workflows/ci.yml`, `README.md` | Done |
 | [011](011-page-e2e-tests.md) | Page + smoke E2E tests | E11 | `e2e/`, page component tests | Todo |
 
 Status values: `Todo` → `In progress` → `Done` (gate green) / `Blocked`.

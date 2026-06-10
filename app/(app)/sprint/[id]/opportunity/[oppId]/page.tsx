@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OpportunityDetail } from "@/components/opportunity/OpportunityDetail";
-import { sowDraftFor } from "@/lib/data";
+import { buildSowDraft } from "@/lib/sow";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
 import { approveOpportunity } from "./actions";
@@ -29,14 +29,17 @@ export default async function OpportunityPage({
   const { id, oppId } = await params;
   const session = await requireManagerOrSponsor();
   const api = await getApi();
-  const opp = await api.opportunity.get({ id: oppId }).catch(() => null);
+  const [opp, sprint] = await Promise.all([
+    api.opportunity.get({ id: oppId }).catch(() => null),
+    api.sprint.get({ id }).catch(() => null),
+  ]);
   if (!opp) notFound();
 
   return (
     <OpportunityDetail
       sprintId={id}
       opp={opp}
-      sow={sowDraftFor(opp)}
+      sow={buildSowDraft(opp, sprint?.tenantName ?? "your organization")}
       approverRole={session.role}
       onApprove={approveOpportunity}
     />

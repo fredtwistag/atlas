@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ScoreBadge";
-import { usdRange } from "@/lib/data";
+import { usdRange } from "@/lib/format";
 import type { Opportunity } from "@/lib/types";
 
 export function OpportunityCard({

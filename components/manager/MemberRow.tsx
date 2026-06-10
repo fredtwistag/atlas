@@ -100,7 +100,9 @@ export function MemberRow({
               </button>
             </>
           ) : (
-            <Badge tone={role === "manager" ? "brand" : "neutral"}>{role}</Badge>
+            <Badge tone={role === "manager" ? "brand" : "neutral"}>
+              {role}
+            </Badge>
           )}
         </div>
       </div>

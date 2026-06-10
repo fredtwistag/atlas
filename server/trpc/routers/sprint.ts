@@ -328,10 +328,7 @@ export const sprintRouter = router({
           (p) => p.user.id === userId,
         )?.user;
         if (inParticipants) return inParticipants;
-        const [u] = await tx
-          .select()
-          .from(users)
-          .where(eq(users.id, userId));
+        const [u] = await tx.select().from(users).where(eq(users.id, userId));
         if (!u) return undefined;
         return {
           id: u.id,

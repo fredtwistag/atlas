@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { PrintButton } from "@/components/report/PrintButton";
-import { usdShort } from "@/lib/data";
+import { usdShort } from "@/lib/format";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
 

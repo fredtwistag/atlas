@@ -2,11 +2,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { OpportunityDetail } from "./OpportunityDetail";
-import { db, sowDraftFor } from "@/lib/data";
+import { db } from "@/lib/data";
+import { buildSowDraft } from "@/lib/sow";
 
 async function getFixtures() {
   const opp = (await db.opportunity.get("opp-1"))!;
-  return { opp, sow: sowDraftFor(opp) };
+  return { opp, sow: buildSowDraft(opp, "Northwind Logistics") };
 }
 
 describe("OpportunityDetail approve flow", () => {

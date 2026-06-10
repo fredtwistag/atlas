@@ -16,7 +16,12 @@ export function PageContainer({
   as?: "main" | "div";
 }) {
   return (
-    <Tag className={cn("mx-auto w-full max-w-[1400px] px-6 py-8 lg:px-8", className)}>
+    <Tag
+      className={cn(
+        "mx-auto w-full max-w-[1400px] px-6 py-8 lg:px-8",
+        className,
+      )}
+    >
       {children}
     </Tag>
   );

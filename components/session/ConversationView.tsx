@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { conversationScript } from "@/lib/data";
+import { conversationScript } from "@/lib/demo-data";
 import { captureKindTone } from "@/lib/ui-maps";
 import type { CaptureKind } from "@/lib/types";
 

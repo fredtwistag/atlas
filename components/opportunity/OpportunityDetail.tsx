@@ -20,7 +20,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
-import { usdRange, usdShort } from "@/lib/data";
+import { usdRange, usdShort } from "@/lib/format";
 import type { Opportunity, SowDraft } from "@/lib/types";
 
 type Tab = "evidence" | "patterns" | "discussion";

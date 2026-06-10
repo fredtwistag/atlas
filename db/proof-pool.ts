@@ -16,7 +16,8 @@ async function main(): Promise<void> {
     { action: "proof.pool", actor: "proof" },
     (tx) => tx.select().from(tenants).where(eq(tenants.slug, "northwind")),
   );
-  if (!t) throw new Error("Northwind tenant missing — run `npm run db:seed` first.");
+  if (!t)
+    throw new Error("Northwind tenant missing — run `npm run db:seed` first.");
 
   const claims = {
     tenantId: t.id,

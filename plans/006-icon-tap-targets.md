@@ -19,3 +19,9 @@ inspect.
 
 ## Gate
 `npm run build` + manual preview at 375px (screenshot).
+
+## Findings
+The app root font is **14px**, so Tailwind's rem-based `h-11` (2.75rem) renders
+only ~38.5px — under the 44px target. Browser inspection caught this; the icon
+size and all icon buttons use pixel-based `h-[44px] w-[44px]` instead. Verified
+the hamburger and member-remove buttons compute to exactly 44×44px.

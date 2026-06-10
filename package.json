@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run test:integration && npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "tsx --env-file=.env.local db/migrate.ts",

@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Activity, CheckCircle2, CircleDot, FileText, Settings, Users } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  CircleDot,
+  FileText,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
