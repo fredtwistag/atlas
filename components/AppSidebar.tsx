@@ -12,11 +12,13 @@ import {
   Lightbulb,
   BarChart3,
   Boxes,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Avatar } from "./ui/Avatar";
 import { cn } from "@/lib/cn";
+import { signOut } from "@/app/sign-in/actions";
 
 /**
  * Persona switcher — not part of the real product (auth + JWT role decide the
@@ -200,33 +202,6 @@ export function AppSidebar({
         <Logo />
       </div>
 
-      {/* Persona switcher (demo affordance) */}
-      <div className="px-3 pb-2">
-        <div className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-text-faint">
-          Viewing as
-        </div>
-        <div className="flex gap-0.5 rounded-md border border-border bg-bg p-0.5">
-          {personas.map((p) => {
-            const active = p.id === persona.id;
-            return (
-              <Link
-                key={p.id}
-                href={p.home}
-                onClick={onNavigate}
-                className={cn(
-                  "flex-1 rounded-[5px] px-1.5 py-1 text-center text-[11px] font-medium transition-colors",
-                  active
-                    ? "bg-text text-surface"
-                    : "text-text-2 hover:text-text",
-                )}
-              >
-                {p.short}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Grouped nav */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-3">
         {persona.groups.map((group) => (
@@ -301,6 +276,17 @@ export function AppSidebar({
           </div>
           <div className="truncate text-xs text-text-3">{user.title}</div>
         </div>
+        <form action={signOut}>
+          <button
+            type="submit"
+            onClick={onNavigate}
+            aria-label="Sign out"
+            title="Sign out"
+            className="rounded-sm p-1.5 text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </div>
   );
