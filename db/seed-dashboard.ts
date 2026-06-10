@@ -12,6 +12,7 @@ import {
   opportunities,
   captures,
   opportunityEvidence,
+  sowDrafts,
 } from "./schema";
 
 const SPRINT_ID = "5f1b2c00-0000-4000-8000-000000000001";
@@ -32,9 +33,12 @@ async function main(): Promise<void> {
       const tenantId = t.id;
 
       // Idempotent: clear this tenant's dashboard rows before reseeding.
+      // sow_drafts (added in migration 0004) FK-references opportunities, so it
+      // must be cleared before them or the delete violates the constraint.
       await tx
         .delete(opportunityEvidence)
         .where(eq(opportunityEvidence.tenantId, tenantId));
+      await tx.delete(sowDrafts).where(eq(sowDrafts.tenantId, tenantId));
       await tx.delete(captures).where(eq(captures.tenantId, tenantId));
       await tx
         .delete(opportunities)
