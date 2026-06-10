@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { dmSans, jetbrainsMono } from "./fonts";
+import { dmSans, fraunces, jetbrainsMono } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${dmSans.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
+      // Browser extensions (LanguageTool, Grammarly, etc.) inject attributes
+      // like data-lt-installed onto <html> before React hydrates; ignore those
+      // attribute-only diffs on this element.
+      suppressHydrationWarning
+    >
       <body>{children}</body>
     </html>
   );
