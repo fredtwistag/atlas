@@ -78,3 +78,36 @@ describe("users — tenant isolation", () => {
     expect(stillThere).toHaveLength(1);
   });
 });
+
+describe("users — privacy_ack_at (PRD F1.5)", () => {
+  it("a tenant can set privacy_ack_at on its own user", async () => {
+    const [u] = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(users),
+    );
+    const result = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx
+        .update(users)
+        .set({ privacyAckAt: new Date() })
+        .where(eq(users.id, u.id)),
+    );
+    expect(result.count ?? 0).toBe(1);
+    const [after] = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(users),
+    );
+    expect(after.privacyAckAt).not.toBeNull();
+  });
+
+  it("tenant B cannot set privacy_ack_at on a tenant A user (RLS → 0 rows)", async () => {
+    const result = await asUser({ tenantId: TENANT_B }, (tx) =>
+      tx
+        .update(users)
+        .set({ privacyAckAt: new Date() })
+        .where(eq(users.email, "secret@a.example")),
+    );
+    expect(result.count ?? 0).toBe(0);
+    const [after] = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(users),
+    );
+    expect(after.privacyAckAt).toBeNull();
+  });
+});

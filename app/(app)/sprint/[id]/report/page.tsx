@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { PrintButton } from "@/components/report/PrintButton";
+import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { usdShort } from "@/lib/format";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
@@ -56,6 +57,9 @@ export default async function FinalReport({
       </div>
 
       <article className="mx-auto max-w-3xl px-6 py-12">
+        {/* Scoring explainer — dismissible, hidden in print. */}
+        <ReportExplainer />
+
         {/* Cover */}
         <header className="mb-12 border-b border-border pb-10">
           <div className="mb-3 text-sm font-semibold uppercase tracking-[0.1em] text-brand">

@@ -35,7 +35,7 @@
 - Cross-tenant queries are blocked at DB layer via RLS policies (ADR-001); enforced by adversarial CI tests on every PR
 
 ### Principle 3 — Defense in depth
-- Stytch handles auth (no password storage)
+- Supabase Auth handles auth (no password storage)
 - Tenant context enforced at middleware AND query layer
 - Per-tenant rate limits
 - Audit log on every mutation
@@ -76,7 +76,7 @@
 |---|---|---|
 | Supabase | DB hosting (EU region) | ✓ |
 | Vercel | Web app hosting | ✓ |
-| Stytch | Auth tokens (no content) | ✓ |
+| Supabase Auth | Auth tokens (no content) | ✓ |
 | Anthropic | LLM inference (transient) | ✓ |
 | Resend | Email delivery | ✓ |
 | Inngest | Job orchestration metadata | ✓ |
@@ -84,7 +84,7 @@
 ## 4. Authentication & authorization
 
 ### Auth
-- **Mechanism:** Stytch magic links
+- **Mechanism:** Supabase Auth magic links + 6-digit OTP code (see ADR-002)
 - **Token type:** JWT, signed with rotating key (RS256)
 - **Token contents:** `user_id`, `tenant_id`, `role`, `exp`, `iat`
 - **Expiry:** 30-day sliding window for ICs; 7-day for Twistag-side
@@ -115,7 +115,7 @@
 - Mitigation: LLM extraction prompt instructed to skip PII; quarterly review of capture sample
 
 **T4 — Account takeover**
-- Mitigation: Stytch magic link (rotated single-use), no password attack surface
+- Mitigation: Supabase Auth magic link (rotated single-use) + OTP code; /auth/confirm button POSTs the verification (prefetch-safe); no password attack surface
 
 **T5 — Insider abuse (Twistag user reading client data)**
 - Mitigation: audit log of all Twistag-side queries; quarterly review

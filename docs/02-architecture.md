@@ -110,7 +110,7 @@
 - **Service-role bypass** allowed only inside Inngest workers + audit-logged
 
 ### 3.2 Tenant context flow
-1. User signs in via Stytch magic link → JWT issued with `tenant_id`, `user_id`, `role`
+1. User signs in via Supabase Auth magic link (or 6-digit OTP code) → JWT issued with `tenant_id`, `user_id`, `role` (see ADR-002)
 2. Every request: middleware decodes JWT → injects `ctx.tenantId` and `ctx.user`
 3. tRPC procedure creates a Supabase client bound to the user's JWT
 4. All queries go through RLS — Postgres returns only rows where `tenant_id` matches JWT claim

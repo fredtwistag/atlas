@@ -10,20 +10,24 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import type { Metadata } from "next";
 import { getApi } from "@/server/trpc/caller";
 import { getCurrentUser } from "@/lib/session";
 import { requireTenantSession } from "@/lib/auth-guards";
+import { hasAckedPrivacy } from "@/lib/privacy";
+import { PrivacyGate } from "@/components/me/PrivacyGate";
 
 export const metadata: Metadata = { title: "My sprint · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function IcHomePage() {
-  await requireTenantSession();
+  const session = await requireTenantSession();
   const me = await getCurrentUser();
   const api = await getApi();
   const data = await api.session.myDashboard();
+  const needsAck =
+    session.role === "ic" && !(await hasAckedPrivacy(session));
 
   if (!data || data.sessions.length === 0) {
     return (
@@ -65,6 +69,9 @@ export default async function IcHomePage() {
             : `You're ${doneCount} of ${totalCount} sessions in. About ${minutesLeft} minutes of your time left, whenever it suits you.`}
         </p>
       </div>
+
+      {/* Privacy gate (PRD F1.5) — shown until the participant acknowledges. */}
+      {needsAck && <PrivacyGate />}
 
       {/* Progress pills */}
       <Card className="mb-6 p-5">
@@ -131,14 +138,26 @@ export default async function IcHomePage() {
                 </div>
               </div>
             </div>
-            <ButtonLink
-              href={`/session/${next.id}`}
-              variant="brand"
-              size="lg"
-              className="mt-5"
-            >
-              Start session <ArrowRight className="h-4 w-4" />
-            </ButtonLink>
+            {needsAck ? (
+              <Button
+                variant="brand"
+                size="lg"
+                className="mt-5"
+                disabled
+                aria-disabled
+              >
+                Start session <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <ButtonLink
+                href={`/session/${next.id}`}
+                variant="brand"
+                size="lg"
+                className="mt-5"
+              >
+                Start session <ArrowRight className="h-4 w-4" />
+              </ButtonLink>
+            )}
           </div>
         </Card>
       )}

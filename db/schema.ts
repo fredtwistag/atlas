@@ -79,6 +79,7 @@ export const users = pgTable(
     department: text("department"),
     title: text("title"),
     optedOut: boolean("opted_out").notNull().default(false),
+    privacyAckAt: timestamp("privacy_ack_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

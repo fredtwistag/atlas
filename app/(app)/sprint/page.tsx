@@ -5,6 +5,7 @@ import { getApi } from "@/server/trpc/caller";
 import { withTenantContext } from "@/db/client";
 import { users } from "@/db/schema";
 import { LaunchSprintForm } from "@/components/sprint/LaunchSprintForm";
+import { FirstRunChecklist } from "@/components/sprint/FirstRunChecklist";
 import { sprintLandingPath } from "@/lib/sprint-landing";
 
 export const dynamic = "force-dynamic";
@@ -52,5 +53,10 @@ export default async function SprintIndex({
   );
 
   const { error } = await searchParams;
-  return <LaunchSprintForm members={members} invalid={error === "invalid"} />;
+  return (
+    <>
+      <FirstRunChecklist memberCount={members.length} />
+      <LaunchSprintForm members={members} invalid={error === "invalid"} />
+    </>
+  );
 }

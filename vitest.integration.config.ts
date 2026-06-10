@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const TEST_DB_URL =
@@ -6,7 +7,10 @@ const TEST_DB_URL =
   "postgresql://postgres:postgres@localhost:5433/atlas_test";
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  // react() supplies the JSX transform: the tRPC router transitively imports the
+  // emails/*.tsx templates, and Next's tsconfig sets jsx:"preserve", so esbuild
+  // alone would leave JSX unparsed. Matches vitest.config.ts.
+  plugins: [react(), tsconfigPaths()],
   test: {
     environment: "node",
     globals: true,

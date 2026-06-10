@@ -35,7 +35,7 @@ Atlas solves this by being a **focused sprint product** that:
 ### In scope
 
 - Multi-tenant web app (no Slack/Teams).
-- Magic link auth (Stytch); no SSO.
+- Magic link auth (Supabase Auth — see ADR-002); no SSO.
 - Manager-led sprint setup wizard (3-4 week sprint, custom topics, manual team invitation).
 - IC conversational sessions (text-only, ~5min, async).
 - Manager dashboard + executive view (read in same workspace).
@@ -166,7 +166,7 @@ Atlas solves this by being a **focused sprint product** that:
 
 ### F1 — Onboarding & setup
 - F1.1 Multi-tenant workspace, Twistag-assisted creation
-- F1.2 Magic link auth via email (Stytch)
+- F1.2 Magic link auth via email + 6-digit OTP code (Supabase Auth — see ADR-002)
 - F1.3 Manager invitation flow: add emails, role tags, scope selection
 - F1.4 Sprint setup wizard (5 steps: scope, team, topics, timeline, review)
 - F1.5 Privacy disclosure shown to IC before first interaction
@@ -282,7 +282,8 @@ Atlas solves this by being a **focused sprint product** that:
 | 2026-06-07 | Web-only MVP (no Slack/Teams in Wave 1) | Isolate adoption risk; faster to alpha; lower compliance burden |
 | 2026-06-07 | pgvector instead of Neo4j | MVP scope; revisit at >5 clients |
 | 2026-06-07 | Magic link instead of SSO | Lower friction for pilots; SSO add-on in v1.5 |
-| 2026-06-07 | Stytch as auth provider | Magic link UX maturity; SOC2-friendly |
+| 2026-06-07 | ~~Stytch as auth provider~~ — superseded by ADR-002 | Magic link UX maturity; SOC2-friendly |
+| 2026-06-10 | Supabase Auth, not Stytch (ADR-002) | Native magic links + claims hook; one fewer vendor; OTP-code hardening |
 | 2026-06-07 | Anthropic Claude Sonnet as default LLM | Best discovery conversation quality at MVP; abstracted via service layer |
 | 2026-06-08 | **Drop "Hermes" branding for Atlas conversation layer** | It's just prompt engineering + state code + Claude API. No engine package needed. Avoid brand/governance overhead. |
 | 2026-06-08 | **Sprint-mode only in Wave 1; subscriptions in v1.5** | Honest framing — "persistent copilot" requires Slack/Teams to be real |
