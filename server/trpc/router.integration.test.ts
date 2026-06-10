@@ -442,3 +442,81 @@ describe("opportunity.approve", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("sprint.participant", () => {
+  const PUSER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa0001";
+  const PMGR = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaa00ff";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: PUSER,
+          tenantId: TENANT_A,
+          email: "p@a.example",
+          name: "Pat",
+          role: "ic",
+          department: "Ops",
+          title: "Coordinator",
+        },
+        {
+          id: PMGR,
+          tenantId: TENANT_A,
+          email: "pm@a.example",
+          name: "PM",
+          role: "manager",
+          department: "Ops",
+        },
+      ]),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprintParticipants).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        userId: PUSER,
+        status: "idle",
+        sessionsCompleted: 1,
+        sessionsTotal: 4,
+      }),
+    );
+  });
+
+  it("returns a participant's nudge view", async () => {
+    const p = await asManager(TENANT_A, PMGR).sprint.participant({
+      sprintId: SPRINT_A,
+      userId: PUSER,
+    });
+    expect(p.name).toBe("Pat");
+    expect(p.sessionsCompleted).toBe(1);
+    expect(p.status).toBe("idle");
+  });
+
+  it("rejects an IC", async () => {
+    await expect(
+      asIc(TENANT_A, PUSER).sprint.participant({
+        sprintId: SPRINT_A,
+        userId: PUSER,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("cross-tenant → NOT_FOUND", async () => {
+    const MGRB = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaab0ff";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MGRB,
+        tenantId: TENANT_B,
+        email: "mb@b.example",
+        name: "MB",
+        role: "manager",
+        department: "Ops",
+      }),
+    );
+    await expect(
+      asManager(TENANT_B, MGRB).sprint.participant({
+        sprintId: SPRINT_A,
+        userId: PUSER,
+      }),
+    ).rejects.toThrow();
+  });
+});

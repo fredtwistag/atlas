@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
 import { withTenantContext } from "@/db/client";
 import {
@@ -275,6 +275,37 @@ export const sprintRouter = router({
       }));
     }),
   ),
+
+  participant: managerProcedure
+    .input(z.object({ sprintId: z.string().uuid(), userId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [row] = await tx
+          .select({
+            name: users.name,
+            title: users.title,
+            status: sprintParticipants.status,
+            sessionsCompleted: sprintParticipants.sessionsCompleted,
+            sessionsTotal: sprintParticipants.sessionsTotal,
+          })
+          .from(sprintParticipants)
+          .innerJoin(users, eq(sprintParticipants.userId, users.id))
+          .where(
+            and(
+              eq(sprintParticipants.sprintId, input.sprintId),
+              eq(sprintParticipants.userId, input.userId),
+            ),
+          );
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+        return {
+          name: row.name,
+          title: row.title ?? "Contributor",
+          status: row.status,
+          sessionsCompleted: row.sessionsCompleted,
+          sessionsTotal: row.sessionsTotal,
+        };
+      }),
+    ),
 });
 
 function blankUser(): Sprint["manager"] {
