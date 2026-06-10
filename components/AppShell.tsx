@@ -43,12 +43,18 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[220px_1fr]">
       {/* Desktop rail */}
-      <aside className="sticky top-0 hidden h-screen border-r border-border lg:block">
+      <aside
+        data-app-chrome
+        className="sticky top-0 hidden h-screen border-r border-border lg:block"
+      >
         <AppSidebar user={user} sprintId={sprintId} icSessions={icSessions} />
       </aside>
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-bg/85 px-4 backdrop-blur lg:hidden">
+      <div
+        data-app-chrome
+        className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-bg/85 px-4 backdrop-blur lg:hidden"
+      >
         <button
           onClick={() => setDrawerOpen(true)}
           className="rounded-sm p-1.5 text-text-2 hover:bg-surface-2 hover:text-text"

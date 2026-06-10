@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Check, Download } from "lucide-react";
+import { Check } from "lucide-react";
 import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { PrintButton } from "@/components/report/PrintButton";
 import { usdShort } from "@/lib/data";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
@@ -34,12 +35,13 @@ export default async function FinalReport({
   return (
     <div className="bg-bg">
       {/* Toolbar */}
-      <div className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur">
+      <div
+        data-print-hide
+        className="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur"
+      >
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-2.5">
           <BackLink href={`/sprint/${id}`}>Back to sprint</BackLink>
-          <button className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 text-[13px] font-medium hover:bg-surface-2">
-            <Download className="h-3.5 w-3.5" /> Download PDF
-          </button>
+          <PrintButton />
         </div>
       </div>
 
