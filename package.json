@@ -23,7 +23,8 @@
     "db:seed": "tsx --env-file=.env.local db/seed-demo.ts",
     "db:proof:auth": "tsx --env-file=.env.local db/proof-auth.ts",
     "db:proof:pool": "tsx --env-file=.env.local db/proof-pool.ts",
-    "db:seed:dashboard": "tsx --env-file=.env.local db/seed-dashboard.ts"
+    "db:seed:dashboard": "tsx --env-file=.env.local db/seed-dashboard.ts",
+    "email:test": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/send-test-emails.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
