@@ -2,12 +2,15 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
 import {
+  tenants,
   sprints,
   opportunities,
   users,
   topics,
   sprintParticipants,
   sessions,
+  invitations,
+  sowDrafts,
 } from "@/db/schema";
 import { seedRow, resetDb, seedTenants, TENANT_A } from "@/db/test/helpers";
 
@@ -223,5 +226,149 @@ describe("/sprint/[id] page contract — get + progress + activity + opportuniti
 
     // Opportunities are ranked by composite score (highest first).
     expect(opps.map((o) => o.title)).toEqual(["Top-scored", "Lower-scored"]);
+  });
+});
+
+const asTwistag = () =>
+  createCaller({
+    session: {
+      kind: "twistag",
+      twistagRole: "twistag_admin",
+      userId: "00000000-0000-4000-8000-0000000000ff",
+    },
+  });
+
+describe("/admin/clients/[tenantId]/sprint/[sprintId]/report contract — twistag.sprintView", () => {
+  it("returns tenantId + render-ready sprint/progress/opportunities", async () => {
+    const data = await asTwistag().twistag.sprintView({ sprintId: SPRINT });
+    // The admin report route verifies this against the URL tenant.
+    expect(data.tenantId).toBe(TENANT_A);
+    expect(data.sprint.name).toBe("Ops Discovery");
+    expect(data.sprint.startDate).not.toBe(""); // formatted
+    expect(typeof data.progress.completionPct).toBe("number");
+    expect(data.progress.participantCount).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(data.opportunities)).toBe(true);
+  });
+});
+
+describe("/admin/clients/[tenantId] contract — twistag.clientDetail", () => {
+  // A valid-UUID tenant (the TENANT_A/B fixtures aren't valid versioned UUIDs,
+  // which the strict z.uuid() input rejects).
+  const TC = "abababab-abab-4bab-8bab-abababab0001";
+  const SC = "abababab-abab-4bab-8bab-abababab0002";
+  const MC = "abababab-abab-4bab-8bab-abababab0003";
+  const OC = "abababab-abab-4bab-8bab-abababab0004";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(tenants).values({
+        id: TC,
+        slug: "client-c",
+        name: "Client C",
+        segment: "PE portco · 100-day",
+        status: "onboarding",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprints).values({
+        id: SC,
+        tenantId: TC,
+        name: "Revenue Ops Discovery",
+        primaryFocus: "Quote-to-cash",
+        startDate: "2026-05-18",
+        endDate: "2026-06-12",
+        cadence: "weekly",
+        status: "active",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MC,
+        tenantId: TC,
+        email: "mgr@c.example",
+        name: "Cory Vale",
+        role: "manager",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprintParticipants).values({
+        tenantId: TC,
+        sprintId: SC,
+        userId: MC,
+        status: "in_progress",
+        sessionsCompleted: 3,
+        sessionsTotal: 6,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(opportunities).values({
+        id: OC,
+        tenantId: TC,
+        sprintId: SC,
+        title: "Automate credit-hold release",
+        description: "d",
+        category: "c",
+        impactLow: 100_000,
+        impactHigh: 200_000,
+        timeToShipWeeksLow: 2,
+        timeToShipWeeksHigh: 4,
+        confidenceScore: 5,
+        compositeScore: "8.4",
+        dimensionScores: [],
+        rationale: "r",
+        status: "approved",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sowDrafts).values({
+        tenantId: TC,
+        opportunityId: OC,
+        sprintId: SC,
+        title: "SOW",
+        scope: "s",
+        team: [],
+        durationWeeks: 4,
+        priceUsd: 50_000,
+        status: "draft",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(invitations).values({
+        tenantId: TC,
+        email: "new@c.example",
+        role: "ic",
+        status: "pending",
+        invitedByKind: "twistag",
+      }),
+    );
+  });
+
+  it("returns the exact render contract the drill-down consumes", async () => {
+    const detail = await asTwistag().twistag.clientDetail({ tenantId: TC });
+
+    expect(detail.tenant).toMatchObject({
+      name: "Client C",
+      segment: "PE portco · 100-day",
+      status: "onboarding",
+    });
+    expect(detail.members.map((m) => m.email)).toContain("mgr@c.example");
+    expect(detail.pendingInvitations.map((i) => i.email)).toContain(
+      "new@c.example",
+    );
+
+    expect(detail.sprints).toHaveLength(1);
+    const s = detail.sprints[0];
+    expect(s.completionPct).toBe(50);
+    expect(s.participantCount).toBe(1);
+    expect(s.opportunityCount).toBe(1);
+    expect(s.approvedCount).toBe(1);
+    expect(s.sowDraftStatuses).toEqual(["draft"]);
+
+    expect(detail.opportunities).toHaveLength(1);
+    const o = detail.opportunities[0];
+    expect(o.title).toBe("Automate credit-hold release");
+    expect(o.compositeScore).toBe(8.4);
+    expect(o.status).toBe("approved");
+    expect(o.sowStatus).toBe("draft");
   });
 });

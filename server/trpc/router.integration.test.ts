@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
 import {
+  tenants,
   sprints,
   opportunities,
   users,
@@ -350,11 +351,215 @@ describe("twistag.clientList", () => {
     const a = clients.find((c) => c.name === "Tenant A")!;
     expect(a.opportunities).toBeGreaterThanOrEqual(1);
     expect(["healthy", "watch", "at_risk"]).toContain(a.health);
+    // engagementLead was render-dead and is gone (Phase 0).
+    expect(a).not.toHaveProperty("engagementLead");
+    // Shape holds even for a tenant with no active sprint: zero-safe fields.
+    for (const c of clients) {
+      expect(typeof c.completionPct).toBe("number");
+      expect(Number.isNaN(c.completionPct)).toBe(false);
+      expect(typeof c.sprintName).toBe("string");
+    }
   });
 
   it("rejects a tenant session (twistagProcedure)", async () => {
     const api = asTenant(TENANT_A);
     await expect(api.twistag.clientList()).rejects.toThrow();
+  });
+});
+
+const TW_ADMIN = "00000000-0000-4000-8000-0000000000ff";
+const asTwistag = (twistagRole: string, userId = TW_ADMIN) =>
+  createCaller({ session: { kind: "twistag", twistagRole, userId } });
+
+describe("twistag admin procedures", () => {
+  it("the twistag-vs-tenant boundary: every twistag.* rejects a tenant session", async () => {
+    const api = asTenant(TENANT_A);
+    await expect(
+      api.twistag.clientDetail({ tenantId: TENANT_A }),
+    ).rejects.toThrow();
+    await expect(
+      api.twistag.sprintView({ sprintId: SPRINT_A }),
+    ).rejects.toThrow();
+    await expect(api.twistag.auditLog({})).rejects.toThrow();
+    await expect(
+      api.twistag.sprintClose({ sprintId: SPRINT_A }),
+    ).rejects.toThrow();
+  });
+
+  it.each(["twistag_admin", "twistag_lead"])(
+    "any twistag session (%s) can close a sprint — flips status + audits tenantId/targetId",
+    async (role) => {
+      const api = asTwistag(role);
+      const res = await api.twistag.sprintClose({ sprintId: SPRINT_A });
+      expect(res.status).toBe("completed");
+      expect(res.tenantId).toBe(TENANT_A);
+
+      const [s] = await seedRow((tx) =>
+        tx.select().from(sprints).where(eq(sprints.id, SPRINT_A)),
+      );
+      expect(s.status).toBe("completed");
+
+      const [audit] = await seedRow((tx) =>
+        tx
+          .select()
+          .from(auditLog)
+          .where(eq(auditLog.action, "twistag.sprint.close")),
+      );
+      expect(audit.tenantId).toBe(TENANT_A);
+      expect(audit.targetId).toBe(SPRINT_A);
+      expect(audit.metadata).toMatchObject({ twistag_role: role });
+    },
+  );
+
+  it("clientDetail throws NOT_FOUND for an unknown tenant", async () => {
+    const api = asTwistag("twistag_admin");
+    await expect(
+      // Valid v4 UUID that isn't seeded → reaches the NOT_FOUND path.
+      api.twistag.clientDetail({
+        tenantId: "99999999-9999-4999-8999-999999999999",
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("clientDetail aggregates only the requested tenant's data", async () => {
+    // The seeded TENANT_A/B fixtures aren't valid versioned UUIDs (the strict
+    // z.uuid() input rejects them), so use a fresh valid-UUID tenant here.
+    const TENANT_V = "12121212-1212-4121-8121-121212121212";
+    const SPRINT_V = "13131313-1313-4131-8131-131313131313";
+    const MGR_V = "14141414-1414-4141-8141-141414141414";
+    await seedRow((tx) =>
+      tx.insert(tenants).values({
+        id: TENANT_V,
+        slug: "tenant-v",
+        name: "Tenant V",
+        segment: "test",
+        status: "active",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprints).values(sprintRow(SPRINT_V, TENANT_V)),
+    );
+    await seedRow((tx) =>
+      tx.insert(opportunities).values(oppRow(TENANT_V, SPRINT_V, "V opp")),
+    );
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: MGR_V,
+        tenantId: TENANT_V,
+        email: "m@v.example",
+        name: "Mgr V",
+        role: "manager",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprintParticipants).values({
+        tenantId: TENANT_V,
+        sprintId: SPRINT_V,
+        userId: MGR_V,
+        status: "in_progress",
+        sessionsCompleted: 2,
+        sessionsTotal: 4,
+      }),
+    );
+
+    const api = asTwistag("twistag_admin");
+    const detail = await api.twistag.clientDetail({ tenantId: TENANT_V });
+    expect(detail.tenant.name).toBe("Tenant V");
+    expect(detail.members.map((m) => m.email)).toContain("m@v.example");
+    const sprintV = detail.sprints.find((s) => s.id === SPRINT_V)!;
+    expect(sprintV.opportunityCount).toBe(1);
+    expect(sprintV.participantCount).toBe(1);
+    expect(sprintV.completionPct).toBe(50);
+    // Other tenants' sprints never leak into this tenant's detail.
+    expect(detail.sprints.some((s) => s.id === SPRINT_A)).toBe(false);
+    expect(detail.sprints.some((s) => s.id === SPRINT_B)).toBe(false);
+  });
+
+  it("auditLog filters, paginates, hides reads by default, and logs its own view", async () => {
+    const api = asTwistag("twistag_admin");
+    await api.twistag.clientList(); // writes a twistag.read
+    await api.twistag.sprintClose({ sprintId: SPRINT_A }); // writes twistag.sprint.close
+
+    const def = await api.twistag.auditLog({ limit: 50 });
+    // Reads hidden by default.
+    expect(def.rows.every((r) => r.action !== "twistag.read")).toBe(true);
+    // The act of viewing logs itself.
+    expect(def.rows.some((r) => r.action === "twistag.audit.view")).toBe(true);
+    // The close shows.
+    expect(def.rows.some((r) => r.action === "twistag.sprint.close")).toBe(
+      true,
+    );
+
+    // includeReads surfaces twistag.read.
+    const withReads = await api.twistag.auditLog({
+      includeReads: true,
+      limit: 50,
+    });
+    expect(withReads.rows.some((r) => r.action === "twistag.read")).toBe(true);
+
+    // action prefix filter.
+    const closes = await api.twistag.auditLog({
+      action: "twistag.sprint",
+      limit: 50,
+    });
+    expect(closes.rows.length).toBeGreaterThanOrEqual(1);
+    expect(
+      closes.rows.every((r) => r.action.startsWith("twistag.sprint")),
+    ).toBe(true);
+
+    // actor filter (metadata ->> 'actor').
+    const byActor = await api.twistag.auditLog({
+      actor: TW_ADMIN,
+      includeReads: true,
+      limit: 50,
+    });
+    expect(
+      byActor.rows.every(
+        (r) => (r.metadata as { actor?: string }).actor === TW_ADMIN,
+      ),
+    ).toBe(true);
+
+    // keyset pagination by id desc.
+    const page1 = await api.twistag.auditLog({ limit: 1, includeReads: true });
+    expect(page1.rows).toHaveLength(1);
+    expect(page1.nextCursor).not.toBeNull();
+    const page2 = await api.twistag.auditLog({
+      limit: 1,
+      includeReads: true,
+      cursor: page1.nextCursor!,
+    });
+    expect(page2.rows[0].id).toBeLessThan(page1.rows[0].id);
+  });
+
+  it("auditLog combines tenant + action filters (audit page contract)", async () => {
+    const TV = "15151515-1515-4151-8151-151515151515";
+    const SV = "16161616-1616-4161-8161-161616161616";
+    await seedRow((tx) =>
+      tx.insert(tenants).values({
+        id: TV,
+        slug: "tenant-av",
+        name: "Tenant AV",
+        segment: "test",
+        status: "active",
+      }),
+    );
+    await seedRow((tx) => tx.insert(sprints).values(sprintRow(SV, TV)));
+
+    const api = asTwistag("twistag_admin");
+    await api.twistag.sprintClose({ sprintId: SV }); // close on TV
+    await api.twistag.sprintClose({ sprintId: SPRINT_A }); // close on another tenant
+
+    const res = await api.twistag.auditLog({
+      tenantId: TV,
+      action: "twistag.sprint",
+      limit: 50,
+    });
+    expect(res.rows.length).toBeGreaterThanOrEqual(1);
+    expect(
+      res.rows.every(
+        (r) => r.tenantId === TV && r.action.startsWith("twistag.sprint"),
+      ),
+    ).toBe(true);
   });
 });
 

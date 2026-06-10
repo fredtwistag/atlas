@@ -11,7 +11,7 @@
  *   - cross-tenant targets are invisible (RLS) or explicitly tenant-scoped.
  */
 import { eq, and, sql } from "drizzle-orm";
-import { withTenantContext, withServiceRole } from "@/db/client";
+import { withTenantContext, withServiceRole, type Db } from "@/db/client";
 import {
   users,
   invitations,
@@ -72,11 +72,84 @@ export async function updateMemberRole(
 }
 
 /**
+ * Hard-remove a member and their sprint footprint within `tenantId`. Assumes a
+ * service_role transaction (BYPASSRLS), so every statement is explicitly
+ * tenant-scoped. Blocks removing the last manager. Returns the removed email so
+ * the wrapper can delete the matching Supabase auth user. Shared by the tenant
+ * (`removeMemberRecord`) and Twistag (`removeMemberFromTenant`) paths — the
+ * self-removal check is the caller's, since a Twistag actor is never a member.
+ */
+export async function removeMemberTx(
+  tx: Db,
+  tenantId: string,
+  userId: string,
+): Promise<{ email: string }> {
+  const [target] = await tx
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)));
+  if (!target) throw new Error("not found");
+
+  if (target.role === "manager") {
+    const managers = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.tenantId, tenantId), eq(users.role, "manager")));
+    if (managers.length <= 1) {
+      throw new Error("cannot remove the last manager");
+    }
+  }
+
+  // Null out references that should survive the person leaving.
+  await tx
+    .update(sprints)
+    .set({ sponsorId: null })
+    .where(and(eq(sprints.sponsorId, userId), eq(sprints.tenantId, tenantId)));
+  await tx
+    .update(sprints)
+    .set({ managerId: null })
+    .where(and(eq(sprints.managerId, userId), eq(sprints.tenantId, tenantId)));
+  await tx
+    .update(opportunities)
+    .set({ approvedBy: null })
+    .where(
+      and(
+        eq(opportunities.approvedBy, userId),
+        eq(opportunities.tenantId, tenantId),
+      ),
+    );
+
+  // Delete the rows the user owns, inner-most FK first.
+  await tx.execute(
+    sql`DELETE FROM public.opportunity_evidence
+        WHERE tenant_id = ${tenantId}::uuid
+          AND capture_id IN (SELECT id FROM public.captures WHERE user_id = ${userId}::uuid)`,
+  );
+  await tx
+    .delete(captures)
+    .where(and(eq(captures.userId, userId), eq(captures.tenantId, tenantId)));
+  await tx
+    .delete(sessions)
+    .where(and(eq(sessions.userId, userId), eq(sessions.tenantId, tenantId)));
+  await tx
+    .delete(sprintParticipants)
+    .where(
+      and(
+        eq(sprintParticipants.userId, userId),
+        eq(sprintParticipants.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(users)
+    .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)));
+
+  return { email: target.email };
+}
+
+/**
  * Hard-remove a member and their sprint footprint. Runs as service_role
- * (audited) because it must clear FK-referencing rows the user owns; every
- * write is explicitly tenant-scoped since RLS is bypassed. Blocks removing
- * yourself or the last manager. Returns the removed email so the wrapper can
- * delete the matching Supabase auth user.
+ * (audited). Blocks removing yourself or the last manager. Returns the removed
+ * email so the wrapper can delete the matching Supabase auth user.
  */
 export async function removeMemberRecord(
   actor: Actor,
@@ -88,55 +161,7 @@ export async function removeMemberRecord(
   }
   return withServiceRole(
     { action: "member.remove", actor: actor.userId },
-    async (tx) => {
-      const [target] = await tx
-        .select()
-        .from(users)
-        .where(and(eq(users.id, userId), eq(users.tenantId, actor.tenantId)));
-      if (!target) throw new Error("not found");
-
-      if (target.role === "manager") {
-        const managers = await tx
-          .select({ id: users.id })
-          .from(users)
-          .where(
-            and(eq(users.tenantId, actor.tenantId), eq(users.role, "manager")),
-          );
-        if (managers.length <= 1) {
-          throw new Error("cannot remove the last manager");
-        }
-      }
-
-      // Null out references that should survive the person leaving.
-      await tx
-        .update(sprints)
-        .set({ sponsorId: null })
-        .where(eq(sprints.sponsorId, userId));
-      await tx
-        .update(sprints)
-        .set({ managerId: null })
-        .where(eq(sprints.managerId, userId));
-      await tx
-        .update(opportunities)
-        .set({ approvedBy: null })
-        .where(eq(opportunities.approvedBy, userId));
-
-      // Delete the rows the user owns, inner-most FK first.
-      await tx.execute(
-        sql`DELETE FROM public.opportunity_evidence
-            WHERE capture_id IN (SELECT id FROM public.captures WHERE user_id = ${userId}::uuid)`,
-      );
-      await tx.delete(captures).where(eq(captures.userId, userId));
-      await tx.delete(sessions).where(eq(sessions.userId, userId));
-      await tx
-        .delete(sprintParticipants)
-        .where(eq(sprintParticipants.userId, userId));
-      await tx
-        .delete(users)
-        .where(and(eq(users.id, userId), eq(users.tenantId, actor.tenantId)));
-
-      return { email: target.email };
-    },
+    (tx) => removeMemberTx(tx, actor.tenantId, userId),
   );
 }
 

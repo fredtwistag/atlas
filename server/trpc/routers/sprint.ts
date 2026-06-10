@@ -12,10 +12,9 @@ import {
   users,
   tenants,
   opportunities,
-  captures,
   auditLog,
 } from "@/db/schema";
-import { computeProgress } from "@/lib/dashboard-map";
+import { loadSprint, loadSprintProgress } from "@/lib/sprint-read";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { LaunchSprintSchema } from "@/lib/schemas";
 import { appUrl } from "@/lib/app-url";
@@ -23,24 +22,10 @@ import { generateInviteLink } from "@/services/email/invite-link";
 import { sendEmail } from "@/services/email/send";
 import { InviteEmail, inviteSubject } from "@/emails/InviteEmail";
 import { NudgeEmail } from "@/emails/NudgeEmail";
-import type {
-  Sprint,
-  Participant,
-  SprintProgress,
-  ActivityItem,
-} from "@/lib/types";
+import type { ActivityItem } from "@/lib/types";
 
 const idInput = z.object({ id: z.string().uuid() });
 const DAY = 86_400_000;
-
-function fmtDate(d: string): string {
-  return new Date(d + "T00:00:00Z").toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
 
 export const sprintRouter = router({
   currentForTenant: tenantProcedure.query(({ ctx }) =>
@@ -346,152 +331,17 @@ export const sprintRouter = router({
       return launched.sprintId;
     }),
 
-  get: tenantProcedure.input(idInput).query(({ ctx, input }) =>
-    withTenantContext(ctx.session, async (tx): Promise<Sprint> => {
-      const [s] = await tx
-        .select()
-        .from(sprints)
-        .where(eq(sprints.id, input.id));
-      if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+  get: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadSprint(tx, input.id)),
+    ),
 
-      const [tenant] = await tx
-        .select()
-        .from(tenants)
-        .where(eq(tenants.id, s.tenantId));
-
-      const topicRows = await tx
-        .select()
-        .from(topics)
-        .where(eq(topics.sprintId, s.id))
-        .orderBy(topics.orderIdx);
-
-      const partRows = await tx
-        .select({
-          status: sprintParticipants.status,
-          sessionsCompleted: sprintParticipants.sessionsCompleted,
-          sessionsTotal: sprintParticipants.sessionsTotal,
-          lastActiveLabel: sprintParticipants.lastActiveLabel,
-          uid: users.id,
-          name: users.name,
-          email: users.email,
-          role: users.role,
-          department: users.department,
-          title: users.title,
-        })
-        .from(sprintParticipants)
-        .innerJoin(users, eq(sprintParticipants.userId, users.id))
-        .where(eq(sprintParticipants.sprintId, s.id));
-
-      const participants: Participant[] = partRows.map((p) => ({
-        user: {
-          id: p.uid,
-          name: p.name,
-          email: p.email,
-          role: p.role as Participant["user"]["role"],
-          department: p.department ?? "",
-          title: p.title ?? "",
-        },
-        status: p.status as Participant["status"],
-        sessionsCompleted: p.sessionsCompleted,
-        sessionsTotal: p.sessionsTotal,
-        lastActiveLabel: p.lastActiveLabel ?? "",
-        capturesContributed: 0,
-      }));
-
-      // Sponsor/manager are usually NOT participants, so resolve them from the
-      // users table directly (fast-path via participants when they are one).
-      const resolveUser = async (
-        userId: string | null,
-      ): Promise<Participant["user"] | undefined> => {
-        if (!userId) return undefined;
-        const inParticipants = participants.find(
-          (p) => p.user.id === userId,
-        )?.user;
-        if (inParticipants) return inParticipants;
-        const [u] = await tx.select().from(users).where(eq(users.id, userId));
-        if (!u) return undefined;
-        return {
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role as Participant["user"]["role"],
-          department: u.department ?? "",
-          title: u.title ?? "",
-        };
-      };
-      const [manager, sponsor] = await Promise.all([
-        resolveUser(s.managerId),
-        resolveUser(s.sponsorId),
-      ]);
-
-      const start = new Date(s.startDate + "T00:00:00Z");
-      const end = new Date(s.endDate + "T00:00:00Z");
-      const dayTotal = Math.max(
-        1,
-        Math.round((end.getTime() - start.getTime()) / DAY),
-      );
-      const dayOf = Math.min(
-        dayTotal,
-        Math.max(1, Math.round((Date.now() - start.getTime()) / DAY)),
-      );
-
-      return {
-        id: s.id,
-        tenantName: tenant?.name ?? "",
-        tenantSegment: tenant?.segment ?? "",
-        name: s.name,
-        primaryFocus: s.primaryFocus,
-        scopeDepartment: s.scopeDepartment ?? "",
-        status: s.status as Sprint["status"],
-        startDate: fmtDate(s.startDate),
-        endDate: fmtDate(s.endDate),
-        dayOf,
-        dayTotal,
-        cadence: s.cadence,
-        topics: topicRows.map((t) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description ?? "",
-          orderIdx: t.orderIdx,
-          questionCount: t.questionCount,
-          estMinutes: t.estMinutes,
-        })),
-        participants,
-        sponsor: sponsor ?? manager ?? participants[0]?.user ?? blankUser(),
-        manager: manager ?? participants[0]?.user ?? blankUser(),
-      };
-    }),
-  ),
-
-  progress: tenantProcedure.input(idInput).query(({ ctx, input }) =>
-    withTenantContext(ctx.session, async (tx): Promise<SprintProgress> => {
-      const parts = await tx
-        .select({
-          status: sprintParticipants.status,
-          sessionsCompleted: sprintParticipants.sessionsCompleted,
-          sessionsTotal: sprintParticipants.sessionsTotal,
-        })
-        .from(sprintParticipants)
-        .where(eq(sprintParticipants.sprintId, input.id));
-      const opps = await tx
-        .select({ compositeScore: opportunities.compositeScore })
-        .from(opportunities)
-        .where(eq(opportunities.sprintId, input.id));
-      const caps = await tx
-        .select({ id: captures.id })
-        .from(captures)
-        .innerJoin(sessions, eq(captures.sessionId, sessions.id))
-        .where(eq(sessions.sprintId, input.id));
-      return computeProgress({
-        participants: parts,
-        opportunities: opps.map((o) => ({
-          compositeScore: Number(o.compositeScore),
-        })),
-        capturesCount: caps.length,
-        signalQuality: 4.6,
-      });
-    }),
-  ),
+  progress: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadSprintProgress(tx, input.id)),
+    ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>
     withTenantContext(ctx.session, async (tx): Promise<ActivityItem[]> => {
@@ -564,14 +414,3 @@ export const sprintRouter = router({
       }),
     ),
 });
-
-function blankUser(): Sprint["manager"] {
-  return {
-    id: "",
-    name: "—",
-    email: "",
-    role: "manager",
-    department: "",
-    title: "",
-  };
-}

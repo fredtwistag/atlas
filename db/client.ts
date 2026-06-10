@@ -81,16 +81,36 @@ export async function withTenantContext<T>(
 /**
  * Run `fn` as the service_role (BYPASSRLS). For seeding, admin, and cross-tenant
  * operations only. Writes an audit_log row before running fn.
+ *
+ * `tenantId`/`userId`/`targetId` fill the matching audit_log columns so admin
+ * actions are queryable by the audit viewer; they're optional so legacy 2-field
+ * callers keep compiling. `metadata` merges with `{actor}` (actor always wins).
+ * We deliberately do NOT derive `user_id` from `actor` — some actors are
+ * non-uuid sentinels ("test"/"dev"/"seed").
  */
 export async function withServiceRole<T>(
-  audit: { action: string; actor: string },
+  audit: {
+    action: string;
+    actor: string;
+    tenantId?: string;
+    userId?: string;
+    targetId?: string;
+    metadata?: Record<string, unknown>;
+  },
   fn: (tx: Db) => Promise<T>,
 ): Promise<T> {
+  const metaJson = JSON.stringify(audit.metadata ?? {});
   return db().transaction(async (tx) => {
     await tx.execute(sql`SET LOCAL ROLE service_role`);
     await tx.execute(
-      sql`INSERT INTO public.audit_log (action, metadata)
-          VALUES (${audit.action}, jsonb_build_object('actor', ${audit.actor}::text))`,
+      sql`INSERT INTO public.audit_log (action, tenant_id, user_id, target_id, metadata)
+          VALUES (
+            ${audit.action},
+            ${audit.tenantId ?? null}::uuid,
+            ${audit.userId ?? null}::uuid,
+            ${audit.targetId ?? null},
+            ${metaJson}::jsonb || jsonb_build_object('actor', ${audit.actor}::text)
+          )`,
     );
     return fn(tx as unknown as Db);
   });
@@ -107,7 +127,12 @@ export async function withServiceRole<T>(
  * which a twistag claim does not have, so writes here would be denied anyway.
  */
 export async function withTwistagContext<T>(
-  audit: { twistagRole: string; actor: string },
+  audit: {
+    twistagRole: string;
+    actor: string;
+    tenantId?: string;
+    targetId?: string;
+  },
   fn: (tx: Db) => Promise<T>,
 ): Promise<T> {
   const claimsJson = JSON.stringify({
@@ -116,11 +141,13 @@ export async function withTwistagContext<T>(
   });
   return db().transaction(async (tx) => {
     // Audit the cross-tenant read as service_role (authenticated lacks INSERT
-    // on audit_log).
+    // on audit_log). tenant_id/target_id record what was read, when known.
     await tx.execute(sql`SET LOCAL ROLE service_role`);
     await tx.execute(
-      sql`INSERT INTO public.audit_log (action, metadata)
+      sql`INSERT INTO public.audit_log (action, tenant_id, target_id, metadata)
           VALUES ('twistag.read',
+                  ${audit.tenantId ?? null}::uuid,
+                  ${audit.targetId ?? null},
                   jsonb_build_object('actor', ${audit.actor}::text,
                                      'twistag_role', ${audit.twistagRole}::text))`,
     );

@@ -29,7 +29,7 @@ dev-server preview verification at 375 / 768 / 1280 px with screenshots.
 | [009](009-mock-data-quarantine.md) | Quarantine mock data | D8 | `lib/format.ts`, shipped routes/components | Done |
 | [010](010-verify-script-ci.md) | verify script + CI format gate | D10 | `package.json`, `.github/workflows/ci.yml`, `README.md` | Done |
 | [011](011-page-e2e-tests.md) | Page + smoke E2E tests | E11 | `e2e/`, page component tests | Done |
-| [012](012-admin-super-area.md) | Twistag admin super-area (visibility/control/audit) | — | `app/(app)/admin/**`, `server/trpc/routers/twistag.ts`, `db/client.ts`, `lib/twistag-admin.ts`, `components/AppSidebar.tsx` | Todo |
+| [012](012-admin-super-area.md) | Twistag admin super-area (visibility/control/audit) | — | `app/(app)/admin/**`, `server/trpc/routers/twistag.ts`, `db/client.ts`, `lib/twistag-admin.ts`, `components/AppSidebar.tsx` | Done |
 
 Status values: `Todo` → `In progress` → `Done` (gate green) / `Blocked`.
 

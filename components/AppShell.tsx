@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { AppSidebar, type SidebarSession } from "./AppSidebar";
+import { AppSidebar, type SidebarSession, type UserKind } from "./AppSidebar";
 import { Logo } from "./Logo";
 
 /**
@@ -13,11 +13,13 @@ import { Logo } from "./Logo";
  */
 export function AppShell({
   user,
+  userKind = "tenant",
   sprintId = null,
   icSessions = [],
   children,
 }: {
   user: { name: string; title: string };
+  userKind?: UserKind;
   sprintId?: string | null;
   icSessions?: SidebarSession[];
   children: React.ReactNode;
@@ -47,7 +49,12 @@ export function AppShell({
         data-app-chrome
         className="sticky top-0 hidden h-screen border-r border-border lg:block"
       >
-        <AppSidebar user={user} sprintId={sprintId} icSessions={icSessions} />
+        <AppSidebar
+          user={user}
+          userKind={userKind}
+          sprintId={sprintId}
+          icSessions={icSessions}
+        />
       </aside>
 
       {/* Mobile top bar */}
@@ -89,6 +96,7 @@ export function AppShell({
             </button>
             <AppSidebar
               user={user}
+              userKind={userKind}
               sprintId={sprintId}
               icSessions={icSessions}
               onNavigate={() => setDrawerOpen(false)}

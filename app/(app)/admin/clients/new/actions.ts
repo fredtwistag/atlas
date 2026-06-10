@@ -27,7 +27,7 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
     managerEmail: formData.get("managerEmail"),
   });
   if (!parsed.success) {
-    redirect("/admin?error=invalid");
+    redirect("/admin/clients/new?error=invalid");
   }
   const { orgName, orgSlug, segment, managerName, managerEmail } = parsed.data;
 
@@ -92,7 +92,7 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
   revalidatePath("/admin");
   redirect(
     delivered
-      ? `/admin?invited=${encodeURIComponent(managerEmail)}`
-      : "/admin?error=email",
+      ? `/admin/clients/new?invited=${encodeURIComponent(managerEmail)}`
+      : "/admin/clients/new?error=email",
   );
 }

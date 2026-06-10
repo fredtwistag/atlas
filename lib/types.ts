@@ -208,6 +208,5 @@ export interface ClientSummary {
   completionPct: number;
   opportunities: number;
   approved: number;
-  engagementLead: string;
   alert?: string;
 }

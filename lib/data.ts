@@ -873,7 +873,6 @@ const clients: ClientSummary[] = [
     completionPct: 63,
     opportunities: 7,
     approved: 1,
-    engagementLead: "You",
   },
   {
     tenantId: "cli-helios",
@@ -884,7 +883,6 @@ const clients: ClientSummary[] = [
     completionPct: 41,
     opportunities: 4,
     approved: 0,
-    engagementLead: "You",
     alert: "Participation stalled at 41% — 2 ICs idle >5 days",
   },
   {
@@ -896,7 +894,6 @@ const clients: ClientSummary[] = [
     completionPct: 78,
     opportunities: 9,
     approved: 2,
-    engagementLead: "You",
   },
   {
     tenantId: "cli-orbit",
@@ -907,7 +904,6 @@ const clients: ClientSummary[] = [
     completionPct: 22,
     opportunities: 2,
     approved: 0,
-    engagementLead: "You",
     alert: "Sponsor unresponsive 8 days — kickoff momentum lost",
   },
 ];

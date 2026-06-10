@@ -4,8 +4,14 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { usdRange } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import type { Opportunity } from "@/lib/types";
 
+/**
+ * Opportunity summary card. With `href` it's a clickable link (dashboard,
+ * manager report). Without `href` it renders as a plain, non-interactive card —
+ * used by the Twistag read-only report where there's no drill-down.
+ */
 export function OpportunityCard({
   opp,
   href,
@@ -14,43 +20,50 @@ export function OpportunityCard({
   meta = "voices",
 }: {
   opp: Opportunity;
-  href: string;
+  href?: string;
   rank?: number;
   meta?: "voices" | "category";
 }) {
-  return (
-    <Link href={href}>
-      <Card className="group p-4 transition-all hover:border-border-strong hover:shadow">
-        <div className="flex items-start gap-3">
-          <ScoreBadge score={opp.compositeScore} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-md font-semibold leading-snug">
-                {rank != null ? (
-                  <span className="mr-1.5 text-xs font-semibold text-text-3">
-                    {String(rank).padStart(2, "0")}
-                  </span>
-                ) : null}
-                {opp.title}
-              </h3>
+  const body = (
+    <Card
+      className={cn(
+        "p-4",
+        href && "group transition-all hover:border-border-strong hover:shadow",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <ScoreBadge score={opp.compositeScore} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-md font-semibold leading-snug">
+              {rank != null ? (
+                <span className="mr-1.5 text-xs font-semibold text-text-3">
+                  {String(rank).padStart(2, "0")}
+                </span>
+              ) : null}
+              {opp.title}
+            </h3>
+            {href ? (
               <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-text-3 transition-colors group-hover:text-brand" />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <Badge tone="success">
-                {usdRange(opp.impactLow, opp.impactHigh)}/yr
-              </Badge>
-              <Badge tone="outline">
-                {opp.timeToShipWeeksLow}–{opp.timeToShipWeeksHigh} wks
-              </Badge>
-              <Badge tone="neutral">
-                {meta === "category"
-                  ? opp.category
-                  : `${opp.contributorCount} voices`}
-              </Badge>
-            </div>
+            ) : null}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge tone="success">
+              {usdRange(opp.impactLow, opp.impactHigh)}/yr
+            </Badge>
+            <Badge tone="outline">
+              {opp.timeToShipWeeksLow}–{opp.timeToShipWeeksHigh} wks
+            </Badge>
+            <Badge tone="neutral">
+              {meta === "category"
+                ? opp.category
+                : `${opp.contributorCount} voices`}
+            </Badge>
           </div>
         </div>
-      </Card>
-    </Link>
+      </div>
+    </Card>
   );
+
+  return href ? <Link href={href}>{body}</Link> : body;
 }

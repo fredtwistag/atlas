@@ -12,6 +12,8 @@ import {
   Lightbulb,
   BarChart3,
   Boxes,
+  Building2,
+  ScrollText,
   LogOut,
   Check,
   Lock,
@@ -51,7 +53,7 @@ type NavItem = {
  * no active sprint — the manager then sees Overview, which routes to the launch
  * form). Only real, working routes are linked.
  */
-function buildPersonas(sprintId: string | null): Persona[] {
+export function buildPersonas(sprintId: string | null): Persona[] {
   const sprintItems: NavItem[] = [
     {
       label: "Overview",
@@ -112,8 +114,8 @@ function buildPersonas(sprintId: string | null): Persona[] {
     {
       id: "Twistag",
       short: "Twistag",
-      home: "/twistag",
-      match: ["/twistag"],
+      home: "/admin",
+      match: ["/admin", "/twistag"],
       groups: [
         {
           label: "Workspace",
@@ -121,12 +123,29 @@ function buildPersonas(sprintId: string | null): Persona[] {
             {
               label: "All clients",
               icon: Boxes,
-              href: "/twistag",
-              match: ["/twistag"],
+              href: "/admin",
+              match: ["/admin", "/admin/clients"],
+            },
+            {
+              label: "New client",
+              icon: Building2,
+              href: "/admin/clients/new",
+              match: ["/admin/clients/new"],
             },
             { label: "Opportunities", icon: Lightbulb, soon: true },
             { label: "Engagements", icon: Layers, soon: true },
             { label: "Pattern library", icon: Boxes, soon: true },
+          ],
+        },
+        {
+          label: "Governance",
+          items: [
+            {
+              label: "Audit log",
+              icon: ScrollText,
+              href: "/admin/audit",
+              match: ["/admin/audit"],
+            },
           ],
         },
         {
@@ -142,7 +161,21 @@ function buildPersonas(sprintId: string | null): Persona[] {
   ];
 }
 
-function activePersona(personas: Persona[], pathname: string): Persona {
+export type UserKind = "tenant" | "twistag";
+
+/**
+ * Twistag staff always get the Twistag persona — their nav is role-driven, not
+ * path-driven (they may land on tenant routes like a read-only report). Tenant
+ * users keep path-based selection across the IC / Manager personas.
+ */
+export function activePersona(
+  personas: Persona[],
+  pathname: string,
+  userKind: UserKind,
+): Persona {
+  if (userKind === "twistag") {
+    return personas.find((p) => p.id === "Twistag") ?? personas[0];
+  }
   return (
     personas.find((p) => p.match.some((m) => pathname.startsWith(m))) ??
     personas[0]
@@ -192,18 +225,20 @@ export type SidebarSession = {
 
 export function AppSidebar({
   user,
+  userKind = "tenant",
   sprintId = null,
   icSessions = [],
   onNavigate,
 }: {
   user: { name: string; title: string };
+  userKind?: UserKind;
   sprintId?: string | null;
   icSessions?: SidebarSession[];
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const personas = buildPersonas(sprintId);
-  const persona = activePersona(personas, pathname);
+  const persona = activePersona(personas, pathname, userKind);
   const active = activeItem(persona, pathname);
 
   // The IC sees their real session checklist; "up next" is the first incomplete.

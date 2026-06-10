@@ -36,6 +36,20 @@ export const clientHealthMeta: Record<
   at_risk: { label: "At risk", tone: "danger" },
 };
 
+/**
+ * Tenant lifecycle status → badge. `status` is free text in the DB, so callers
+ * fall back to `{ label: status, tone: "neutral" }` for anything unmapped.
+ */
+export const tenantStatusMeta: Record<
+  string,
+  { label: string; tone: BadgeTone }
+> = {
+  active: { label: "Active", tone: "success" },
+  onboarding: { label: "Onboarding", tone: "brand" },
+  paused: { label: "Paused", tone: "warning" },
+  churned: { label: "Churned", tone: "neutral" },
+};
+
 export const captureKindTone: Record<CaptureKind, BadgeTone> = {
   bottleneck: "danger",
   workaround: "brand",

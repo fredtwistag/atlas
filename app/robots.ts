@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/me", "/sprint", "/twistag", "/session"],
+        disallow: ["/me", "/sprint", "/admin", "/twistag", "/session"],
       },
     ],
     sitemap: "https://atlas.twistag.com/sitemap.xml",

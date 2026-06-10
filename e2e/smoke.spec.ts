@@ -54,6 +54,89 @@ test("manager: sign in → dashboard → opportunity → SOW preview", async ({
   }
 });
 
+test("twistag admin: sign in → /admin cockpit, role-aware sidebar, /twistag redirect", async ({
+  page,
+}) => {
+  await page.goto("/sign-in/dev", { waitUntil: "networkidle" });
+  const signIn = page.locator(
+    'form:has(input[value="admin@twistag.com"]) button[type="submit"]',
+  );
+  await Promise.all([
+    page.waitForURL(/\/admin$/, { timeout: 30_000 }),
+    signIn.click(),
+  ]);
+
+  // The cockpit (moved here from /twistag) plus the Twistag persona sidebar.
+  await expect(
+    page.getByRole("heading", { name: /your clients/i }),
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("link", { name: "All clients" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "New client" })).toBeVisible();
+
+  // The legacy /twistag link still resolves — it redirects to the cockpit.
+  await page.goto("/twistag");
+  await expect(page).toHaveURL(/\/admin$/);
+});
+
+test("twistag admin: cockpit → client drill-down → tabs → read-only report", async ({
+  page,
+}) => {
+  await page.goto("/sign-in/dev", { waitUntil: "networkidle" });
+  await Promise.all([
+    page.waitForURL(/\/admin$/, { timeout: 30_000 }),
+    page
+      .locator(
+        'form:has(input[value="admin@twistag.com"]) button[type="submit"]',
+      )
+      .click(),
+  ]);
+
+  // Open the first client from the cockpit table.
+  const clientLink = page.locator('a[href^="/admin/clients/"]').first();
+  await expect(clientLink).toBeVisible({ timeout: 30_000 });
+  await clientLink.click();
+  await expect(page).toHaveURL(/\/admin\/clients\/[0-9a-f-]{36}$/);
+
+  // The canonical roving-tabindex tablist is keyboard navigable.
+  const tablist = page.getByRole("tablist");
+  await expect(tablist).toBeVisible();
+  const sprintsTab = page.getByRole("tab", { name: /sprints/i });
+  await sprintsTab.click();
+  await expect(sprintsTab).toHaveAttribute("aria-selected", "true");
+  await sprintsTab.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: /people/i })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
+  // From the Sprints tab, open a read-only report.
+  await sprintsTab.click();
+  const reportLink = page.getByRole("link", { name: /^Report$/ }).first();
+  if (await reportLink.count()) {
+    await reportLink.click();
+    await expect(page).toHaveURL(/\/sprint\/[0-9a-f-]{36}\/report$/);
+    await expect(page.getByText(/twistag view · read-only/i)).toBeVisible();
+  }
+});
+
+test("twistag admin: audit log viewer loads from the Governance nav", async ({
+  page,
+}) => {
+  await page.goto("/sign-in/dev", { waitUntil: "networkidle" });
+  await Promise.all([
+    page.waitForURL(/\/admin$/, { timeout: 30_000 }),
+    page
+      .locator(
+        'form:has(input[value="admin@twistag.com"]) button[type="submit"]',
+      )
+      .click(),
+  ]);
+  await page.getByRole("link", { name: "Audit log" }).click();
+  await expect(page).toHaveURL(/\/admin\/audit/);
+  await expect(page.getByRole("heading", { name: /audit log/i })).toBeVisible();
+});
+
 test("sign-in: expired-link error param shows recovery copy", async ({
   page,
 }) => {

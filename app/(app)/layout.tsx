@@ -32,6 +32,7 @@ export default async function AppLayout({
   return (
     <AppShell
       user={{ name: me.name, title: me.title }}
+      userKind={me.kind}
       sprintId={sprintId}
       icSessions={icSessions}
     >

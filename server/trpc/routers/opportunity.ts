@@ -12,6 +12,7 @@ import {
   sowDrafts,
 } from "@/db/schema";
 import { toOpportunity, type OpportunityRow } from "@/lib/dashboard-map";
+import { listSprintOpportunities } from "@/lib/sprint-read";
 import { buildSowDraft } from "@/lib/sow";
 import type { Opportunity, Capture, SowDraft } from "@/lib/types";
 
@@ -19,14 +20,9 @@ export const opportunityRouter = router({
   listForSprint: tenantProcedure
     .input(z.object({ sprintId: z.string().uuid() }))
     .query(({ ctx, input }) =>
-      withTenantContext(ctx.session, async (tx): Promise<Opportunity[]> => {
-        const rows = await tx
-          .select()
-          .from(opportunities)
-          .where(eq(opportunities.sprintId, input.sprintId))
-          .orderBy(desc(opportunities.compositeScore));
-        return rows.map((r) => toOpportunity(r as OpportunityRow, []));
-      }),
+      withTenantContext(ctx.session, (tx) =>
+        listSprintOpportunities(tx, input.sprintId),
+      ),
     ),
 
   get: tenantProcedure

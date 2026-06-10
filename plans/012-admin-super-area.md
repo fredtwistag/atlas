@@ -113,3 +113,15 @@ Manual: `/sign-in/dev` → admin@twistag.com → land `/admin` (cockpit) → cli
 - **Supabase deps**: invites need `SUPABASE_SERVICE_ROLE_KEY` + access-token hook enabled in dashboard (already true for /admin and /team).
 - **No RLS edits** → 2-approval PR rule not triggered. If a reviewer wants `tenants` write policies instead of service-role writes, push back: mirrors existing `inviteOrganization`/`removeMemberRecord` pattern deliberately.
 - Copy style throughout: short, honest, no corporate-speak; errors say what happened + what to do.
+
+---
+
+## Implementation notes (executed — branch `feat/admin-super-area`)
+
+Built phase by phase; each phase gated by typecheck + lint + unit + integration, and the admin surface browser-verified (cockpit, drill-down tabs, read-only report, audit viewer). Deviations from the spec above, all deliberate:
+
+1. **`twistag.clientDetail` returns an extra `opportunities[]`** (`{id, sprintId, title, compositeScore, status, sowStatus}`) — the "Opportunities & SOWs" tab needs titles/scores, not just the per-sprint counts. Still privacy-safe (no evidence/quotes). One read per page preserved.
+2. **Drill-down mutations use inline-feedback client components** (`CompanyEditForm`, `InviteMemberForm`, `CloseSprintButton` + `MemberRow`/`PendingInviteRow` via `useTransition`) instead of searchParam banners, so the active tab survives a mutation. Actions don't redirect; they `revalidatePath`. The org-invite at `/admin/clients/new` keeps its searchParam banners (single-purpose page).
+3. **`sprintClose` is two-step**: a `withTwistagContext` read resolves the sprint's tenant (NOT_FOUND if missing), then an audited `withServiceRole` update closes it with `tenantId`+`targetId`. Necessary because `withServiceRole` writes its audit row *before* `fn` runs, so the tenant must be known up front.
+4. **Strict `z.uuid()` on `clientDetail`/`auditLog` tenantId**: the `TENANT_A/B` test fixtures aren't valid *versioned* UUIDs, so tenant-filtered tests seed fresh valid-UUID tenants. Production tenant ids (`defaultRandom()`) are valid v4.
+5. **`tablist` UX**: panels stay mounted (`hidden`) so form/input state survives tab switches; roving tabindex + Arrow/Home/End nav per the OpportunityDetail pattern.
