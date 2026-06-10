@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const ROLE_OPTIONS = [
   { value: "ic", label: "Team member" },
@@ -38,6 +39,7 @@ export function MemberRow({
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function run(fn: () => Promise<void>) {
     setError(null);
@@ -91,16 +93,8 @@ export function MemberRow({
                 aria-label={`Remove ${name}`}
                 title="Remove member"
                 disabled={pending}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Remove ${name} from the team? Their sprint sessions are deleted too. This can't be undone.`,
-                    )
-                  ) {
-                    run(() => onRemove(id));
-                  }
-                }}
-                className="rounded-sm p-1.5 text-text-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+                onClick={() => setConfirmOpen(true)}
+                className="grid h-11 w-11 place-items-center rounded-sm text-text-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -115,6 +109,19 @@ export function MemberRow({
           {error}
         </p>
       ) : null}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Remove ${name} from the team?`}
+        description="Their sprint sessions are deleted too. This can't be undone."
+        confirmLabel="Remove"
+        destructive
+        pending={pending}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          run(() => onRemove(id));
+        }}
+      />
     </Card>
   );
 }

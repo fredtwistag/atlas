@@ -57,7 +57,7 @@ export function AppShell({
       >
         <button
           onClick={() => setDrawerOpen(true)}
-          className="rounded-sm p-1.5 text-text-2 hover:bg-surface-2 hover:text-text"
+          className="grid h-11 w-11 place-items-center rounded-sm text-text-2 hover:bg-surface-2 hover:text-text"
           aria-label="Open navigation"
         >
           <Menu className="h-5 w-5" />
@@ -82,7 +82,7 @@ export function AppShell({
           >
             <button
               onClick={() => setDrawerOpen(false)}
-              className="absolute right-3 top-4 z-10 rounded-sm p-1.5 text-text-3 hover:bg-surface-2 hover:text-text"
+              className="absolute right-3 top-4 z-10 grid h-11 w-11 place-items-center rounded-sm text-text-3 hover:bg-surface-2 hover:text-text"
               aria-label="Close"
             >
               <X className="h-4 w-4" />

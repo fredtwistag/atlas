@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -42,6 +42,25 @@ export function OpportunityDetail({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [approved, setApproved] = useState(opp.status === "approved");
   const [approving, setApproving] = useState(false);
+
+  const tabKeys: Tab[] = ["evidence", "patterns", "discussion"];
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const baseId = useId();
+  const tabId = (key: Tab) => `${baseId}-tab-${key}`;
+  const panelId = (key: Tab) => `${baseId}-panel-${key}`;
+
+  function onTabKeyDown(e: React.KeyboardEvent, idx: number) {
+    let next = idx;
+    if (e.key === "ArrowRight") next = (idx + 1) % tabKeys.length;
+    else if (e.key === "ArrowLeft")
+      next = (idx - 1 + tabKeys.length) % tabKeys.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabKeys.length - 1;
+    else return;
+    e.preventDefault();
+    setTab(tabKeys[next]);
+    tabRefs.current[next]?.focus();
+  }
 
   const isSponsor = approverRole === "sponsor";
   const approveLabel = isSponsor
@@ -135,31 +154,53 @@ export function OpportunityDetail({
           </Card>
 
           {/* Tabs */}
-          <div className="mb-4 flex gap-1 border-b border-border">
+          <div
+            role="tablist"
+            aria-label="Opportunity detail"
+            className="mb-4 flex gap-1 border-b border-border"
+          >
             {(
               [
                 ["evidence", `Evidence · ${opp.evidence.length}`],
                 ["patterns", "Patterns"],
                 ["discussion", "Discussion"],
               ] as [Tab, string][]
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={cn(
-                  "-mb-px border-b-2 px-3 py-2 text-[13px] font-medium transition-colors",
-                  tab === key
-                    ? "border-brand text-text"
-                    : "border-transparent text-text-3 hover:text-text-2",
-                )}
-              >
-                {label}
-              </button>
-            ))}
+            ).map(([key, label], idx) => {
+              const selected = tab === key;
+              return (
+                <button
+                  key={key}
+                  ref={(el) => {
+                    tabRefs.current[idx] = el;
+                  }}
+                  role="tab"
+                  id={tabId(key)}
+                  aria-selected={selected}
+                  aria-controls={panelId(key)}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setTab(key)}
+                  onKeyDown={(e) => onTabKeyDown(e, idx)}
+                  className={cn(
+                    "-mb-px border-b-2 px-3 py-2 text-[13px] font-medium transition-colors",
+                    selected
+                      ? "border-brand text-text"
+                      : "border-transparent text-text-3 hover:text-text-2",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {tab === "evidence" && (
-            <div className="space-y-3">
+            <div
+              role="tabpanel"
+              id={panelId("evidence")}
+              aria-labelledby={tabId("evidence")}
+              tabIndex={0}
+              className="space-y-3"
+            >
               {opp.evidence.map((c) => (
                 <Card key={c.id} className="p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -188,44 +229,58 @@ export function OpportunityDetail({
           )}
 
           {tab === "patterns" && (
-            <Card className="p-5">
-              {opp.patternMatch ? (
-                <>
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-                    Twistag-internal · pattern library
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-md font-semibold">
-                        {opp.patternMatch.title}
-                      </h3>
-                      <p className="mt-1 text-sm text-text-2">
-                        Shipped {opp.patternMatch.deploys} times across prior
-                        Twistag engagements.
-                      </p>
+            <div
+              role="tabpanel"
+              id={panelId("patterns")}
+              aria-labelledby={tabId("patterns")}
+              tabIndex={0}
+            >
+              <Card className="p-5">
+                {opp.patternMatch ? (
+                  <>
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
+                      Twistag-internal · pattern library
                     </div>
-                    <Badge tone="brand">
-                      {Math.round(opp.patternMatch.similarity * 100)}% match
-                    </Badge>
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-text-3">
-                  No strong pattern match yet. Vector similarity runs nightly.
-                </p>
-              )}
-            </Card>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-md font-semibold">
+                          {opp.patternMatch.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-text-2">
+                          Shipped {opp.patternMatch.deploys} times across prior
+                          Twistag engagements.
+                        </p>
+                      </div>
+                      <Badge tone="brand">
+                        {Math.round(opp.patternMatch.similarity * 100)}% match
+                      </Badge>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-text-3">
+                    No strong pattern match yet. Vector similarity runs nightly.
+                  </p>
+                )}
+              </Card>
+            </div>
           )}
 
           {tab === "discussion" && (
-            <Card className="p-8 text-center">
-              <MessageSquare className="mx-auto mb-2 h-6 w-6 text-text-3" />
-              <p className="text-sm font-medium">No comments yet</p>
-              <p className="mx-auto mt-1 max-w-xs text-sm text-text-3">
-                This is where the manager, sponsor, and Twistag align on scope
-                before approving. Comments notify by email (opt-in).
-              </p>
-            </Card>
+            <div
+              role="tabpanel"
+              id={panelId("discussion")}
+              aria-labelledby={tabId("discussion")}
+              tabIndex={0}
+            >
+              <Card className="p-8 text-center">
+                <MessageSquare className="mx-auto mb-2 h-6 w-6 text-text-3" />
+                <p className="text-sm font-medium">No comments yet</p>
+                <p className="mx-auto mt-1 max-w-xs text-sm text-text-3">
+                  This is where the manager, sponsor, and Twistag align on scope
+                  before approving. Comments notify by email (opt-in).
+                </p>
+              </Card>
+            </div>
           )}
         </div>
 

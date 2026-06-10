@@ -91,7 +91,7 @@ export function Sheet({
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1.5 text-text-3 hover:bg-surface-2 hover:text-text"
+            className="grid h-11 w-11 place-items-center rounded text-text-3 hover:bg-surface-2 hover:text-text"
             aria-label="Close"
           >
             <X className="h-4 w-4" />

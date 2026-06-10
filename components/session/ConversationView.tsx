@@ -117,7 +117,7 @@ export function ConversationView({
           </div>
           <Link
             href="/me"
-            className="rounded-md p-1.5 text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
+            className="grid h-11 w-11 place-items-center rounded-md text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
             aria-label="Pause and exit"
           >
             <X className="h-4 w-4" />
@@ -147,10 +147,16 @@ export function ConversationView({
               </div>
             ))}
             {thinking && (
-              <div className="flex items-center gap-1 py-1">
+              <div
+                role="status"
+                aria-live="polite"
+                className="flex items-center gap-1 py-1"
+              >
+                <span className="sr-only">Atlas is typing…</span>
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
+                    aria-hidden="true"
                     className="h-1.5 w-1.5 animate-bounce rounded-full bg-text-3"
                     style={{ animationDelay: `${i * 0.15}s` }}
                   />

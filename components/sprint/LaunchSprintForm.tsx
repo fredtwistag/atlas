@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { launchSprint } from "@/app/(app)/sprint/actions";
+import { LaunchSubmitButton } from "@/components/sprint/LaunchSubmitButton";
 
 export interface LaunchFormMember {
   id: string;
@@ -31,7 +31,10 @@ export function LaunchSprintForm({
       </div>
 
       {invalid && (
-        <div className="mb-5 rounded-lg border border-danger/40 bg-danger-soft px-4 py-3 text-md text-danger">
+        <div
+          role="alert"
+          className="mb-5 rounded-lg border border-danger/40 bg-danger-soft px-4 py-3 text-md text-danger"
+        >
           Check the fields — you need a name, a focus, at least one topic, and
           at least one participant.
         </div>
@@ -128,14 +131,7 @@ export function LaunchSprintForm({
           )}
         </Card>
 
-        <Button
-          type="submit"
-          variant="brand"
-          size="lg"
-          disabled={members.length === 0}
-        >
-          Launch sprint
-        </Button>
+        <LaunchSubmitButton disabled={members.length === 0} />
       </form>
     </main>
   );

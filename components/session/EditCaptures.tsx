@@ -75,7 +75,7 @@ export function EditCaptures({
                 {!c.removed && editing !== c.id && (
                   <button
                     onClick={() => startEdit(c)}
-                    className="rounded p-1.5 text-text-3 hover:bg-surface-2 hover:text-text"
+                    className="grid h-11 w-11 place-items-center rounded text-text-3 hover:bg-surface-2 hover:text-text"
                     aria-label="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -84,7 +84,7 @@ export function EditCaptures({
                 <button
                   onClick={() => toggleRemove(c.id)}
                   className={cn(
-                    "rounded p-1.5 hover:bg-surface-2",
+                    "grid h-11 w-11 place-items-center rounded hover:bg-surface-2",
                     c.removed
                       ? "text-brand hover:text-brand-hover"
                       : "text-text-3 hover:text-danger",

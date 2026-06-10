@@ -54,7 +54,11 @@ export function NudgeComposer({
 
   if (sent) {
     return (
-      <Card className="border-success/40 bg-success-soft p-6 text-center">
+      <Card
+        role="status"
+        aria-live="polite"
+        className="border-success/40 bg-success-soft p-6 text-center"
+      >
         <Check className="mx-auto mb-2 h-7 w-7 text-success" />
         <p className="font-semibold text-success">Nudge logged</p>
         <p className="mt-1 text-md text-text-2">
@@ -138,7 +142,12 @@ export function NudgeComposer({
         <span className="text-xs text-text-3">
           No quotes or capture content is ever included in a nudge.
         </span>
-        <Button variant="brand" disabled={pending} onClick={send}>
+        <Button
+          variant="brand"
+          disabled={pending}
+          aria-busy={pending}
+          onClick={send}
+        >
           {pending ? "Logging…" : "Log nudge"}
         </Button>
       </div>
