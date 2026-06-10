@@ -53,3 +53,15 @@ test("manager: sign in → dashboard → opportunity → SOW preview", async ({
     await expect(page.getByText(/approved for fde/i)).toBeVisible();
   }
 });
+
+test("sign-in: expired-link error param shows recovery copy", async ({
+  page,
+}) => {
+  // Hermetic — no Supabase needed; the page reads ?error= via useSearchParams.
+  await page.goto("/sign-in?error=auth", { waitUntil: "networkidle" });
+  await expect(
+    page.getByText(/that sign-in link expired or was already used/i),
+  ).toBeVisible();
+  // The email form is still there to request a fresh link.
+  await expect(page.getByLabel(/work email/i)).toBeVisible();
+});
