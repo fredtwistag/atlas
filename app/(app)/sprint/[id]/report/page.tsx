@@ -5,6 +5,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { usdShort } from "@/lib/data";
 import { getApi } from "@/server/trpc/caller";
+import { requireManagerOrSponsor } from "@/lib/auth-guards";
 
 export const metadata: Metadata = { title: "Discovery report · Atlas" };
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function FinalReport({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireManagerOrSponsor();
   const api = await getApi();
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();

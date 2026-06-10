@@ -14,11 +14,13 @@ import { ButtonLink } from "@/components/ui/Button";
 import type { Metadata } from "next";
 import { getApi } from "@/server/trpc/caller";
 import { getCurrentUser } from "@/lib/session";
+import { requireTenantSession } from "@/lib/auth-guards";
 
 export const metadata: Metadata = { title: "My sprint · Atlas" };
 export const dynamic = "force-dynamic";
 
 export default async function IcHomePage() {
+  await requireTenantSession();
   const me = await getCurrentUser();
   const api = await getApi();
   const data = await api.session.myDashboard();
