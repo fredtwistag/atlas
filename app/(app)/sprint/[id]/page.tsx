@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Activity, CircleDot, FileText, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
-import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
+import { TeamProgress } from "@/components/manager/TeamProgress";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
-import { participantStatusMeta } from "@/lib/ui-maps";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
 
 export async function generateMetadata({
@@ -123,70 +119,7 @@ export default async function ManagerDashboard({
           <h2 className="mb-3 px-1 text-sm font-semibold text-text-2">
             Team progress
           </h2>
-          <Card className="overflow-hidden">
-            <Table>
-              <THead>
-                <HeaderRow>
-                  <Th>Contributor</Th>
-                  <Th>Progress</Th>
-                  <Th>Status</Th>
-                  <Th align="right">Last active</Th>
-                </HeaderRow>
-              </THead>
-              <tbody>
-                {sprint.participants.map((pt) => {
-                  const meta = participantStatusMeta[pt.status];
-                  const pct = Math.round(
-                    (pt.sessionsCompleted / pt.sessionsTotal) * 100,
-                  );
-                  return (
-                    <Tr key={pt.user.id} hover={false}>
-                      <Td>
-                        <div className="flex items-center gap-2.5">
-                          <Avatar name={pt.user.name} size="sm" />
-                          <div className="min-w-0">
-                            <div className="font-medium leading-tight">
-                              {pt.user.name}
-                            </div>
-                            <div className="text-xs text-text-3">
-                              {pt.user.department}
-                            </div>
-                          </div>
-                        </div>
-                      </Td>
-                      <Td>
-                        <div className="flex items-center gap-2">
-                          <ProgressBar
-                            value={pct}
-                            tone={pt.status === "idle" ? "warning" : "brand"}
-                            className="w-20"
-                          />
-                          <span className="font-mono text-xs tabular-nums text-text-3">
-                            {pt.sessionsCompleted}/{pt.sessionsTotal}
-                          </span>
-                        </div>
-                      </Td>
-                      <Td>
-                        <Badge tone={meta.tone}>{meta.label}</Badge>
-                      </Td>
-                      <Td align="right" className="text-xs text-text-3">
-                        {pt.status === "idle" || pt.status === "not_started" ? (
-                          <Link
-                            href={`/sprint/${id}/nudge/${pt.user.id}`}
-                            className="font-medium text-brand hover:text-brand-hover"
-                          >
-                            Send nudge →
-                          </Link>
-                        ) : (
-                          pt.lastActiveLabel
-                        )}
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-          </Card>
+          <TeamProgress sprintId={id} participants={sprint.participants} />
 
           {/* Activity feed */}
           <h2 className="mb-3 mt-6 px-1 text-sm font-semibold text-text-2">
