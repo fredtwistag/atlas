@@ -62,7 +62,10 @@ export function InviteEmail(props: InviteEmailProps) {
 
   if (role === "ic") {
     return (
-      <EmailLayout preview={inviteSubject("ic", inviterName, orgName)} footer={footerFor(props)}>
+      <EmailLayout
+        preview={inviteSubject("ic", inviterName, orgName)}
+        footer={footerFor(props)}
+      >
         <EmailHeading>{inviterName} added you to Atlas</EmailHeading>
         <EmailText>
           {inviterName} added you to a short discovery sprint for {orgName}.
@@ -75,8 +78,8 @@ export function InviteEmail(props: InviteEmailProps) {
         </EmailText>
         <EmailText muted>
           What you say is attributed by role, never by name, in anything your
-          manager or sponsor sees. You can edit or remove anything you said for 7
-          days after each session.
+          manager or sponsor sees. You can edit or remove anything you said for
+          7 days after each session.
         </EmailText>
         {topics && topics.length > 0 && (
           <Section style={{ margin: "0 0 16px" }}>
@@ -95,22 +98,26 @@ export function InviteEmail(props: InviteEmailProps) {
 
   if (role === "sponsor") {
     return (
-      <EmailLayout preview={inviteSubject("sponsor", inviterName, orgName)} footer={footerFor(props)}>
+      <EmailLayout
+        preview={inviteSubject("sponsor", inviterName, orgName)}
+        footer={footerFor(props)}
+      >
         <EmailHeading>
           You&apos;re the sponsor for {orgName}&apos;s discovery sprint
         </EmailHeading>
         <EmailText>
-          {inviterName} set up a discovery sprint for {orgName} and named you its
-          sponsor. When it wraps, you&apos;ll get a ranked, evidence-backed
-          report of where the team&apos;s time goes and what&apos;s worth fixing.
+          {inviterName} set up a discovery sprint for {orgName} and named you
+          its sponsor. When it wraps, you&apos;ll get a ranked, evidence-backed
+          report of where the team&apos;s time goes and what&apos;s worth
+          fixing.
         </EmailText>
         <EmailText muted>
           Expect 5-10 opportunities surfaced, 1-3 of them high-impact — each one
           clicks through to the quotes behind it.
         </EmailText>
         <EmailText>
-          Approving an opportunity hands it to the Twistag engagement team with a
-          pre-drafted scope, so the build can start within days.
+          Approving an opportunity hands it to the Twistag engagement team with
+          a pre-drafted scope, so the build can start within days.
         </EmailText>
         <EmailButton href={confirmUrl}>View the report</EmailButton>
       </EmailLayout>
@@ -118,7 +125,10 @@ export function InviteEmail(props: InviteEmailProps) {
   }
 
   return (
-    <EmailLayout preview={inviteSubject("manager", inviterName, orgName)} footer={footerFor(props)}>
+    <EmailLayout
+      preview={inviteSubject("manager", inviterName, orgName)}
+      footer={footerFor(props)}
+    >
       <EmailHeading>Your Atlas workspace for {orgName} is ready</EmailHeading>
       <EmailText>
         Your Atlas workspace for {orgName} is set up. Here&apos;s how to get a

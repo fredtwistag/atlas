@@ -1,9 +1,5 @@
 import { Fragment } from "react";
-import {
-  EmailLayout,
-  EmailText,
-  EmailButton,
-} from "./components/EmailLayout";
+import { EmailLayout, EmailText, EmailButton } from "./components/EmailLayout";
 
 export interface NudgeEmailProps {
   /** The manager who wrote and sent the nudge. */
@@ -28,7 +24,12 @@ function paragraphs(body: string): string[] {
  * attribution, a CTA to the sessions page, and the privacy footer. No quotes or
  * captures are ever included — that promise is in the footer.
  */
-export function NudgeEmail({ senderName, orgName, body, ctaUrl }: NudgeEmailProps) {
+export function NudgeEmail({
+  senderName,
+  orgName,
+  body,
+  ctaUrl,
+}: NudgeEmailProps) {
   return (
     <EmailLayout
       preview={`A nudge from ${senderName}`}

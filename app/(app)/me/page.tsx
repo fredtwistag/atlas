@@ -26,8 +26,7 @@ export default async function IcHomePage() {
   const me = await getCurrentUser();
   const api = await getApi();
   const data = await api.session.myDashboard();
-  const needsAck =
-    session.role === "ic" && !(await hasAckedPrivacy(session));
+  const needsAck = session.role === "ic" && !(await hasAckedPrivacy(session));
 
   if (!data || data.sessions.length === 0) {
     return (

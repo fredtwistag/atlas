@@ -44,9 +44,9 @@ export function ReportExplainer() {
         contributor are shown. The composite score (0–10) ranks them.
       </p>
       <p className="mt-2 text-sm leading-relaxed text-text-2">
-        Expect 5-10 opportunities surfaced, 1-3 of them high-impact. Approving one
-        hands it to the Twistag engagement team with a pre-drafted scope, so the
-        build can start within days.
+        Expect 5-10 opportunities surfaced, 1-3 of them high-impact. Approving
+        one hands it to the Twistag engagement team with a pre-drafted scope, so
+        the build can start within days.
       </p>
     </Card>
   );

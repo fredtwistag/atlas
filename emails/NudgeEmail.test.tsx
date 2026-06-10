@@ -18,7 +18,9 @@ describe("NudgeEmail", () => {
       <NudgeEmail
         senderName="Marcus"
         orgName="Northwind"
-        body={"Hi Sam,\n\nJust a nudge — your sessions are open whenever.\n\nThanks!"}
+        body={
+          "Hi Sam,\n\nJust a nudge — your sessions are open whenever.\n\nThanks!"
+        }
         ctaUrl="https://atlas.test/me"
       />,
     );

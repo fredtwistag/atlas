@@ -22,21 +22,21 @@ describe("managerChecklist", () => {
   });
 
   it("marks 'Invite your team' done once there are members", () => {
-    expect(
-      managerChecklist({ memberCount: 0, hasSprint: false })[0].done,
-    ).toBe(false);
-    expect(
-      managerChecklist({ memberCount: 3, hasSprint: false })[0].done,
-    ).toBe(true);
+    expect(managerChecklist({ memberCount: 0, hasSprint: false })[0].done).toBe(
+      false,
+    );
+    expect(managerChecklist({ memberCount: 3, hasSprint: false })[0].done).toBe(
+      true,
+    );
   });
 
   it("marks 'Launch your sprint' done once a sprint exists", () => {
-    expect(
-      managerChecklist({ memberCount: 3, hasSprint: false })[2].done,
-    ).toBe(false);
-    expect(
-      managerChecklist({ memberCount: 3, hasSprint: true })[2].done,
-    ).toBe(true);
+    expect(managerChecklist({ memberCount: 3, hasSprint: false })[2].done).toBe(
+      false,
+    );
+    expect(managerChecklist({ memberCount: 3, hasSprint: true })[2].done).toBe(
+      true,
+    );
   });
 });
 

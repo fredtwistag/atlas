@@ -14,7 +14,10 @@ import { signInErrorMessage } from "@/lib/sign-in-errors";
  * enumeration. Supabase surfaces "signups not allowed" (422 / otp_disabled) when
  * the user doesn't exist.
  */
-function isNoAccountError(error: { message: string; status?: number }): boolean {
+function isNoAccountError(error: {
+  message: string;
+  status?: number;
+}): boolean {
   return (
     error.status === 422 ||
     /not allowed|signups?|otp_disabled|not found/i.test(error.message)
@@ -93,8 +96,8 @@ function SignInForm() {
             aria-live="polite"
             className="rounded-lg border border-success/40 bg-success-soft px-4 py-3 text-md text-text-2"
           >
-            If <strong>{email}</strong> has an Atlas account, a sign-in link (and
-            a 6-digit code) is on its way.
+            If <strong>{email}</strong> has an Atlas account, a sign-in link
+            (and a 6-digit code) is on its way.
           </div>
           <form onSubmit={onVerifyCode} className="space-y-3">
             <div>

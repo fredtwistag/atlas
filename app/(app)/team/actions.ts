@@ -11,7 +11,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { InviteMemberSchema } from "@/lib/invitations";
 import { generateInviteLink } from "@/services/email/invite-link";
 import { sendEmail } from "@/services/email/send";
-import { InviteEmail, inviteSubject, type InviteRole } from "@/emails/InviteEmail";
+import {
+  InviteEmail,
+  inviteSubject,
+  type InviteRole,
+} from "@/emails/InviteEmail";
 import {
   updateMemberRole,
   removeMemberRecord,

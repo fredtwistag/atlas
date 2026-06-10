@@ -38,9 +38,7 @@ export function FirstRunChecklist({ memberCount }: { memberCount: number }) {
               <span
                 className={cn(
                   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                  s.done
-                    ? "bg-success text-white"
-                    : "bg-surface-2 text-text-2",
+                  s.done ? "bg-success text-white" : "bg-surface-2 text-text-2",
                 )}
               >
                 {s.done ? <Check className="h-3.5 w-3.5" /> : i + 1}

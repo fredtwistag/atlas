@@ -72,7 +72,10 @@ describe("sendEmail", () => {
 
   it("throws when Resend returns an error (so a tx can roll back)", async () => {
     process.env.RESEND_API_KEY = "re_test";
-    sendMock.mockResolvedValue({ data: null, error: { message: "rate limited" } });
+    sendMock.mockResolvedValue({
+      data: null,
+      error: { message: "rate limited" },
+    });
 
     await expect(
       sendEmail({ to: "ic@a.example", subject: "Hello", react: element }),
