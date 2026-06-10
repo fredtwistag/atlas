@@ -11,6 +11,7 @@ import {
   sessions,
   sowDrafts,
   auditLog,
+  captures,
 } from "@/db/schema";
 import {
   seedRow,
@@ -810,6 +811,81 @@ describe("sprint lifecycle — close / update / currentForTenant", () => {
     await expect(
       asIc(TENANT_A, IC_A1).sprint.update({ id: SPRINT_A, name: "Nope" }),
     ).rejects.toThrow();
+  });
+});
+
+describe("sprint.progress — captures scoped to the sprint", () => {
+  // Two sprints in the SAME tenant. RLS scopes to tenant; the captures count
+  // must additionally scope to the queried sprint via sessions.sprintId.
+  const SPR_OTHER = "dddddddd-dddd-4ddd-8ddd-dddddddd0010";
+  const CAP_IC = "dddddddd-dddd-4ddd-8ddd-dddddddd0001";
+  const SES_IN_A = "dddddddd-dddd-4ddd-8ddd-dddddddd0a01";
+  const SES_IN_OTHER = "dddddddd-dddd-4ddd-8ddd-dddddddd0b01";
+
+  function captureRow(sessionId: string, summary: string) {
+    return {
+      tenantId: TENANT_A,
+      sessionId,
+      userId: CAP_IC,
+      kind: "friction",
+      summary,
+      sourceQuote: "q",
+    };
+  }
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: CAP_IC,
+        tenantId: TENANT_A,
+        email: "cap@a.example",
+        name: "Cap IC",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprints).values(sprintRow(SPR_OTHER, TENANT_A)),
+    );
+    // SPRINT_A (outer beforeEach) gets one session with 2 captures;
+    // SPR_OTHER gets one session with 3 captures — same tenant.
+    await seedRow((tx) =>
+      tx.insert(sessions).values([
+        {
+          id: SES_IN_A,
+          tenantId: TENANT_A,
+          sprintId: SPRINT_A,
+          userId: CAP_IC,
+          status: "completed",
+        },
+        {
+          id: SES_IN_OTHER,
+          tenantId: TENANT_A,
+          sprintId: SPR_OTHER,
+          userId: CAP_IC,
+          status: "completed",
+        },
+      ]),
+    );
+    await seedRow((tx) =>
+      tx
+        .insert(captures)
+        .values([
+          captureRow(SES_IN_A, "a1"),
+          captureRow(SES_IN_A, "a2"),
+          captureRow(SES_IN_OTHER, "o1"),
+          captureRow(SES_IN_OTHER, "o2"),
+          captureRow(SES_IN_OTHER, "o3"),
+        ]),
+    );
+  });
+
+  it("counts only the queried sprint's captures, not all tenant captures", async () => {
+    const api = asTenant(TENANT_A);
+    const a = await api.sprint.progress({ id: SPRINT_A });
+    expect(a.capturesCount).toBe(2);
+    const other = await api.sprint.progress({ id: SPR_OTHER });
+    expect(other.capturesCount).toBe(3);
   });
 });
 

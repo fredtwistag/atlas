@@ -18,9 +18,9 @@ dev-server preview verification at 375 / 768 / 1280 px with screenshots.
 
 | # | Item | Plan | Files | Status |
 |---|------|------|-------|--------|
-| [001](001-captures-scope.md) | Scope captures count to sprint | A1 | `server/trpc/routers/sprint.ts` | Todo |
-| [002](002-auth-redirect.md) | Validate post-login redirect | A2 | `app/auth/callback/route.ts` | Todo |
-| [003](003-parallel-lookups.md) | Parallelize manager/sponsor lookups | A9 | `server/trpc/routers/sprint.ts` | Todo |
+| [001](001-captures-scope.md) | Scope captures count to sprint | A1 | `server/trpc/routers/sprint.ts` | Done |
+| [002](002-auth-redirect.md) | Validate post-login redirect | A2 | `app/auth/callback/route.ts` | Done |
+| [003](003-parallel-lookups.md) | Parallelize manager/sponsor lookups | A9 | `server/trpc/routers/sprint.ts` | Done |
 | [004](004-confirm-dialog.md) | Accessible ConfirmDialog | B3 | `components/ui/ConfirmDialog.tsx`, `MemberRow.tsx`, `CloseSprintButton.tsx` | Todo |
 | [005](005-opportunity-tablist.md) | Opportunity tabs → real tablist | B4 | `components/opportunity/OpportunityDetail.tsx` | Todo |
 | [006](006-icon-tap-targets.md) | ≥44px icon tap targets | B5 | `components/ui/Button.tsx` + icon buttons | Todo |

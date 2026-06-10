@@ -342,8 +342,10 @@ export const sprintRouter = router({
           title: u.title ?? "",
         };
       };
-      const manager = await resolveUser(s.managerId);
-      const sponsor = await resolveUser(s.sponsorId);
+      const [manager, sponsor] = await Promise.all([
+        resolveUser(s.managerId),
+        resolveUser(s.sponsorId),
+      ]);
 
       const start = new Date(s.startDate + "T00:00:00Z");
       const end = new Date(s.endDate + "T00:00:00Z");
@@ -398,7 +400,11 @@ export const sprintRouter = router({
         .select({ compositeScore: opportunities.compositeScore })
         .from(opportunities)
         .where(eq(opportunities.sprintId, input.id));
-      const caps = await tx.select({ id: captures.id }).from(captures);
+      const caps = await tx
+        .select({ id: captures.id })
+        .from(captures)
+        .innerJoin(sessions, eq(captures.sessionId, sessions.id))
+        .where(eq(sessions.sprintId, input.id));
       return computeProgress({
         participants: parts,
         opportunities: opps.map((o) => ({

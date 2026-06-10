@@ -28,8 +28,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# claude code local overrides (machine-specific)
-.claude/settings.local.json
+# claude code local tooling (worktrees, plugin cache, machine-specific state)
+.claude/
 
 # this is an npm project — no yarn lockfile
 yarn.lock

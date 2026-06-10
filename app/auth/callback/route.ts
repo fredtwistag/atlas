@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { decodeJwtPayload, parseClaims } from "@/lib/auth-claims";
 import { landingPathFor } from "@/lib/landing";
+import { safeNext } from "./safe-next";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      let dest = explicitNext;
+      let dest = safeNext(explicitNext);
       if (!dest) {
         const {
           data: { session },
