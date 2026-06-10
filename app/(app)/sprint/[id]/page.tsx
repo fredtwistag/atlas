@@ -42,12 +42,19 @@ export default async function ManagerDashboard({
     api.sprint.activity({ id }),
   ]);
 
-  const stats = [
+  const stats: {
+    label: string;
+    value: string;
+    sub: string;
+    icon: typeof Users;
+    href?: string;
+  }[] = [
     {
       label: "Participation",
       value: `${p.completionPct}%`,
       sub: `${p.sessionsCompleted}/${p.sessionsTotal} sessions complete`,
       icon: Users,
+      href: "/team",
     },
     {
       label: "Weekly active",
@@ -60,6 +67,7 @@ export default async function ManagerDashboard({
       value: `${p.opportunitiesCount}`,
       sub: `${p.highImpactCount} high-impact · ${p.capturesCount} captures`,
       icon: CircleDot,
+      href: `/sprint/${id}/report`,
     },
     {
       label: "Signal quality",
@@ -109,6 +117,7 @@ export default async function ManagerDashboard({
             label={s.label}
             value={s.value}
             sub={s.sub}
+            href={s.href}
           />
         ))}
       </div>
