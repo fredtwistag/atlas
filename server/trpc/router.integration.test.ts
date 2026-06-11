@@ -1076,6 +1076,22 @@ describe("sprint.participant", () => {
     expect(p.status).toBe("idle");
   });
 
+  it("reports the sprint status so the page can hide the nudge composer once closed (plan 024)", async () => {
+    const active = await asManager(TENANT_A, PMGR).sprint.participant({
+      sprintId: SPRINT_A,
+      userId: PUSER,
+    });
+    expect(active.sprintStatus).toBe("active");
+
+    await asTenant(TENANT_A).sprint.close({ id: SPRINT_A });
+
+    const closed = await asManager(TENANT_A, PMGR).sprint.participant({
+      sprintId: SPRINT_A,
+      userId: PUSER,
+    });
+    expect(closed.sprintStatus).toBe("completed");
+  });
+
   it("rejects an IC", async () => {
     await expect(
       asIc(TENANT_A, PUSER).sprint.participant({

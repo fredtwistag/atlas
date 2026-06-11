@@ -98,14 +98,25 @@ export default async function ParticipantPage({
 
         <div>
           <h2 className="mb-2 text-sm font-semibold text-text-2">Nudge</h2>
-          <NudgeComposer
-            sprintId={id}
-            userId={participantId}
-            name={p.name}
-            sessionsCompleted={p.sessionsCompleted}
-            sessionsTotal={p.sessionsTotal}
-            onSend={sendNudgeAction}
-          />
+          {p.sprintStatus === "active" ? (
+            <NudgeComposer
+              sprintId={id}
+              userId={participantId}
+              name={p.name}
+              sessionsCompleted={p.sessionsCompleted}
+              sessionsTotal={p.sessionsTotal}
+              onSend={sendNudgeAction}
+            />
+          ) : (
+            <Card className="p-5 text-sm text-text-2">
+              <p className="font-medium text-text">This sprint is closed.</p>
+              <p className="mt-1 text-text-3">
+                Nudges are only available while a sprint is active. The
+                contributor&apos;s sessions and progress are shown on the left,
+                and the finished work lives in the report.
+              </p>
+            </Card>
+          )}
         </div>
       </div>
     </main>

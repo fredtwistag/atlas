@@ -188,13 +188,26 @@ export default async function ManagerDashboard({
             </span>
           </div>
           <div className="space-y-2.5">
-            {opps.map((o) => (
-              <OpportunityCard
-                key={o.id}
-                opp={o}
-                href={`/sprint/${id}/opportunity/${o.id}`}
-              />
-            ))}
+            {opps.length === 0 ? (
+              <Card className="border-dashed p-6 text-center">
+                <p className="text-sm font-medium text-text">
+                  No opportunities yet
+                </p>
+                <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-text-3">
+                  They surface here as your team&apos;s sessions add up — usually
+                  from day 7. Until then, keep an eye on team progress on the
+                  left.
+                </p>
+              </Card>
+            ) : (
+              opps.map((o) => (
+                <OpportunityCard
+                  key={o.id}
+                  opp={o}
+                  href={`/sprint/${id}/opportunity/${o.id}`}
+                />
+              ))
+            )}
           </div>
           <p className="mt-3 px-1 text-xs leading-relaxed text-text-3">
             Opportunities promote from provisional to surfaced after day 7. Weak

@@ -308,9 +308,11 @@ export const sprintRouter = router({
             sessionsCompleted: sprintParticipants.sessionsCompleted,
             sessionsTotal: sprintParticipants.sessionsTotal,
             lastActiveLabel: sprintParticipants.lastActiveLabel,
+            sprintStatus: sprints.status,
           })
           .from(sprintParticipants)
           .innerJoin(users, eq(sprintParticipants.userId, users.id))
+          .innerJoin(sprints, eq(sprintParticipants.sprintId, sprints.id))
           .where(
             and(
               eq(sprintParticipants.sprintId, input.sprintId),
@@ -339,6 +341,7 @@ export const sprintRouter = router({
           name: row.name,
           title: row.title ?? "Contributor",
           status: row.status,
+          sprintStatus: row.sprintStatus,
           sessionsCompleted: row.sessionsCompleted,
           sessionsTotal: row.sessionsTotal,
           lastActiveLabel: row.lastActiveLabel ?? "",
