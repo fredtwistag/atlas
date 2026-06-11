@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { conversationScript } from "@/lib/demo-data";
+import { trpc } from "@/lib/trpc/react";
 import { captureKindTone } from "@/lib/ui-maps";
+import { furthestArc, progressForArc } from "@/lib/session-progress";
 import type { CaptureKind } from "@/lib/types";
 
 interface ChatMsg {
@@ -23,28 +24,54 @@ interface LiveCapture {
   summary: string;
 }
 
+/** A message turn as returned by session.start (transcript rows carry an arc). */
+export interface InitialMessage {
+  role: string;
+  content: string;
+  arc: string | null;
+}
+
 export function ConversationView({
   sessionId,
   topicTitle,
+  initialMessages,
   onComplete,
 }: {
   sessionId: string;
   topicTitle: string;
+  initialMessages: InitialMessage[];
   onComplete?: (sessionId: string) => Promise<void>;
 }) {
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { id: "m-0", role: "assistant", content: conversationScript[0].assistant },
-  ]);
+  const [messages, setMessages] = useState<ChatMsg[]>(() =>
+    initialMessages
+      .filter((m) => m.role === "assistant" || m.role === "user")
+      .map((m, i) => ({
+        id: `init-${i}`,
+        role: m.role as "assistant" | "user",
+        content: m.content,
+      })),
+  );
   const [captures, setCaptures] = useState<LiveCapture[]>([]);
-  const [step, setStep] = useState(0);
   const [draft, setDraft] = useState("");
-  const [thinking, setThinking] = useState(false);
+  // `arc` tracks the furthest-along arc we've observed, for the honest progress
+  // rail. Seeded from the initial transcript; sendMessage doesn't return an arc,
+  // so we let `done` drive the final jump to 100%.
+  const [arc, setArc] = useState(() =>
+    furthestArc(initialMessages.map((m) => m.arc)),
+  );
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const threadRef = useRef<HTMLDivElement>(null);
   const completedRef = useRef(false);
-  const lastStep = conversationScript.length - 1;
-  const progress = Math.round((step / lastStep) * 100);
+  // A monotonic counter for client-generated message ids (avoids key collisions
+  // with the init-* ids and with each other across rapid sends).
+  const turnRef = useRef(0);
+
+  const sendMessage = trpc.session.sendMessage.useMutation();
+  const thinking = sendMessage.isPending;
+  const progress = progressForArc(arc, done);
 
   useEffect(() => {
     // Guard scrollTo: not implemented in jsdom (tests) and absent in some
@@ -66,42 +93,63 @@ export function ConversationView({
     const text = draft.trim();
     if (!text || thinking || done) return;
 
+    const turn = turnRef.current++;
+    // Optimistic user bubble. We keep `text` in scope so we can restore the
+    // composer if the turn fails.
     setMessages((m) => [
       ...m,
-      { id: `u-${step}`, role: "user", content: text },
+      { id: `u-${turn}`, role: "user", content: text },
     ]);
     setDraft("");
-    setThinking(true);
+    setError(null);
+    setStatusMessage("Atlas is replying…");
 
-    const nextStep = step + 1;
-    // The "extraction pass" runs against the reply and surfaces a capture.
-    const incoming = conversationScript[nextStep];
-
-    window.setTimeout(() => {
-      setThinking(false);
-      if (incoming?.captureOnReply) {
-        setCaptures((c) => [
-          ...c,
-          {
-            id: `cap-${nextStep}`,
-            kind: incoming.captureOnReply!.kind,
-            summary: incoming.captureOnReply!.summary,
-          },
-        ]);
-      }
-      if (incoming) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: `a-${nextStep}`,
-            role: "assistant",
-            content: incoming.assistant,
-          },
-        ]);
-        setStep(nextStep);
-        if (nextStep >= lastStep) setDone(true);
-      }
-    }, 900);
+    sendMessage.mutate(
+      { id: sessionId, content: text },
+      {
+        onSuccess: (res) => {
+          if (!res) return;
+          if (res.captures.length > 0) {
+            setCaptures((c) => [
+              ...c,
+              ...res.captures.map((cap) => ({
+                id: cap.id,
+                kind: cap.kind,
+                summary: cap.summary,
+              })),
+            ]);
+          }
+          setMessages((m) => [
+            ...m,
+            { id: `a-${turn}`, role: "assistant", content: res.assistant },
+          ]);
+          // The reply belongs to the next arc; nudge the rail forward one step
+          // unless we're already at CLOSE. `done` will pin it to 100%.
+          setArc((prev) => nextRailArc(prev));
+          setStatusMessage(
+            res.captures.length > 0
+              ? `Reply received. ${res.captures.length} new ${res.captures.length === 1 ? "thing" : "things"} captured.`
+              : "Reply received.",
+          );
+          if (res.done) setDone(true);
+        },
+        onError: (err) => {
+          // Roll the optimistic bubble back out and restore the draft so the IC
+          // can retry without retyping.
+          setMessages((m) => m.filter((msg) => msg.id !== `u-${turn}`));
+          setDraft(text);
+          setStatusMessage("");
+          // The router maps a missing key to PRECONDITION_FAILED naming
+          // ANTHROPIC_API_KEY — surface that verbatim; otherwise a generic,
+          // honest retry message.
+          setError(
+            /ANTHROPIC_API_KEY/i.test(err.message)
+              ? err.message
+              : "Atlas couldn't reply. Your answer is saved in the box — try again.",
+          );
+        },
+      },
+    );
   }
 
   return (
@@ -147,12 +195,7 @@ export function ConversationView({
               </div>
             ))}
             {thinking && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="flex items-center gap-1 py-1"
-              >
-                <span className="sr-only">Atlas is typing…</span>
+              <div className="flex items-center gap-1 py-1">
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
@@ -163,6 +206,10 @@ export function ConversationView({
                 ))}
               </div>
             )}
+            {/* Screen-reader status: send/reply progress, parity with NudgeComposer. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {statusMessage}
+            </p>
           </div>
         </div>
 
@@ -173,7 +220,8 @@ export function ConversationView({
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-success-soft px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-success">
                   <Check className="h-4 w-4" />
-                  Session captured — {captures.length} things noted. Thank you.
+                  Session captured — {captures.length}{" "}
+                  {captures.length === 1 ? "thing" : "things"} noted. Thank you.
                 </div>
                 <Link href="/me">
                   <Button variant="brand" size="sm">
@@ -182,32 +230,51 @@ export function ConversationView({
                 </Link>
               </div>
             ) : (
-              <div className="flex items-end gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
-                <textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
-                  }}
-                  rows={1}
-                  aria-label="Your message"
-                  placeholder="Type how it really works… (Enter to send)"
-                  className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent px-2 py-1.5 text-md leading-relaxed placeholder:text-text-3 focus:outline-none"
-                />
-                <Button
-                  variant="brand"
-                  size="md"
-                  onClick={send}
-                  disabled={!draft.trim() || thinking}
-                  className="h-9 w-9 shrink-0 p-0"
-                  aria-label="Send"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-              </div>
+              <>
+                {error && (
+                  <div
+                    role="alert"
+                    className="mb-2 flex items-center justify-between gap-3 rounded-xl bg-danger/10 px-4 py-2.5 text-[13px] text-danger"
+                  >
+                    <span>{error}</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={send}
+                      disabled={!draft.trim() || thinking}
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-end gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        send();
+                      }
+                    }}
+                    rows={1}
+                    aria-label="Your message"
+                    placeholder="Type how it really works… (Enter to send)"
+                    className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent px-2 py-1.5 text-md leading-relaxed placeholder:text-text-3 focus:outline-none"
+                  />
+                  <Button
+                    variant="brand"
+                    size="md"
+                    onClick={send}
+                    disabled={!draft.trim() || thinking}
+                    aria-busy={thinking}
+                    className="h-[44px] w-[44px] shrink-0 p-0"
+                    aria-label="Send"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -256,4 +323,24 @@ export function ConversationView({
       </aside>
     </div>
   );
+}
+
+/**
+ * Advance the progress-rail arc one step on each reply. The engine owns the real
+ * arc transitions server-side; this is a client-only estimate that keeps the bar
+ * moving forward and stops at CLOSE (the `done` signal pins it to 100%).
+ */
+function nextRailArc(current: string): ReturnType<typeof furthestArc> {
+  const order = [
+    "INIT",
+    "INTRO",
+    "ARC_1",
+    "ARC_2",
+    "ARC_3",
+    "ARC_4",
+    "CLOSE",
+  ] as const;
+  const idx = order.indexOf(current as (typeof order)[number]);
+  if (idx === -1) return "CLOSE";
+  return order[Math.min(idx + 1, order.length - 1)];
 }

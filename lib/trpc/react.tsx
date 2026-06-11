@@ -7,8 +7,10 @@ import superjson from "superjson";
 import type { AppRouter } from "@/server/trpc/routers/_app";
 
 /**
- * React Query tRPC client. Scaffolded for future Client Components — the
- * current dashboards read via the server caller (server/trpc/caller.ts).
+ * React Query tRPC client. Mounted in app/(app)/layout.tsx so Client Components
+ * under the app shell can call mutations directly (the IC ConversationView uses
+ * session.start / session.sendMessage). Server Components still read via the
+ * server caller (server/trpc/caller.ts).
  */
 export const trpc = createTRPCReact<AppRouter>();
 
