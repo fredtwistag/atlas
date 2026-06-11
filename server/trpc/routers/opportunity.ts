@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
 import { withTenantContext } from "@/db/client";
 import {
@@ -49,7 +49,14 @@ export const opportunityRouter = router({
           .from(opportunityEvidence)
           .innerJoin(captures, eq(opportunityEvidence.captureId, captures.id))
           .innerJoin(users, eq(captures.userId, users.id))
-          .where(eq(opportunityEvidence.opportunityId, input.id));
+          // Removed captures (IC exercised the 7-day edit window) must never
+          // render as evidence — plan 017.
+          .where(
+            and(
+              eq(opportunityEvidence.opportunityId, input.id),
+              eq(captures.isRemoved, false),
+            ),
+          );
 
         const evidence: Capture[] = evRows.map((e) => ({
           id: e.id,

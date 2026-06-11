@@ -41,6 +41,7 @@ import {
   sowDrafts,
   auditLog,
   captures,
+  opportunityEvidence,
 } from "@/db/schema";
 import {
   seedRow,
@@ -357,6 +358,188 @@ describe("session.myDashboard / session.get", () => {
   it("session.get is blocked cross-tenant (NOT_FOUND under RLS)", async () => {
     await expect(
       asIc(TENANT_B, IC_VIEW).session.get({ id: SES_ID }),
+    ).rejects.toThrow();
+  });
+
+  it("session.get requires ownership — a same-tenant other IC gets NOT_FOUND", async () => {
+    // Another member of TENANT_A who does not own SES_ID. Tenant RLS would let
+    // them through; the owner-scoped where clause (plan 017) must not.
+    const other = "55555555-5555-4555-8555-55555555a0aa";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: other,
+        tenantId: TENANT_A,
+        email: "other@a.example",
+        name: "Other IC",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    await expect(
+      asIc(TENANT_A, other).session.get({ id: SES_ID }),
+    ).rejects.toThrow(/NOT_FOUND/);
+  });
+});
+
+describe("session.updateCapture", () => {
+  const TOPIC_ID = "55555555-5555-4555-8555-55555555b010";
+  const OPEN_SES = "55555555-5555-4555-8555-55555555b020";
+  const CLOSED_SES = "55555555-5555-4555-8555-55555555b021";
+  const NULL_SES = "55555555-5555-4555-8555-55555555b022";
+  const CAP_OPEN = "55555555-5555-4555-8555-55555555b030";
+  const CAP_CLOSED = "55555555-5555-4555-8555-55555555b031";
+  const CAP_NULL = "55555555-5555-4555-8555-55555555b032";
+
+  const DAY = 86_400_000;
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: IC_VIEW,
+        tenantId: TENANT_A,
+        email: "view@a.example",
+        name: "Viewer",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: TOPIC_ID,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "How work flows",
+        description: "desc",
+        orderIdx: 1,
+        questionCount: 5,
+        estMinutes: 6,
+      }),
+    );
+    // Three sessions owned by IC_VIEW: open window, expired window, NULL window.
+    const mkSession = (id: string, editWindowEndsAt: Date | null) =>
+      seedRow((tx) =>
+        tx.insert(sessions).values({
+          id,
+          tenantId: TENANT_A,
+          sprintId: SPRINT_A,
+          topicId: TOPIC_ID,
+          userId: IC_VIEW,
+          status: "completed",
+          completedAt: new Date(),
+          editWindowEndsAt,
+        }),
+      );
+    await mkSession(OPEN_SES, new Date(Date.now() + 7 * DAY));
+    await mkSession(CLOSED_SES, new Date(Date.now() - DAY));
+    await mkSession(NULL_SES, null);
+
+    const mkCapture = (id: string, sessionId: string) =>
+      seedRow((tx) =>
+        tx.insert(captures).values({
+          id,
+          tenantId: TENANT_A,
+          sessionId,
+          userId: IC_VIEW,
+          kind: "process",
+          summary: "Original summary",
+          sourceQuote: "quote",
+        }),
+      );
+    await mkCapture(CAP_OPEN, OPEN_SES);
+    await mkCapture(CAP_CLOSED, CLOSED_SES);
+    await mkCapture(CAP_NULL, NULL_SES);
+  });
+
+  it("edits inside the window persist and flag isEdited", async () => {
+    const res = await asIc(TENANT_A, IC_VIEW).session.updateCapture({
+      sessionId: OPEN_SES,
+      captureId: CAP_OPEN,
+      summary: "Corrected summary",
+    });
+    expect(res.ok).toBe(true);
+
+    const [row] = await seedRow((tx) =>
+      tx
+        .select({
+          summary: captures.summary,
+          isEdited: captures.isEdited,
+          isRemoved: captures.isRemoved,
+        })
+        .from(captures)
+        .where(eq(captures.id, CAP_OPEN)),
+    );
+    expect(row.summary).toBe("Corrected summary");
+    expect(row.isEdited).toBe(true);
+    expect(row.isRemoved).toBe(false);
+  });
+
+  it("removal inside the window sets isRemoved without flagging isEdited", async () => {
+    await asIc(TENANT_A, IC_VIEW).session.updateCapture({
+      sessionId: OPEN_SES,
+      captureId: CAP_OPEN,
+      isRemoved: true,
+    });
+    const [row] = await seedRow((tx) =>
+      tx
+        .select({
+          isRemoved: captures.isRemoved,
+          isEdited: captures.isEdited,
+        })
+        .from(captures)
+        .where(eq(captures.id, CAP_OPEN)),
+    );
+    expect(row.isRemoved).toBe(true);
+    expect(row.isEdited).toBe(false);
+  });
+
+  it("an expired window is FORBIDDEN", async () => {
+    await expect(
+      asIc(TENANT_A, IC_VIEW).session.updateCapture({
+        sessionId: CLOSED_SES,
+        captureId: CAP_CLOSED,
+        summary: "too late",
+      }),
+    ).rejects.toThrow(/edit window/i);
+  });
+
+  it("a NULL window is treated as closed (FORBIDDEN)", async () => {
+    await expect(
+      asIc(TENANT_A, IC_VIEW).session.updateCapture({
+        sessionId: NULL_SES,
+        captureId: CAP_NULL,
+        summary: "no window",
+      }),
+    ).rejects.toThrow(/edit window/i);
+  });
+
+  it("another user's capture is NOT_FOUND (owner-scoped session load)", async () => {
+    const other = "55555555-5555-4555-8555-55555555b0aa";
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: other,
+        tenantId: TENANT_A,
+        email: "other2@a.example",
+        name: "Other IC",
+        role: "ic",
+        department: "Ops",
+      }),
+    );
+    await expect(
+      asIc(TENANT_A, other).session.updateCapture({
+        sessionId: OPEN_SES,
+        captureId: CAP_OPEN,
+        summary: "not mine",
+      }),
+    ).rejects.toThrow(/NOT_FOUND/);
+  });
+
+  it("rejects an update with neither summary nor isRemoved (Zod refine)", async () => {
+    await expect(
+      // Omitting both summary and isRemoved must hit the Zod .refine at runtime.
+      asIc(TENANT_A, IC_VIEW).session.updateCapture({
+        sessionId: OPEN_SES,
+        captureId: CAP_OPEN,
+      }),
     ).rejects.toThrow();
   });
 });
@@ -705,6 +888,85 @@ describe("opportunity.approve", () => {
     await expect(
       asManager(TENANT_B, MGR_B).opportunity.approve({ id: OPP_ID }),
     ).rejects.toThrow();
+  });
+});
+
+describe("opportunity.get evidence (isRemoved filter)", () => {
+  const OPP_ID = "99999999-9999-4999-8999-99999999c001";
+  const IC = "99999999-9999-4999-8999-99999999c0aa";
+  const SES = "99999999-9999-4999-8999-99999999c0bb";
+  const CAP_KEPT = "99999999-9999-4999-8999-99999999c010";
+  const CAP_REMOVED = "99999999-9999-4999-8999-99999999c011";
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: IC,
+        tenantId: TENANT_A,
+        email: "evidence-ic@a.example",
+        name: "Evidence IC",
+        role: "ic",
+        department: "Ops",
+        title: "Ops Analyst",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        id: SES,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        userId: IC,
+        status: "completed",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(opportunities).values({
+        id: OPP_ID,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "Has evidence",
+        description: "d",
+        category: "c",
+        impactLow: 1,
+        impactHigh: 2,
+        timeToShipWeeksLow: 1,
+        timeToShipWeeksHigh: 4,
+        confidenceScore: 5,
+        compositeScore: "8.0",
+        dimensionScores: [],
+        rationale: "r",
+        status: "surfaced",
+      }),
+    );
+    const mkCap = (id: string, isRemoved: boolean) =>
+      seedRow((tx) =>
+        tx.insert(captures).values({
+          id,
+          tenantId: TENANT_A,
+          sessionId: SES,
+          userId: IC,
+          kind: "process",
+          summary: isRemoved ? "Removed evidence" : "Kept evidence",
+          sourceQuote: "q",
+          isRemoved,
+        }),
+      );
+    await mkCap(CAP_KEPT, false);
+    await mkCap(CAP_REMOVED, true);
+    await seedRow((tx) =>
+      tx.insert(opportunityEvidence).values([
+        { tenantId: TENANT_A, opportunityId: OPP_ID, captureId: CAP_KEPT },
+        { tenantId: TENANT_A, opportunityId: OPP_ID, captureId: CAP_REMOVED },
+      ]),
+    );
+  });
+
+  it("excludes removed captures from rendered evidence", async () => {
+    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({ id: OPP_ID });
+    const summaries = opp.evidence.map((e) => e.summary);
+    expect(summaries).toContain("Kept evidence");
+    expect(summaries).not.toContain("Removed evidence");
+    expect(opp.evidence).toHaveLength(1);
   });
 });
 

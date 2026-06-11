@@ -118,7 +118,16 @@ export const sessionRouter = router({
           .select({ id: sessions.id, topicTitle: topics.title })
           .from(sessions)
           .leftJoin(topics, eq(sessions.topicId, topics.id))
-          .where(eq(sessions.id, input.id));
+          // Owner-scoped, mirroring editView/start/sendMessage. Tenant RLS alone
+          // would let any same-tenant member open another IC's live conversation
+          // — a privacy breach (CLAUDE.md: IC sessions are owner-only). Twistag
+          // debugging goes through audited withTwistagContext, not this route.
+          .where(
+            and(
+              eq(sessions.id, input.id),
+              eq(sessions.userId, ctx.session.userId),
+            ),
+          );
         if (!row) throw new TRPCError({ code: "NOT_FOUND" });
         return {
           id: row.id,
@@ -163,12 +172,94 @@ export const sessionRouter = router({
             ),
           );
 
+        // Window open = non-null AND in the future (NULL = closed; pre-014
+        // sessions never got a window). The page renders read-only when closed;
+        // updateCapture re-checks server-side, so this is presentation only.
+        const editable =
+          s.editWindowEndsAt != null &&
+          s.editWindowEndsAt.getTime() > Date.now();
+
         return {
           topicTitle: s.topicTitle ?? "Discovery session",
           completedAt: fmtTs(s.completedAt),
           editWindowEndsAt: fmtTs(s.editWindowEndsAt),
+          editable,
           captures: caps,
         };
+      }),
+    ),
+
+  /**
+   * Persist an IC's edit to one of their own captures (the 7-day edit-window
+   * promise from the privacy gate). Owner-scoped and window-enforced:
+   * - the session must belong to the caller (else NOT_FOUND);
+   * - the edit window must be open — `editWindowEndsAt` non-null AND in the
+   *   future (NULL is treated as closed, covering pre-014 sessions);
+   * - the capture must belong to that session.
+   * `summary` edits flip `isEdited`; `isRemoved` is a soft toggle that stops the
+   * capture rendering anywhere (report, opportunity evidence, edit view).
+   */
+  updateCapture: tenantProcedure
+    .input(
+      z
+        .object({
+          sessionId: z.string().uuid(),
+          captureId: z.string().uuid(),
+          summary: z.string().min(3).max(500).optional(),
+          isRemoved: z.boolean().optional(),
+        })
+        .refine(
+          (v) => v.summary !== undefined || v.isRemoved !== undefined,
+          { message: "Provide a new summary or a removal change." },
+        ),
+    )
+    .mutation(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [s] = await tx
+          .select({ editWindowEndsAt: sessions.editWindowEndsAt })
+          .from(sessions)
+          .where(
+            and(
+              eq(sessions.id, input.sessionId),
+              eq(sessions.userId, ctx.session.userId),
+            ),
+          );
+        if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // NULL window = closed (pre-014 sessions never got a window set).
+        if (
+          s.editWindowEndsAt == null ||
+          s.editWindowEndsAt.getTime() <= Date.now()
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "The 7-day edit window for this session has closed.",
+          });
+        }
+
+        const set: Partial<typeof captures.$inferInsert> = {};
+        if (input.summary !== undefined) {
+          set.summary = input.summary;
+          set.isEdited = true;
+        }
+        if (input.isRemoved !== undefined) {
+          set.isRemoved = input.isRemoved;
+        }
+
+        const updated = await tx
+          .update(captures)
+          .set(set)
+          .where(
+            and(
+              eq(captures.id, input.captureId),
+              eq(captures.sessionId, input.sessionId),
+              eq(captures.userId, ctx.session.userId),
+            ),
+          )
+          .returning({ id: captures.id });
+        if (updated.length === 0) throw new TRPCError({ code: "NOT_FOUND" });
+
+        return { ok: true as const };
       }),
     ),
 
