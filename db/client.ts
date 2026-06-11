@@ -66,6 +66,10 @@ export async function withTenantContext<T>(
 ): Promise<T> {
   const claimsJson = JSON.stringify({
     sub: claims.userId,
+    // `user_id` mirrors the production access-token hook (0001) so RLS policies
+    // keyed on auth.jwt() ->> 'user_id' — e.g. session_messages' owner-only
+    // SELECT — behave identically here and in Supabase.
+    user_id: claims.userId,
     tenant_id: claims.tenantId,
     role: claims.role,
   });

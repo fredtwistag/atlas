@@ -172,6 +172,27 @@ export const sessions = pgTable("sessions", {
     .defaultNow(),
 });
 
+export const sessionMessages = pgTable("session_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => sessions.id),
+  // The owning contributor. Drives the owner-only SELECT RLS policy so a
+  // same-tenant manager cannot read an IC's transcript (CLAUDE.md privacy).
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  role: text("role").notNull(), // "assistant" | "user"
+  content: text("content").notNull(),
+  arc: text("arc").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const captures = pgTable("captures", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
