@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { env } from "@/lib/env";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/me", "/sprint", "/admin", "/twistag", "/session"],
       },
     ],
-    sitemap: "https://atlas.twistag.com/sitemap.xml",
+    sitemap: `${env.appUrl()}/sitemap.xml`,
   };
 }
