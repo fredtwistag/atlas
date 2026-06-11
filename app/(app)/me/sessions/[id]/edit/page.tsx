@@ -18,9 +18,11 @@ export default async function EditSessionPage({
 
   return (
     <EditCaptures
+      sessionId={id}
       topicTitle={view.topicTitle}
       completedAt={view.completedAt ?? "—"}
       editWindowEndsAt={view.editWindowEndsAt ?? "—"}
+      editable={view.editable}
       captures={view.captures}
     />
   );
