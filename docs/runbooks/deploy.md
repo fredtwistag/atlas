@@ -165,7 +165,11 @@ fails the deploy at startup with a named error.
 | `DB_POOL_MAX`                   | Prod              | optional        | `1` on serverless (each instance opens its own pool) |
 | `INNGEST_EVENT_KEY`             | Prod              | slot — plan 020 | Inngest Cloud (add when 020 lands) |
 | `INNGEST_SIGNING_KEY`           | Prod              | slot — plan 020 | Inngest Cloud (add when 020 lands) |
-| `SENTRY_DSN`                    | Prod              | slot — plan 023 | Sentry/observability (add when 023 lands) |
+| `SENTRY_DSN`                    | Prod (+ Preview)  | optional        | §9 Sentry project DSN (server/edge). Unset = error tracking off; NEVER breaks boot/build |
+| `NEXT_PUBLIC_SENTRY_DSN`        | Prod (+ Preview)  | optional        | §9 Sentry DSN exposed to the browser. Usually the same value as `SENTRY_DSN` |
+| `SENTRY_ORG`                    | Prod (build env)  | optional        | §9 Sentry org slug — only for source-map upload at build time |
+| `SENTRY_PROJECT`               | Prod (build env)  | optional        | §9 Sentry project slug — only for source-map upload at build time |
+| `SENTRY_AUTH_TOKEN`            | Prod (build env)  | optional        | §9 Sentry auth token for source-map upload. Unset = maps not uploaded, build still succeeds |
 
 > Keep this table in sync with `lib/env.ts`: every new env var a future plan
 > adds MUST land here and in `.env.example` in the same PR.
@@ -229,3 +233,71 @@ If any step fails, do not launch — fix and re-smoke.
 - **Env mistake:** if a deploy crashes at boot with an `Invalid environment`
   error, the message names the bad key — fix it in Vercel env vars and redeploy.
   This is the validation working as intended, not a regression.
+
+---
+
+## 9. Observability — error tracking + alerts + uptime (plan 023)
+
+> The CODE side already ships: Sentry is wired for the server, edge, and browser
+> runtimes with PII/transcript scrubbing (`lib/sentry-scrub.ts`), a structured
+> logger (`lib/log.ts`), and capture at the LLM/email failure hotspots. It is a
+> **no-op until a DSN is set** — a missing DSN never breaks a build or a boot
+> (see ADR-003). This section is the dashboard work the code can't do for you.
+> All of §9 is OPTIONAL for the app to run, but **do it before launch** so a
+> failed LLM/email/DB call pages Twistag instead of waiting for a client email.
+
+### 9a. Create the Sentry project
+
+1. [ ] In Sentry, create (or pick) an org, then **create a project** of platform
+       **Next.js**. Name it clearly, e.g. `atlas-web`.
+2. [ ] Copy the project **DSN** (Settings → Client Keys / DSN). The same DSN
+       value is used for both the server and the browser.
+3. [ ] **EU data residency:** create the project under a Sentry **EU**
+       organization/region to match the GDPR posture in the privacy policy
+       (same reasoning as the Supabase EU project in §1).
+
+### 9b. Set the Sentry env vars in Vercel
+
+1. [ ] `SENTRY_DSN` = the project DSN (Production + Preview).
+2. [ ] `NEXT_PUBLIC_SENTRY_DSN` = the same DSN (Production + Preview) — this one
+       is exposed to the browser bundle, which is fine; a DSN is a public
+       ingestion key, not a secret.
+3. [ ] (Source maps, optional but recommended for readable stack traces) set
+       `SENTRY_ORG`, `SENTRY_PROJECT`, and a `SENTRY_AUTH_TOKEN` (Sentry →
+       Settings → Auth Tokens, scope: `project:releases`) as **build-time** env
+       vars. With these unset the build still succeeds — it just skips the map
+       upload (the `errorHandler` in `next.config.mjs` swallows upload failures
+       so a missing token can never fail the deploy).
+4. [ ] Redeploy. After the deploy, a thrown error anywhere in the app shows up in
+       the Sentry project. Confirm the event is **scrubbed**: it must carry the
+       `area`/`tenantId` tags but NO request body, NO email, NO transcript text.
+
+### 9c. Alert rule (any error → Twistag)
+
+1. [ ] Sentry → Alerts → create an **Issue alert**: condition "a new issue is
+       created" (or "an event is seen") → action: notify Twistag via **email**
+       and/or a **Slack** channel (connect the Slack integration first).
+2. [ ] Fire a **test event** (Sentry's "Send a test event", or trigger a
+       deliberate error in a throwaway preview deploy) and confirm the alert
+       lands in the chosen channel.
+
+### 9d. Uptime monitor on `/api/health`
+
+The app exposes `GET /api/health` (§7.4): it returns **200** only when the DB
+check passes, **503** otherwise. Point an external checker at it so an outage
+pages someone even if no client is online to notice.
+
+1. [ ] Choose ONE checker:
+       - **Sentry Uptime/Cron** (keeps everything in one tool), OR
+       - **Better Stack** / **UptimeRobot** free tier (independent of Vercel, so
+         it still alerts if Vercel itself is degraded — the recommended default).
+2. [ ] Configure the monitor:
+       - URL: `https://atlas.twistag.com/api/health`
+       - Method: `GET`, expect HTTP **200** (a 503 = DB down → alert).
+       - Interval: 1–3 min. Alert channel: the same email/Slack as §9c.
+3. [ ] Trigger a test alert (pause the monitor or point it at a 404 briefly) and
+       confirm it notifies, then restore it.
+
+> **Recommended choice for the pilot:** UptimeRobot (free, external, 5-min
+> checks) on `/api/health` for liveness + Sentry issue alerts for errors. Record
+> whichever you pick here so the on-call knows where the pages come from.
