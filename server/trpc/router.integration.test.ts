@@ -2,13 +2,29 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
 
 // Mock the LLM client so the engine runs for real (persisting transcript rows)
-// without any network call. `complete` returns a deterministic assistant reply.
+// without any network call. `complete` returns a deterministic assistant reply;
+// `completeStructured` (the extraction pass) returns no captures by default so
+// transcript-row assertions stay exact — extraction-specific tests override it.
 const llmComplete = vi.fn(
   async (..._args: unknown[]) => "Atlas asks a concrete question.",
 );
+const llmCompleteStructured = vi.fn<
+  (...args: unknown[]) => Promise<{
+    captures: {
+      kind: string;
+      summary: string;
+      sourceQuote: string;
+      tags: string[];
+    }[];
+  }>
+>(async () => ({ captures: [] }));
 vi.mock("@/services/llm/client", async (orig) => {
   const actual = await orig<typeof import("@/services/llm/client")>();
-  return { ...actual, complete: (...a: unknown[]) => llmComplete(...a) };
+  return {
+    ...actual,
+    complete: (...a: unknown[]) => llmComplete(...a),
+    completeStructured: (...a: unknown[]) => llmCompleteStructured(...a),
+  };
 });
 
 import { createCallerFactory } from "./trpc";
@@ -874,6 +890,8 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
 
   beforeEach(() => {
     llmComplete.mockClear();
+    llmCompleteStructured.mockClear();
+    llmCompleteStructured.mockResolvedValue({ captures: [] });
   });
 
   beforeEach(async () => {
@@ -951,6 +969,65 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
     expect(rows).toHaveLength(3);
     expect(rows.filter((r) => r.role === "user")).toHaveLength(1);
     expect(rows.filter((r) => r.role === "assistant")).toHaveLength(2);
+  });
+
+  it("sendMessage persists extracted captures (correct tenant/user) and bumps captureCount", async () => {
+    llmCompleteStructured.mockResolvedValue({
+      captures: [
+        {
+          kind: "bottleneck",
+          summary: "Re-keys the quote by hand each time.",
+          sourceQuote: "I re-key the quote by hand",
+          tags: ["manual"],
+        },
+      ],
+    });
+
+    await asIc(TENANT_A, CUSER).session.start({ id: CSES });
+    const res = await asIc(TENANT_A, CUSER).session.sendMessage({
+      id: CSES,
+      content: "Every cycle, I re-key the quote by hand into the ERP.",
+    });
+
+    expect(res?.captures).toHaveLength(1);
+    expect(res?.captures[0]).toMatchObject({ kind: "bottleneck" });
+    expect(res?.captures[0].id).toBeTruthy();
+
+    const rows = await asUser({ tenantId: TENANT_A, userId: CUSER }, (tx) =>
+      tx.select().from(captures).where(eq(captures.sessionId, CSES)),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      tenantId: TENANT_A,
+      sessionId: CSES,
+      userId: CUSER,
+      kind: "bottleneck",
+      sourceQuote: "I re-key the quote by hand",
+    });
+
+    const [s] = await asUser({ tenantId: TENANT_A, userId: CUSER }, (tx) =>
+      tx.select().from(sessions).where(eq(sessions.id, CSES)),
+    );
+    expect(s.captureCount).toBe(1);
+  });
+
+  it("a turn whose extraction throws still succeeds (turn not failed)", async () => {
+    const { LlmOutputError } = await import("@/services/llm/client");
+    llmCompleteStructured.mockRejectedValue(new LlmOutputError("bad json"));
+
+    await asIc(TENANT_A, CUSER).session.start({ id: CSES });
+    const res = await asIc(TENANT_A, CUSER).session.sendMessage({
+      id: CSES,
+      content: "I re-key the quote by hand into the ERP.",
+    });
+
+    expect(res?.assistant).toBe("Atlas asks a concrete question.");
+    expect(res?.captures).toEqual([]);
+
+    const caps = await asUser({ tenantId: TENANT_A, userId: CUSER }, (tx) =>
+      tx.select().from(captures).where(eq(captures.sessionId, CSES)),
+    );
+    expect(caps).toHaveLength(0);
   });
 
   it("an IC cannot sendMessage on another user's session (NOT_FOUND)", async () => {

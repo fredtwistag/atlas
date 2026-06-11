@@ -38,3 +38,39 @@ export const ExtractionResultSchema = z.object({
 });
 
 export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
+
+/**
+ * Plan 014's extraction contract. This is the schema the extraction pass
+ * (services/conversation/extract.ts) actually validates against — distinct from
+ * the docs/03 mirror above so the wire shape matches the `captures` table
+ * (`sourceQuote`, no `confidence`) and the takeTurn return shape that plan 015
+ * renders. Kinds are the canonical set shared by db/schema.ts, lib/ui-maps.ts
+ * (captureKindTone), and docs/03 §6 — keep all four in lockstep.
+ *
+ * `summary.min(8)` is intentionally looser than docs/03's 15 so terse-but-real
+ * captures ("AE re-keys the quote") survive; the substring guard in extract.ts
+ * is the quality gate that drops fabricated quotes.
+ */
+export const capturedItem = z.object({
+  kind: z.enum([
+    "bottleneck",
+    "workaround",
+    "tooling",
+    "handoff",
+    "frustration",
+    "sop",
+    "decision",
+  ]),
+  summary: z.string().min(8).max(280),
+  sourceQuote: z.string().min(3),
+  tags: z.array(z.string()).max(5).default([]),
+});
+
+export type CapturedItem = z.infer<typeof capturedItem>;
+
+/** A single extraction pass yields up to 4 captures (object-wrapped for model reliability). */
+export const captureExtraction = z.object({
+  captures: z.array(capturedItem).max(4),
+});
+
+export type CaptureExtraction = z.infer<typeof captureExtraction>;

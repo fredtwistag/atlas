@@ -1,8 +1,15 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { sessions, sessionMessages, topics, users } from "@/db/schema";
-import { complete, type LlmMessage } from "@/services/llm/client";
+import { captures, sessions, sessionMessages, topics, users } from "@/db/schema";
+import {
+  complete,
+  LlmNotConfiguredError,
+  LlmOutputError,
+  type LlmMessage,
+} from "@/services/llm/client";
+import type { CapturedItem } from "@/services/llm/schemas";
 import { nextArc, isDone, type Arc } from "./state";
+import { extractFromTurn } from "./extract";
 import {
   buildSystemPrompt,
   type ConversationRole,
@@ -30,10 +37,15 @@ export type TakeTurnOpts = {
   userMessage: string;
 };
 
+/** A capture as surfaced to the caller (plan 015 renders these live). */
+export type TurnCapture = { id: string; kind: string; summary: string };
+
 export type TakeTurnResult = {
   assistant: string;
   arc: Arc;
   done: boolean;
+  /** Captures extracted from THIS user turn. Empty on small talk or failure. */
+  captures: TurnCapture[];
 };
 
 const ROLE_FALLBACK: ConversationRole = "ic";
@@ -154,7 +166,8 @@ export async function openSession(
   });
 
   await persistTurns(opts, arc, [{ role: "assistant", content: assistant }]);
-  return { assistant, arc, done: isDone(arc) };
+  // The opener has no user turn to extract from.
+  return { assistant, arc, done: isDone(arc), captures: [] };
 }
 
 /**
@@ -191,7 +204,85 @@ export async function takeTurn(opts: TakeTurnOpts): Promise<TakeTurnResult> {
     { role: "assistant", content: assistant },
   ]);
 
-  return { assistant, arc, done: isDone(arc) };
+  const priorAssistant =
+    [...history].reverse().find((m) => m.role === "assistant")?.content ?? null;
+
+  const turnCaptures = await extractAndPersist(opts, {
+    topicTitle: ctx.topicTitle,
+    arc,
+    userMessage: opts.userMessage,
+    priorAssistant,
+  });
+
+  return { assistant, arc, done: isDone(arc), captures: turnCaptures };
+}
+
+/**
+ * Run the per-turn extraction pass and persist any captures in the SAME
+ * transaction as the turn. A failed extraction must NOT fail the turn: on
+ * `LlmOutputError` (the model produced unparseable output even after retry) we
+ * log a COUNT-ONLY warning and return no captures. Capture content is never
+ * logged (CLAUDE.md privacy). Bumps `sessions.captureCount` by the number
+ * actually inserted.
+ */
+async function extractAndPersist(
+  opts: Omit<TakeTurnOpts, "userMessage">,
+  turn: {
+    topicTitle: string;
+    arc: Arc;
+    userMessage: string;
+    priorAssistant: string | null;
+  },
+): Promise<TurnCapture[]> {
+  let items: CapturedItem[];
+  try {
+    items = await extractFromTurn(turn);
+  } catch (err) {
+    // Extraction is best-effort: a turn whose reply already succeeded must not
+    // fail because extraction produced bad output (LlmOutputError) or isn't
+    // configured (LlmNotConfiguredError). Anything else is a real bug — rethrow.
+    if (
+      err instanceof LlmOutputError ||
+      err instanceof LlmNotConfiguredError
+    ) {
+      // Count-only: never the message, never the quote.
+      console.warn(
+        `[conversation] extraction failed for one turn; captured 0 items`,
+      );
+      return [];
+    }
+    throw err;
+  }
+
+  if (items.length === 0) return [];
+
+  const inserted = await opts.db
+    .insert(captures)
+    .values(
+      items.map((c) => ({
+        tenantId: opts.tenantId,
+        sessionId: opts.sessionId,
+        userId: opts.userId,
+        kind: c.kind,
+        summary: c.summary,
+        sourceQuote: c.sourceQuote,
+        tags: c.tags,
+      })),
+    )
+    .returning({
+      id: captures.id,
+      kind: captures.kind,
+      summary: captures.summary,
+    });
+
+  await opts.db
+    .update(sessions)
+    .set({ captureCount: sql`${sessions.captureCount} + ${inserted.length}` })
+    .where(
+      and(eq(sessions.id, opts.sessionId), eq(sessions.userId, opts.userId)),
+    );
+
+  return inserted;
 }
 
 /** Insert the given turns under one arc and bump sessions.messages_count. */

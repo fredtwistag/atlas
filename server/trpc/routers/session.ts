@@ -265,14 +265,15 @@ export const sessionRouter = router({
         if (!s) throw new TRPCError({ code: "NOT_FOUND" });
 
         try {
-          const { assistant, done } = await takeTurn({
+          const { assistant, done, captures } = await takeTurn({
             db: tx,
             tenantId: ctx.session.tenantId,
             sessionId: input.id,
             userId: ctx.session.userId,
             userMessage: input.content,
           });
-          return { assistant, done };
+          // `captures` is {id, kind, summary}[] — plan 015 renders these live.
+          return { assistant, done, captures };
         } catch (err) {
           mapLlmError(err);
         }
