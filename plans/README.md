@@ -45,7 +45,7 @@ fast-follow backlog, and rejected findings live there. Summary:
 | [014](014-capture-extraction-pipeline.md) | Capture extraction pipeline | P0 | Todo |
 | [015](015-conversation-ui-live-wiring.md) | Live conversation UI, retire mock | P0 | Todo |
 | [016](016-opportunity-engine.md) | Opportunity engine + curation safety valve | P0 | Todo |
-| [017](017-ic-edit-window-and-session-authz.md) | IC edit persistence + session authz | P0 | Todo |
+| [017](017-ic-edit-window-and-session-authz.md) | IC edit persistence + session authz | P0 | Done |
 | [018](018-nextjs-upgrade-and-security-headers.md) | Next.js CVE upgrade + headers | P0 | Todo |
 | [019](019-rate-limiting.md) | Rate limiting (auth + email) | P0 | Todo |
 | [020](020-inngest-background-workers.md) | Inngest workers + digests | P0/P1 | Todo |
