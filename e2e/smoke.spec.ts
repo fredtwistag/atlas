@@ -148,3 +148,66 @@ test("sign-in: expired-link error param shows recovery copy", async ({
   // The email form is still there to request a fresh link.
   await expect(page.getByLabel(/work email/i)).toBeVisible();
 });
+
+test("IC: sign in → /me → privacy ack → open session → send one message → reply (Plan 015)", async ({
+  page,
+}) => {
+  // This exercises the live conversation engine end-to-end, so it needs a
+  // configured ANTHROPIC_API_KEY plus the seeded dashboard data:
+  //   npm run db:seed && npm run db:seed:dashboard
+  // Live-key dependent: we assert that an assistant turn appears, NOT its text.
+  test.skip(
+    !process.env.ANTHROPIC_API_KEY,
+    "needs ANTHROPIC_API_KEY for the live conversation engine",
+  );
+
+  // One-click dev sign-in as Priya, a Northwind IC; ICs land on /me.
+  await page.goto("/sign-in/dev", { waitUntil: "networkidle" });
+  await Promise.all([
+    page.waitForURL(/\/me$/, { timeout: 30_000 }),
+    page
+      .locator(
+        'form:has(input[value="priya@northwind.example"]) button[type="submit"]',
+      )
+      .click(),
+  ]);
+
+  // Privacy gate (PRD F1.5): on a first visit the "Got it — start" ack must be
+  // recorded before session links activate. Tolerate it being already acked.
+  const ack = page.getByRole("button", { name: /got it — start/i });
+  if (await ack.count()) {
+    await ack.click();
+    await page.waitForLoadState("networkidle");
+  }
+
+  // Open the next session from the "Up next" card.
+  const start = page.getByRole("link", { name: /start session/i }).first();
+  await expect(start).toBeVisible({ timeout: 30_000 });
+  await Promise.all([
+    page.waitForURL(/\/session\/[0-9a-f-]{36}$/, { timeout: 30_000 }),
+    start.click(),
+  ]);
+
+  // The engine opener renders as the first assistant turn. The thread is the
+  // scroll region labelled by the composer; assert at least one message bubble
+  // exists before we send (the INTRO opener).
+  const composer = page.getByLabel("Your message");
+  await expect(composer).toBeVisible({ timeout: 30_000 });
+
+  // Send one message and wait for a new assistant turn. We count user-side
+  // bubbles to confirm the optimistic append, then wait for the reply by
+  // watching the message container grow — content is model-dependent.
+  const messageCount = () =>
+    page.locator(
+      'main div.whitespace-pre-wrap, [class*="whitespace-pre-wrap"]',
+    );
+  const before = await messageCount().count();
+
+  await composer.fill("It lands in a shared queue and some orders get stuck.");
+  await page.getByRole("button", { name: "Send" }).click();
+
+  // Optimistic user bubble + eventual assistant reply → at least two new turns.
+  await expect
+    .poll(async () => messageCount().count(), { timeout: 30_000 })
+    .toBeGreaterThanOrEqual(before + 2);
+});

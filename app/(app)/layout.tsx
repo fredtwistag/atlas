@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { TRPCProvider } from "@/lib/trpc/react";
 import { getCurrentUser } from "@/lib/session";
 import { getApi } from "@/server/trpc/caller";
 
@@ -30,13 +31,15 @@ export default async function AppLayout({
   }
 
   return (
-    <AppShell
-      user={{ name: me.name, title: me.title }}
-      userKind={me.kind}
-      sprintId={sprintId}
-      icSessions={icSessions}
-    >
-      {children}
-    </AppShell>
+    <TRPCProvider>
+      <AppShell
+        user={{ name: me.name, title: me.title }}
+        userKind={me.kind}
+        sprintId={sprintId}
+        icSessions={icSessions}
+      >
+        {children}
+      </AppShell>
+    </TRPCProvider>
   );
 }
