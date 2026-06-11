@@ -52,7 +52,7 @@ fast-follow backlog, and rejected findings live there. Summary:
 | [021](021-legal-pages-and-gdpr-runbook.md) | Legal pages + GDPR runbook | P0 | Todo |
 | [022](022-prod-cutover.md) | Prod cutover + DEPLOY runbook | P0 | Todo |
 | [023](023-observability.md) | Sentry + logs + uptime | P1 | Todo |
-| [024](024-lifecycle-guards-and-empty-states.md) | Lifecycle guards + empty states | P1 | Todo |
+| [024](024-lifecycle-guards-and-empty-states.md) | Lifecycle guards + empty states | P1 | Done |
 | [025](025-invitation-expiry-and-nudge-optout.md) | Invite expiry + nudge opt-out | P1 | Todo |
 | [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Todo |
 | [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Todo |
