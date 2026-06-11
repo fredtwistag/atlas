@@ -1009,6 +1009,12 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
       tx.select().from(sessions).where(eq(sessions.id, CSES)),
     );
     expect(s.captureCount).toBe(1);
+
+    // Step 4: the sprint progress aggregation reflects the real capture count.
+    const progress = await asTenant(TENANT_A).sprint.progress({
+      id: SPRINT_A,
+    });
+    expect(progress.capturesCount).toBeGreaterThan(0);
   });
 
   it("a turn whose extraction throws still succeeds (turn not failed)", async () => {
