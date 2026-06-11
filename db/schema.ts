@@ -36,6 +36,20 @@ export const auditLog = pgTable("audit_log", {
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Fixed-window rate limiter state. INFRASTRUCTURE, not tenant data: no tenant_id,
+ * no client-readable RLS (service-role-only, like audit_log). One row per
+ * namespaced `key`; `windowStartsAt` + `count` track the current window. Written
+ * exclusively via lib/rate-limit.ts `consume()`. See migration 0007.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStartsAt: timestamp("window_starts_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  count: integer("count").notNull().default(0),
+});
+
 export const twistagUsers = pgTable("twistag_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),

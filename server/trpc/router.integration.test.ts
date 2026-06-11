@@ -51,6 +51,7 @@ import {
   TENANT_B,
 } from "@/db/test/helpers";
 import { LlmNotConfiguredError } from "@/services/llm/client";
+import { consume } from "@/lib/rate-limit";
 
 const SPRINT_A = "33333333-3333-4333-8333-3333333333a1";
 const SPRINT_B = "33333333-3333-4333-8333-3333333333b1";
@@ -1137,6 +1138,30 @@ describe("sprint.nudge", () => {
         body: "x",
       }),
     ).rejects.toThrow();
+  });
+
+  it("caps an actor at 20 nudges / 24h (FORBIDDEN with honest copy)", async () => {
+    // Pre-load the actor's limiter to the cap so the nudge is the over-the-limit
+    // consume. The per-recipient cooldown is keyed to the recipient, so each
+    // pre-load targets a distinct synthetic recipient to keep that path clear.
+    for (let i = 0; i < 20; i++) {
+      const r = await consume(`nudge-actor:${NMGR}`, {
+        limit: 20,
+        windowSeconds: 86_400,
+      });
+      expect(r.allowed).toBe(true);
+    }
+
+    await expect(
+      asManager(TENANT_A, NMGR).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: NIC,
+        channel: "email",
+        body: "One nudge too many.",
+      }),
+    ).rejects.toThrow(/lot of nudges/i);
+    // The cap short-circuits before the audit row is written.
+    expect(await nudgeRows()).toHaveLength(0);
   });
 
   it("is cross-tenant rejected (B manager cannot nudge an A user)", async () => {

@@ -91,6 +91,13 @@ export async function withTenantContext<T>(
  * callers keep compiling. `metadata` merges with `{actor}` (actor always wins).
  * We deliberately do NOT derive `user_id` from `actor` — some actors are
  * non-uuid sentinels ("test"/"dev"/"seed").
+ *
+ * `skipAudit` suppresses the audit_log write for HIGH-FREQUENCY infrastructure
+ * actions that would otherwise flood the audit table — specifically the
+ * per-request rate-limit check (action "rate.limit", see lib/rate-limit.ts),
+ * which can fire on every sign-in/OTP/nudge attempt. It is intended ONLY for
+ * that action; security-relevant admin/cross-tenant operations must stay audited,
+ * so leave `skipAudit` unset everywhere else.
  */
 export async function withServiceRole<T>(
   audit: {
@@ -100,22 +107,25 @@ export async function withServiceRole<T>(
     userId?: string;
     targetId?: string;
     metadata?: Record<string, unknown>;
+    skipAudit?: boolean;
   },
   fn: (tx: Db) => Promise<T>,
 ): Promise<T> {
   const metaJson = JSON.stringify(audit.metadata ?? {});
   return db().transaction(async (tx) => {
     await tx.execute(sql`SET LOCAL ROLE service_role`);
-    await tx.execute(
-      sql`INSERT INTO public.audit_log (action, tenant_id, user_id, target_id, metadata)
-          VALUES (
-            ${audit.action},
-            ${audit.tenantId ?? null}::uuid,
-            ${audit.userId ?? null}::uuid,
-            ${audit.targetId ?? null},
-            ${metaJson}::jsonb || jsonb_build_object('actor', ${audit.actor}::text)
-          )`,
-    );
+    if (!audit.skipAudit) {
+      await tx.execute(
+        sql`INSERT INTO public.audit_log (action, tenant_id, user_id, target_id, metadata)
+            VALUES (
+              ${audit.action},
+              ${audit.tenantId ?? null}::uuid,
+              ${audit.userId ?? null}::uuid,
+              ${audit.targetId ?? null},
+              ${metaJson}::jsonb || jsonb_build_object('actor', ${audit.actor}::text)
+            )`,
+      );
+    }
     return fn(tx as unknown as Db);
   });
 }

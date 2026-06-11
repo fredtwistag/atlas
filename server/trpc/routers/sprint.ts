@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { eq, desc, and, ne, gt, inArray } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
 import { withTenantContext, withServiceRole } from "@/db/client";
+import { consume } from "@/lib/rate-limit";
 import {
   sprints,
   topics,
@@ -149,6 +150,22 @@ export const sprintRouter = router({
               code: "TOO_MANY_REQUESTS",
               message:
                 "A nudge was already sent to this person in the last 48 hours.",
+            });
+          }
+
+          // Per-actor volume cap (on top of the per-recipient cooldown above):
+          // 20 nudges / 24h keeps one manager from blasting the whole team. Runs
+          // through the shared limiter, which opens its OWN service-role tx, so a
+          // tripped cap surfaces before we write the audit row or send the email.
+          const actorCap = await consume(`nudge-actor:${ctx.session.userId}`, {
+            limit: 20,
+            windowSeconds: 86_400,
+          });
+          if (!actorCap.allowed) {
+            throw new TRPCError({
+              code: "TOO_MANY_REQUESTS",
+              message:
+                "You've sent a lot of nudges today — Atlas caps these to keep them meaningful. Try again tomorrow.",
             });
           }
 
