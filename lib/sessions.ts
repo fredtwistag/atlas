@@ -4,6 +4,7 @@
  * Server-only (uses the DB client + tenant RLS).
  */
 import { and, asc, eq, sql } from "drizzle-orm";
+import { log } from "@/lib/log";
 import { withTenantContext, type Db, type TenantClaims } from "@/db/client";
 import {
   captures,
@@ -159,9 +160,10 @@ async function finalExtraction(
     items = await extractFromSession({ topicTitle, turns: opts.turns });
   } catch (err) {
     if (err instanceof LlmOutputError || err instanceof LlmNotConfiguredError) {
-      console.warn(
-        `[conversation] final extraction failed; captured 0 new items`,
-      );
+      // Best-effort final extraction: content-free structured warn (plan 023).
+      // The underlying LLM transport failure, if any, was already captured in
+      // services/llm/client; a real non-typed bug rethrows below.
+      log.warn("conversation.extract.final.failed", { captured: 0 });
       return;
     }
     throw err;

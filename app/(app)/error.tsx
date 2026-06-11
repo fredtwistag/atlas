@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/Button";
 
 export default function AppError({
@@ -11,8 +12,10 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // In the backend phase this forwards to Sentry/Highlight.
-    console.error(error);
+    // Plan 023: forward the render error to Sentry. A no-op when no DSN is set,
+    // so dev/CI behave as before. The scrubber strips any PII before send; the
+    // Error itself is what we want, not the component tree's content.
+    Sentry.captureException(error);
   }, [error]);
 
   return (

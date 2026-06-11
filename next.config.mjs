@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Baseline security headers applied to every response. See plan 018.
 // CSP is REPORT-ONLY for launch week (logs violations without blocking) so a
@@ -54,4 +55,31 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Plan 023: wrap with Sentry's build plugin (source maps + the /monitoring
+// tunnel route that defeats ad-blockers). This ONLY changes build/upload
+// behaviour — it does not touch `headers()` or `outputFileTracingRoot` above,
+// which are spread through untouched. Source-map upload is gated on an auth
+// token being present (operator sets SENTRY_AUTH_TOKEN in CI/Vercel); with no
+// token the wrap is effectively a pass-through, so local/CI builds with NO
+// Sentry env set still succeed.
+const sentryBuildOptions = {
+  // Org/project only matter for source-map upload; harmless when unset.
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Route browser error/trace requests through our origin so ad-blockers don't
+  // drop them. Same-origin, so it needs no CSP connect-src widening (the CSP
+  // already allows 'self'). See plan 023 STOP-condition note on CSP.
+  tunnelRoute: "/monitoring",
+  // Quiet the plugin unless we're actively debugging it.
+  silent: !process.env.CI,
+  // Don't fail the build if source maps can't upload (e.g. no auth token).
+  // Essential for the no-DSN/no-token build to stay green.
+  errorHandler: () => {},
+  // Strip uploaded source maps from the client bundle (don't ship them public).
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  // Tree-shake Sentry's debug logging out of the production client bundle.
+  webpack: { treeshake: { removeDebugLogging: true } },
+};
+
+export default withSentryConfig(nextConfig, sentryBuildOptions);

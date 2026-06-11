@@ -34,6 +34,19 @@ const alwaysRequired = {
   DATABASE_URL: z.string().min(1),
 } as const;
 
+// Observability keys: ALWAYS optional, in every environment including prod.
+// See plan 023. The DSN is deliberately never required — a missing DSN must not
+// be able to break boot or build. With no DSN, Sentry is a no-op (init never
+// runs) and the app behaves identically. So these live OUTSIDE the prod-only
+// tier on purpose: the worst case of an unset DSN is "no error tracking", which
+// must never crash a deploy the way a missing RESEND_API_KEY does.
+const observability = {
+  // Server DSN. Optional, validated as a URL only when present.
+  SENTRY_DSN: z.string().url().optional(),
+  // Browser DSN (public). Optional; usually the same DSN as the server.
+  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+} as const;
+
 // Prod-only keys: optional in dev (the app no-ops), required in production.
 const prodOnly = {
   RESEND_API_KEY: z.string().min(1),
@@ -62,6 +75,7 @@ function schemaFor(prod: boolean) {
     // Dev/CI: prod-only keys are optional, refinements relaxed.
     return z.object({
       ...alwaysRequired,
+      ...observability,
       RESEND_API_KEY: prodOnly.RESEND_API_KEY.optional(),
       EMAIL_FROM: prodOnly.EMAIL_FROM.optional(),
       ANTHROPIC_API_KEY: prodOnly.ANTHROPIC_API_KEY.optional(),
@@ -70,7 +84,7 @@ function schemaFor(prod: boolean) {
     });
   }
   return z
-    .object({ ...alwaysRequired, ...prodOnly })
+    .object({ ...alwaysRequired, ...observability, ...prodOnly })
     .refine((e) => e.DATABASE_URL.includes(":6543"), {
       path: ["DATABASE_URL"],
       message:
@@ -126,5 +140,14 @@ export const env = {
   },
   databaseUrl(): string | undefined {
     return process.env.DATABASE_URL;
+  },
+  /**
+   * Sentry DSN (server/edge). Undefined when observability is not configured —
+   * callers treat that as "Sentry disabled" and init a no-op. Optional in every
+   * environment (see `observability` in the schema): a missing DSN must never
+   * break boot or build.
+   */
+  sentryDsn(): string | undefined {
+    return process.env.SENTRY_DSN;
   },
 } as const;

@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
+import { log } from "@/lib/log";
 import { captures, sessions, sessionMessages, topics, users } from "@/db/schema";
 import {
   complete,
@@ -245,10 +246,12 @@ async function extractAndPersist(
       err instanceof LlmOutputError ||
       err instanceof LlmNotConfiguredError
     ) {
-      // Count-only: never the message, never the quote.
-      console.warn(
-        `[conversation] extraction failed for one turn; captured 0 items`,
-      );
+      // Count-only: never the message, never the quote. This is the expected
+      // best-effort path (bad/absent extraction), so it's a structured warn, not
+      // a Sentry capture — the underlying LLM transport failure, if any, was
+      // already captured in services/llm/client. A real (non-typed) bug rethrows
+      // below and surfaces via tRPC / onRequestError.
+      log.warn("conversation.extract.failed", { captured: 0 });
       return [];
     }
     throw err;

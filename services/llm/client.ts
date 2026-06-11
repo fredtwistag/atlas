@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
+import { log } from "@/lib/log";
+import { captureFailure } from "@/lib/observability";
 
 /**
  * The single LLM access path for Atlas. CLAUDE.md: everything LLM-shaped is
@@ -62,10 +64,33 @@ function textOf(message: Anthropic.Message): string {
     .join("");
 }
 
+/**
+ * One place that actually calls the model (the Anthropic SDK already retries
+ * transient 429/5xx with backoff). A failure here is "the LLM call failed after
+ * retries" — plan 023's first hotspot. We capture it to Sentry tagged
+ * `area: llm` and emit a content-free `llm.call.failed` log line.
+ *
+ * PRIVACY: we attach the Error ONLY — never `params` (its `system` + `messages`
+ * ARE the conversation content). Anthropic SDK errors carry status/type, not the
+ * prompt, so the Error itself is safe to send. `sentry-scrub` is the backstop.
+ */
+async function createMessage(
+  anthropic: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+): Promise<Anthropic.Message> {
+  try {
+    return await anthropic.messages.create(params);
+  } catch (err) {
+    log.error("llm.call.failed", { area: "llm" });
+    captureFailure(err, { area: "llm" });
+    throw err;
+  }
+}
+
 /** A single free-text completion. Returns the assistant's text. */
 export async function complete(opts: CompleteOpts): Promise<string> {
   const anthropic = client();
-  const message = await anthropic.messages.create({
+  const message = await createMessage(anthropic, {
     model: modelId(),
     max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
     system: opts.system,
@@ -106,7 +131,7 @@ export async function completeStructured<T>(
   const messages: LlmMessage[] = [...opts.messages];
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const message = await anthropic.messages.create({
+    const message = await createMessage(anthropic, {
       model: modelId(),
       max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
       system: jsonSystem,

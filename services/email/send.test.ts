@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe("sendEmail", () => {
-  it("no-ops and logs when RESEND_API_KEY is unset", async () => {
+  it("no-ops and logs a content-free skip line when RESEND_API_KEY is unset", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const result = await sendEmail({
       to: "ic@a.example",
@@ -39,9 +39,14 @@ describe("sendEmail", () => {
     });
     expect(result).toEqual({ sent: false, skipped: true });
     expect(sendMock).not.toHaveBeenCalled();
-    expect(info).toHaveBeenCalledWith(
-      expect.stringContaining("[email] skipped"),
-    );
+    // Structured `email.send.skipped` line (plan 023) — and critically, it must
+    // NOT carry the recipient address or subject (PII / content).
+    expect(info).toHaveBeenCalledTimes(1);
+    const line = info.mock.calls[0]?.[0] as string;
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+    expect(parsed.event).toBe("email.send.skipped");
+    expect(line).not.toContain("ic@a.example");
+    expect(line).not.toContain("Hello");
     info.mockRestore();
   });
 

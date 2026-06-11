@@ -80,6 +80,26 @@ Tracked separately from the sweep above (these target the 2026-06-18 pilot launc
   `lib/env.test.ts` (prod-tier schema throws, naming each key) + the runtime
   guard, NOT a build-time failure.
 
+- **023 — observability (error tracking + structured logs + uptime): Done.**
+  `@sentry/nextjs` wired for server/edge (`sentry.server.config.ts`,
+  `sentry.edge.config.ts`, imported from `instrumentation.ts` `register()`
+  ALONGSIDE the existing `validateEnv()`) and browser (`instrumentation-client.ts`).
+  `next.config.mjs` wrapped with `withSentryConfig` — plan 018's security headers
+  + `outputFileTracingRoot` preserved untouched. **No-DSN no-op:** `SENTRY_*` keys
+  are OPTIONAL in every tier of `lib/env.ts`, so a missing DSN inits an inert
+  client and never breaks boot/build (build verified green with no DSN set).
+  PII/transcript scrubbing at ONE chokepoint (`lib/sentry-scrub.ts` `beforeSend`:
+  drops request bodies, reduces user→id, redacts content/PII-keyed values;
+  `sendDefaultPii:false`; Session Replay off). Structured logger `lib/log.ts`
+  (one-line JSON, IDs/counts only) replaces every ad-hoc `console.*` in
+  `services/`/`server/`/`lib/` (email skip+fail, conversation extract warnings).
+  Capture at the LLM + email failure hotspots tagged `area`/`tenantId` via
+  `lib/observability.ts` (jobs hotspot deferred — `services/jobs/` lands with
+  plan 020). `app/(app)/error.tsx` + new `app/global-error.tsx` forward to Sentry.
+  ADR-003 records Sentry-over-OTel. Runbook §9 (+ `.env.example`, §5 env table)
+  is the operator checklist: create the Sentry project, set the DSN in Vercel,
+  add the alert rule, and point an uptime monitor at `/api/health`.
+
 ## Execution order & rationale
 
 - **Plan A (001–003)** first: small, high-trust correctness/security/perf. Low risk.
