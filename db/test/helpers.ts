@@ -27,6 +27,15 @@ export function seedRow<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
   return withServiceRole({ action: "test.seed", actor: "test" }, fn);
 }
 
+/**
+ * Run an arbitrary statement as service_role (bypasses RLS) for test
+ * arrangement and assertions. Audited under "test.svc" so it never collides
+ * with the action a test is asserting on (e.g. "opportunity.recompute").
+ */
+export function withServiceRoleRaw<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
+  return withServiceRole({ action: "test.svc", actor: "test" }, fn);
+}
+
 /** Truncate tenant-scoped tables + tenants between tests (service role). */
 export async function resetDb(): Promise<void> {
   await withServiceRole({ action: "test.reset", actor: "test" }, async (tx) => {

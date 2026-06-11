@@ -66,6 +66,7 @@ export const opportunityStatusMeta: Record<
 > = {
   provisional: { label: "Provisional", tone: "neutral" },
   surfaced: { label: "Surfaced", tone: "brand" },
+  hidden: { label: "Hidden", tone: "neutral" },
   approved: { label: "Approved", tone: "success" },
   deferred: { label: "Deferred", tone: "warning" },
   declined: { label: "Declined", tone: "neutral" },

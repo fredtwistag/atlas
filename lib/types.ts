@@ -40,6 +40,7 @@ export type CaptureKind =
 export type OpportunityStatus =
   | "provisional"
   | "surfaced"
+  | "hidden"
   | "approved"
   | "deferred"
   | "declined";
