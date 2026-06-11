@@ -27,6 +27,7 @@
     "email:test": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/send-test-emails.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.8",
     "@supabase/ssr": "^0.12.0",
