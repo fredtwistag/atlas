@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { dmSans, jetbrainsMono } from "./fonts";
+import { dmSans, jetbrainsMono, suisse } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atlas — Operational discovery for teams that ship",
+  title: "Atlas — Operational discovery sprints by Twistag",
   description:
-    "Atlas runs short, structured conversations with your team to surface the bottlenecks and AI-shaped opportunities that hide between your systems. Output: a ranked plan + pre-drafted SOWs.",
+    "Atlas runs short, structured conversations with your team to surface the bottlenecks and AI-shaped opportunities that hide between your systems. Output: a ranked plan + pre-drafted SOWs. A Twistag product.",
   metadataBase: new URL("https://atlas.twistag.com"),
   openGraph: {
-    title: "Atlas — Operational discovery for teams that ship",
+    title: "Atlas — Operational discovery sprints by Twistag",
     description:
-      "A ranked, ROI-scored opportunity backlog with click-through evidence, in 3–4 weeks.",
+      "A ranked, ROI-scored opportunity backlog with click-through evidence, in 3–4 weeks. Built and operated by Twistag.",
     type: "website",
   },
 };
@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${jetbrainsMono.variable}`}
+      className={`${dmSans.variable} ${jetbrainsMono.variable} ${suisse.variable}`}
       // Browser extensions (LanguageTool, Grammarly, etc.) inject attributes
       // like data-lt-installed onto <html> before React hydrates; ignore those
       // attribute-only diffs on this element.

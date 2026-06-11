@@ -30,6 +30,10 @@ module.exports = {
           hover: "var(--brand-hover)",
           soft: "var(--brand-soft)",
         },
+        accent: {
+          DEFAULT: "var(--accent)",
+          ink: "var(--accent-ink)",
+        },
         success: {
           DEFAULT: "var(--success)",
           soft: "var(--success-soft)",

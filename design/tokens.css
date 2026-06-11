@@ -65,6 +65,48 @@
   --z-overlay: 50;
   --z-modal: 100;
   --z-toast: 200;
+
+  /* ============ TWISTAG ACCENT ============ */
+  /* Twistag brand lime. Background-only on light surfaces (pair with
+   * --accent-ink text); usable as text/accent on black sections. */
+  --accent: #e0ff03;
+  --accent-ink: #09090b;
+}
+
+/* Marketing surface (atlas.twistag.com public pages) — "Field Report"
+ * direction, built from twistag.com's actual DNA: Suisse Intl, square
+ * geometry, hairlines instead of shadows, dirty-white paper, lime as the
+ * action color with a pressed darker edge. The product app keeps the
+ * indigo :root values, DM Sans, radii, and shadows. */
+.theme-marketing {
+  --bg: #ffffff;
+  --surface: #f4f1ec;
+  --surface-2: #ebe7df;
+  --border: #e0dccf;
+  --border-strong: #c9c4b6;
+  --brand: #09090b;
+  --brand-hover: #27272a;
+  --brand-soft: #f6ffc4;
+
+  /* Suisse Intl replaces DM Sans on marketing pages only */
+  --font-sans:
+    var(--font-suisse), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  /* Square geometry, no shadows — twistag.com has zero radius, zero shadow */
+  --radius-sm: 0px;
+  --radius: 0px;
+  --radius-lg: 0px;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: none;
+
+  /* Document furniture */
+  --accent-edge: #c8df22; /* pressed bottom edge on lime buttons */
+  --ink: #111111;
+  --ink-faint: #a8a496; /* two-tone headline trailing clause, on paper */
+  --cell: #111111; /* flat cell on black bands */
+  --cell-hover: #222222;
 }
 
 /* Optional dark theme — Atlas does not use this in v1, but keep tokens reserved */
