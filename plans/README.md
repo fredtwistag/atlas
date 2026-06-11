@@ -33,6 +33,30 @@ dev-server preview verification at 375 / 768 / 1280 px with screenshots.
 
 Status values: `Todo` → `In progress` → `Done` (gate green) / `Blocked`.
 
+## Launch-readiness set (013–027) — see [LAUNCH.md](LAUNCH.md)
+
+Added 2026-06-11 by the launch audit (planned at `430d2f4`). **LAUNCH.md is the
+master index for this set** — dependency order, day-by-day sequence, P2
+fast-follow backlog, and rejected findings live there. Summary:
+
+| # | Item | Priority | Status |
+|---|------|----------|--------|
+| [013](013-llm-service-and-conversation-engine.md) | LLM service + conversation engine | P0 | Done |
+| [014](014-capture-extraction-pipeline.md) | Capture extraction pipeline | P0 | Todo |
+| [015](015-conversation-ui-live-wiring.md) | Live conversation UI, retire mock | P0 | Todo |
+| [016](016-opportunity-engine.md) | Opportunity engine + curation safety valve | P0 | Todo |
+| [017](017-ic-edit-window-and-session-authz.md) | IC edit persistence + session authz | P0 | Todo |
+| [018](018-nextjs-upgrade-and-security-headers.md) | Next.js CVE upgrade + headers | P0 | Todo |
+| [019](019-rate-limiting.md) | Rate limiting (auth + email) | P0 | Todo |
+| [020](020-inngest-background-workers.md) | Inngest workers + digests | P0/P1 | Todo |
+| [021](021-legal-pages-and-gdpr-runbook.md) | Legal pages + GDPR runbook | P0 | Todo |
+| [022](022-prod-cutover.md) | Prod cutover + DEPLOY runbook | P0 | Todo |
+| [023](023-observability.md) | Sentry + logs + uptime | P1 | Todo |
+| [024](024-lifecycle-guards-and-empty-states.md) | Lifecycle guards + empty states | P1 | Todo |
+| [025](025-invitation-expiry-and-nudge-optout.md) | Invite expiry + nudge opt-out | P1 | Todo |
+| [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Todo |
+| [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Todo |
+
 **012 note:** written against `e323025`, approved by Fred 2026-06-10. Five shippable
 phases (0–5), each gated by `npm run verify`; execute phases in order, data layer
 before UI. Routes consolidate under `/admin` (not `/twistag`). Full detail in the
