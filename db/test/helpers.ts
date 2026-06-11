@@ -49,6 +49,9 @@ export async function resetDb(): Promise<void> {
     // RESTART IDENTITY is out — a plain DELETE clears it for deterministic
     // audit-based assertions (the id is never asserted on).
     await tx.execute(sql`DELETE FROM public.audit_log`);
+    // rate_limits is infrastructure (not in the TRUNCATE list / no tenant_id);
+    // clear it so limiter windows don't leak across tests.
+    await tx.execute(sql`DELETE FROM public.rate_limits`);
   });
 }
 

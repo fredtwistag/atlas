@@ -2,27 +2,11 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { signInErrorMessage } from "@/lib/sign-in-errors";
-
-/**
- * `shouldCreateUser: false` plus the no-account error treated as success means
- * the sent state is identical whether or not the email has an account — no
- * enumeration. Supabase surfaces "signups not allowed" (422 / otp_disabled) when
- * the user doesn't exist.
- */
-function isNoAccountError(error: {
-  message: string;
-  status?: number;
-}): boolean {
-  return (
-    error.status === 422 ||
-    /not allowed|signups?|otp_disabled|not found/i.test(error.message)
-  );
-}
+import { requestSignInCode, verifySignInCode } from "./actions";
 
 function SignInForm() {
   const searchParams = useSearchParams();
@@ -41,38 +25,31 @@ function SignInForm() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    setBusy(false);
-    if (error && !isNoAccountError(error)) {
-      setError(error.message);
-      return;
+    try {
+      // The server action rate-limits the send, folds "no account" into success
+      // (no enumeration), and on throttle returns success while skipping the send.
+      await requestSignInCode(email);
+      // Success, no-account, AND throttled all land here — same state.
+      setSent(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't send your code. Try again in a moment.",
+      );
+    } finally {
+      setBusy(false);
     }
-    // Success OR no-account both land here — same state, no enumeration.
-    setSent(true);
   }
 
   async function onVerifyCode(e: React.FormEvent) {
     e.preventDefault();
     setVerifying(true);
     setCodeError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code.trim(),
-      type: "email",
-    });
+    const result = await verifySignInCode(email, code);
     setVerifying(false);
-    if (error) {
-      setCodeError(
-        "That code didn't work. Check it, or use the link in your email.",
-      );
+    if (!result.ok) {
+      setCodeError(result.error);
       return;
     }
     // Session is set; the callback resolves landing + accepts the invitation.
@@ -98,6 +75,10 @@ function SignInForm() {
           >
             If <strong>{email}</strong> has an Atlas account, a sign-in link
             (and a 6-digit code) is on its way.
+            <span className="mt-1 block text-sm text-text-3">
+              If you requested several codes, wait a few minutes before trying
+              again.
+            </span>
           </div>
           <form onSubmit={onVerifyCode} className="space-y-3">
             <div>
