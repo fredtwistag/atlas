@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -19,6 +20,9 @@ import {
 export const metadata = { title: "Atlas — component showcase" };
 
 export default function ComponentsShowcase() {
+  // Dev-only surface: 404 in production (mirrors app/sign-in/dev/page.tsx).
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <div className="min-h-screen bg-bg">
       <div className="mx-auto max-w-4xl space-y-10 px-6 py-12">

@@ -56,6 +56,15 @@ export function configureDb(url: string): void {
 }
 
 /**
+ * Liveness probe for the health endpoint: runs `SELECT 1` on the pool. No role
+ * switch, no RLS context, no audit row — it only proves the DB is reachable.
+ * Rejects (throwing) if the connection fails; callers add their own timeout.
+ */
+export async function pingDb(): Promise<void> {
+  await db().execute(sql`SELECT 1`);
+}
+
+/**
  * Run `fn` as the `authenticated` role with the given JWT claims set, so RLS
  * policies (auth.jwt() ->> 'tenant_id') apply. Everything runs in one
  * transaction; SET LOCAL resets on commit/rollback.

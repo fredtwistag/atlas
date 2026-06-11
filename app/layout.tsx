@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { dmSans, jetbrainsMono, suisse } from "./fonts";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Atlas — Operational discovery sprints by Twistag",
   description:
     "Atlas runs short, structured conversations with your team to surface the bottlenecks and AI-shaped opportunities that hide between your systems. Output: a ranked plan + pre-drafted SOWs. A Twistag product.",
-  metadataBase: new URL("https://atlas.twistag.com"),
+  // Canonical base for OG/relative URLs — honors APP_URL in prod, falls back to
+  // the production host. Keep in sync with robots.ts / sitemap.ts (plan 022).
+  metadataBase: new URL(env.appUrl()),
   openGraph: {
     title: "Atlas — Operational discovery sprints by Twistag",
     description:

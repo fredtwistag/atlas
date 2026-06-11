@@ -62,6 +62,24 @@ phases (0–5), each gated by `npm run verify`; execute phases in order, data la
 before UI. Routes consolidate under `/admin` (not `/twistag`). Full detail in the
 plan file — it is self-contained.
 
+## Launch plans (013–027)
+
+Tracked separately from the sweep above (these target the 2026-06-18 pilot launch).
+
+- **022 — prod cutover (env validation + health checks + deploy runbook): Done.**
+  `lib/env.ts` (+ test) tiered Zod env contract; `validateEnv()` wired into
+  `instrumentation.ts` `register()` (runtime boot only — guarded to no-op during
+  `next build` and outside production, so the shared `npm run verify` gate stays
+  green with no `.env.local`). `app/api/health/route.ts` does real DB `SELECT 1`
+  / email-key / llm-key checks (200 if DB ok, else 503; no secrets). `robots.ts`,
+  `sitemap.ts`, `app/layout.tsx` metadataBase, derive their base URL from
+  `APP_URL`. `app/dev/components` now 404s in prod. `docs/runbooks/deploy.md` is
+  the operator cutover checklist (Supabase EU project → migrations → auth hook →
+  Resend → Vercel env table → first-client bootstrap → go/no-go smoke →
+  rollback). The "prod build with missing RESEND fails loud" criterion is met via
+  `lib/env.test.ts` (prod-tier schema throws, naming each key) + the runtime
+  guard, NOT a build-time failure.
+
 ## Execution order & rationale
 
 - **Plan A (001–003)** first: small, high-trust correctness/security/perf. Low risk.
