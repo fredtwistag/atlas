@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { router, tenantProcedure } from "../trpc";
 import { withTenantContext } from "@/db/client";
 import {
@@ -8,10 +8,28 @@ import {
   topics,
   sessions,
   sprintParticipants,
+  sessionMessages,
   tenants,
   captures,
 } from "@/db/schema";
 import type { MyDashboard, SessionStatus } from "@/lib/types";
+import {
+  openSession,
+  takeTurn,
+} from "@/services/conversation/engine";
+import { LlmNotConfiguredError } from "@/services/llm/client";
+
+/** Map an LLM-config error to a clear tRPC error; rethrow anything else. */
+function mapLlmError(err: unknown): never {
+  if (err instanceof LlmNotConfiguredError) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message:
+        "Conversation engine not configured — set ANTHROPIC_API_KEY to start a session.",
+    });
+  }
+  throw err;
+}
 
 function fmtTs(d: Date | null): string | null {
   if (!d) return null;
@@ -151,6 +169,113 @@ export const sessionRouter = router({
           editWindowEndsAt: fmtTs(s.editWindowEndsAt),
           captures: caps,
         };
+      }),
+    ),
+
+  /**
+   * Start (or resume) a conversation. Validates ownership, flips a not_started
+   * session to in_progress, and — if the transcript is empty — generates the
+   * INTRO opener via the engine. Returns the full ordered transcript so the
+   * caller can render it. Idempotent: calling again on a session that already
+   * has messages just returns them.
+   */
+  start: tenantProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [s] = await tx
+          .select({ id: sessions.id, status: sessions.status })
+          .from(sessions)
+          .where(
+            and(
+              eq(sessions.id, input.id),
+              eq(sessions.userId, ctx.session.userId),
+            ),
+          );
+        if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+
+        if (s.status === "not_started") {
+          await tx
+            .update(sessions)
+            .set({ status: "in_progress" })
+            .where(
+              and(
+                eq(sessions.id, input.id),
+                eq(sessions.userId, ctx.session.userId),
+              ),
+            );
+        }
+
+        const existing = await tx
+          .select({ id: sessionMessages.id })
+          .from(sessionMessages)
+          .where(eq(sessionMessages.sessionId, input.id))
+          .limit(1);
+
+        if (existing.length === 0) {
+          try {
+            await openSession({
+              db: tx,
+              tenantId: ctx.session.tenantId,
+              sessionId: input.id,
+              userId: ctx.session.userId,
+            });
+          } catch (err) {
+            mapLlmError(err);
+          }
+        }
+
+        const messages = await tx
+          .select({
+            role: sessionMessages.role,
+            content: sessionMessages.content,
+            arc: sessionMessages.arc,
+          })
+          .from(sessionMessages)
+          .where(eq(sessionMessages.sessionId, input.id))
+          .orderBy(asc(sessionMessages.createdAt));
+
+        return { messages };
+      }),
+    ),
+
+  /**
+   * Send one user message and get Atlas's reply. Validates ownership, runs the
+   * engine turn (which records both turns), and returns the assistant text plus
+   * whether the session is complete.
+   */
+  sendMessage: tenantProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        content: z.string().min(1).max(4000),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      withTenantContext(ctx.session, async (tx) => {
+        const [s] = await tx
+          .select({ id: sessions.id })
+          .from(sessions)
+          .where(
+            and(
+              eq(sessions.id, input.id),
+              eq(sessions.userId, ctx.session.userId),
+            ),
+          );
+        if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+
+        try {
+          const { assistant, done } = await takeTurn({
+            db: tx,
+            tenantId: ctx.session.tenantId,
+            sessionId: input.id,
+            userId: ctx.session.userId,
+            userMessage: input.content,
+          });
+          return { assistant, done };
+        } catch (err) {
+          mapLlmError(err);
+        }
       }),
     ),
 });

@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
+
+// Mock the LLM client so the engine runs for real (persisting transcript rows)
+// without any network call. `complete` returns a deterministic assistant reply.
+const llmComplete = vi.fn(
+  async (..._args: unknown[]) => "Atlas asks a concrete question.",
+);
+vi.mock("@/services/llm/client", async (orig) => {
+  const actual = await orig<typeof import("@/services/llm/client")>();
+  return { ...actual, complete: (...a: unknown[]) => llmComplete(...a) };
+});
+
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
 import {
@@ -10,6 +21,7 @@ import {
   topics,
   sprintParticipants,
   sessions,
+  sessionMessages,
   sowDrafts,
   auditLog,
   captures,
@@ -22,6 +34,7 @@ import {
   TENANT_A,
   TENANT_B,
 } from "@/db/test/helpers";
+import { LlmNotConfiguredError } from "@/services/llm/client";
 
 const SPRINT_A = "33333333-3333-4333-8333-3333333333a1";
 const SPRINT_B = "33333333-3333-4333-8333-3333333333b1";
@@ -850,6 +863,119 @@ describe("session.editView", () => {
     await expect(
       asIc(TENANT_A, EOTHER).session.editView({ id: ESES }),
     ).rejects.toThrow();
+  });
+});
+
+describe("session.start / session.sendMessage (conversation engine)", () => {
+  const CUSER = "ffffffff-ffff-4fff-8fff-ffffffff0001";
+  const COTHER = "ffffffff-ffff-4fff-8fff-ffffffff0002";
+  const CTOPIC = "ffffffff-ffff-4fff-8fff-ffffffff0010";
+  const CSES = "ffffffff-ffff-4fff-8fff-ffffffff0020";
+
+  beforeEach(() => {
+    llmComplete.mockClear();
+  });
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values([
+        {
+          id: CUSER,
+          tenantId: TENANT_A,
+          email: "conv@a.example",
+          name: "Conv IC",
+          role: "ic",
+          department: "Finance",
+        },
+        {
+          id: COTHER,
+          tenantId: TENANT_A,
+          email: "conv2@a.example",
+          name: "Conv Other",
+          role: "ic",
+          department: "Ops",
+        },
+      ]),
+    );
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: CTOPIC,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        title: "Quote-to-cash handoffs",
+        description: "How a quote becomes cash.",
+        orderIdx: 1,
+        questionCount: 5,
+        estMinutes: 6,
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        id: CSES,
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        topicId: CTOPIC,
+        userId: CUSER,
+        status: "not_started",
+      }),
+    );
+  });
+
+  it("start flips status to in_progress and seeds the INTRO opener", async () => {
+    const res = await asIc(TENANT_A, CUSER).session.start({ id: CSES });
+    expect(res.messages).toHaveLength(1);
+    expect(res.messages[0].role).toBe("assistant");
+    expect(res.messages[0].arc).toBe("INTRO");
+
+    const [s] = await asUser({ tenantId: TENANT_A, userId: CUSER }, (tx) =>
+      tx.select().from(sessions).where(eq(sessions.id, CSES)),
+    );
+    expect(s.status).toBe("in_progress");
+  });
+
+  it("sendMessage persists exactly 2 rows (user + assistant) for that turn", async () => {
+    await asIc(TENANT_A, CUSER).session.start({ id: CSES }); // 1 row (opener)
+    const res = await asIc(TENANT_A, CUSER).session.sendMessage({
+      id: CSES,
+      content: "Here is how the workflow goes.",
+    });
+    expect(res?.assistant).toBe("Atlas asks a concrete question.");
+
+    const rows = await asUser({ tenantId: TENANT_A, userId: CUSER }, (tx) =>
+      tx
+        .select()
+        .from(sessionMessages)
+        .where(eq(sessionMessages.sessionId, CSES)),
+    );
+    // opener (1) + this turn's user + assistant (2) = 3.
+    expect(rows).toHaveLength(3);
+    expect(rows.filter((r) => r.role === "user")).toHaveLength(1);
+    expect(rows.filter((r) => r.role === "assistant")).toHaveLength(2);
+  });
+
+  it("an IC cannot sendMessage on another user's session (NOT_FOUND)", async () => {
+    await asIc(TENANT_A, CUSER).session.start({ id: CSES });
+    await expect(
+      asIc(TENANT_A, COTHER).session.sendMessage({
+        id: CSES,
+        content: "let me in",
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("start is cross-tenant rejected (NOT_FOUND under RLS)", async () => {
+    await expect(
+      asIc(TENANT_B, CUSER).session.start({ id: CSES }),
+    ).rejects.toThrow();
+  });
+
+  it("maps a missing ANTHROPIC_API_KEY to a clear PRECONDITION_FAILED", async () => {
+    llmComplete.mockRejectedValueOnce(
+      new LlmNotConfiguredError(),
+    );
+    await expect(
+      asIc(TENANT_A, CUSER).session.start({ id: CSES }),
+    ).rejects.toThrow(/ANTHROPIC_API_KEY/);
   });
 });
 
