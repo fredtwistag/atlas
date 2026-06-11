@@ -23,6 +23,19 @@ vi.mock("@/services/conversation/extract", () => ({
   extractFromSession: (...args: unknown[]) => extractFromSession(...args),
 }));
 
+// Plan 020: by default completion EMITS `session/completed` (extraction runs in
+// the worker). Mock `inngest.send` so the default path doesn't touch the network
+// and we can assert the emit. Tests that exercise the INLINE fallback set
+// ATLAS_INLINE_SESSION_EXTRACTION=1 (see below).
+const inngestSend = vi.fn(async (..._a: unknown[]) => ({ ids: [] as string[] }));
+vi.mock("@/services/jobs/client", async (orig) => {
+  const actual = await orig<typeof import("@/services/jobs/client")>();
+  return {
+    ...actual,
+    inngest: { ...actual.inngest, send: (...a: unknown[]) => inngestSend(...a) },
+  };
+});
+
 import { completeSessionForUser } from "./sessions";
 
 const USER = "66666666-6666-4666-8666-66666666a001";
@@ -34,6 +47,8 @@ const SES = "66666666-6666-4666-8666-66666666a030";
 beforeEach(async () => {
   extractFromSession.mockReset();
   extractFromSession.mockResolvedValue([]);
+  inngestSend.mockClear();
+  delete process.env.ATLAS_INLINE_SESSION_EXTRACTION;
   await resetDb();
   await seedTenants();
   await seedRow((tx) =>
@@ -186,7 +201,9 @@ describe("completeSessionForUser", () => {
     expect(ses.totalSeconds).toBe(90);
   });
 
-  it("runs the final extraction sweep, dedupes by summary, and bumps captureCount", async () => {
+  it("inline fallback: runs the final extraction sweep, dedupes by summary, and bumps captureCount", async () => {
+    // Exercise the inline path (pre-020 behavior) via the fallback flag.
+    process.env.ATLAS_INLINE_SESSION_EXTRACTION = "1";
     // One capture already on the session (mimics a per-turn pass).
     await seedRow((tx) =>
       tx.insert(captures).values({
@@ -234,7 +251,8 @@ describe("completeSessionForUser", () => {
     expect(ses.captureCount).toBe(1);
   });
 
-  it("completion still succeeds when the final extraction throws", async () => {
+  it("inline fallback: completion still succeeds when the final extraction throws", async () => {
+    process.env.ATLAS_INLINE_SESSION_EXTRACTION = "1";
     const { LlmOutputError } = await import("@/services/llm/client");
     extractFromSession.mockRejectedValue(new LlmOutputError("bad json"));
 
@@ -247,6 +265,31 @@ describe("completeSessionForUser", () => {
       tx.select().from(sessions).where(eq(sessions.id, SES)),
     );
     expect(ses.status).toBe("completed");
+  });
+
+  it("default path: emits session/completed and does NOT run extraction inline", async () => {
+    extractFromSession.mockResolvedValue([
+      { kind: "handoff", summary: "x", sourceQuote: "x", tags: [] },
+    ]);
+
+    await completeSessionForUser(
+      { tenantId: TENANT_A, userId: USER, role: "ic" },
+      SES,
+    );
+
+    // The inline sweep did NOT run (it lives in the worker now).
+    expect(extractFromSession).not.toHaveBeenCalled();
+    // The event was emitted with the session + tenant ids.
+    expect(inngestSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "session/completed",
+        data: expect.objectContaining({ sessionId: SES, tenantId: TENANT_A }),
+      }),
+    );
+    const rows = await asUser({ tenantId: TENANT_A, userId: USER }, (tx) =>
+      tx.select().from(captures).where(eq(captures.sessionId, SES)),
+    );
+    expect(rows).toHaveLength(0);
   });
 
   it("does not complete another user's session", async () => {

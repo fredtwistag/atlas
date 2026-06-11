@@ -47,6 +47,17 @@ const observability = {
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
 } as const;
 
+// Inngest (background workers, plan 020). ALWAYS optional, like observability:
+// the serve handler reads them straight from the env, and a missing key must
+// never break boot or build — unconfigured, `inngest.send` is a local no-op and
+// functions are inert. In prod they SHOULD be set (background work won't run
+// otherwise), but we deliberately do NOT make them required so an unset key can
+// never crash a deploy the way a missing RESEND_API_KEY does.
+const inngestKeys = {
+  INNGEST_EVENT_KEY: z.string().min(1).optional(),
+  INNGEST_SIGNING_KEY: z.string().min(1).optional(),
+} as const;
+
 // Prod-only keys: optional in dev (the app no-ops), required in production.
 const prodOnly = {
   RESEND_API_KEY: z.string().min(1),
@@ -76,6 +87,7 @@ function schemaFor(prod: boolean) {
     return z.object({
       ...alwaysRequired,
       ...observability,
+      ...inngestKeys,
       RESEND_API_KEY: prodOnly.RESEND_API_KEY.optional(),
       EMAIL_FROM: prodOnly.EMAIL_FROM.optional(),
       ANTHROPIC_API_KEY: prodOnly.ANTHROPIC_API_KEY.optional(),
@@ -84,7 +96,7 @@ function schemaFor(prod: boolean) {
     });
   }
   return z
-    .object({ ...alwaysRequired, ...observability, ...prodOnly })
+    .object({ ...alwaysRequired, ...observability, ...inngestKeys, ...prodOnly })
     .refine((e) => e.DATABASE_URL.includes(":6543"), {
       path: ["DATABASE_URL"],
       message:

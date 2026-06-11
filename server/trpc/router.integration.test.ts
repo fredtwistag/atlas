@@ -27,6 +27,19 @@ vi.mock("@/services/llm/client", async (orig) => {
   };
 });
 
+// Plan 020: the nudge + launch paths now ENQUEUE Inngest events instead of
+// sending email inline. Mock `inngest.send` so the tRPC-level tests assert the
+// enqueue (payload) without any worker/network plumbing. The worker BODIES are
+// tested directly in services/jobs/functions/jobs.integration.test.ts.
+const inngestSend = vi.fn(async (..._a: unknown[]) => ({ ids: [] as string[] }));
+vi.mock("@/services/jobs/client", async (orig) => {
+  const actual = await orig<typeof import("@/services/jobs/client")>();
+  return {
+    ...actual,
+    inngest: { ...actual.inngest, send: (...a: unknown[]) => inngestSend(...a) },
+  };
+});
+
 import { createCallerFactory } from "./trpc";
 import { appRouter } from "./routers/_app";
 import {
@@ -160,6 +173,10 @@ describe("tRPC routers — tenant isolation", () => {
 });
 
 describe("sprint.launch", () => {
+  beforeEach(() => {
+    inngestSend.mockClear();
+  });
+
   beforeEach(async () => {
     // resetDb()/seedTenants() already ran in the outer beforeEach; add users.
     await seedRow((tx) =>
@@ -219,6 +236,15 @@ describe("sprint.launch", () => {
     );
     expect(sessionRows).toHaveLength(4); // 2 participants x 2 topics
     expect(sessionRows.every((s) => s.status === "not_started")).toBe(true);
+
+    // Step 3: invites are now handed to the `sprint/launched` worker, not sent
+    // inline. The event is emitted once with the sprint + tenant ids.
+    expect(inngestSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "sprint/launched",
+        data: expect.objectContaining({ sprintId, tenantId: TENANT_A }),
+      }),
+    );
   });
 
   it("isolates tenants — A cannot see a sprint B launched", async () => {
@@ -1352,43 +1378,67 @@ describe("sprint.nudge", () => {
     );
   });
 
+  beforeEach(() => {
+    inngestSend.mockClear();
+  });
+
   async function nudgeRows() {
     return seedRow((tx) =>
       tx.select().from(auditLog).where(eq(auditLog.action, "nudge.sent")),
     );
   }
 
-  it("writes a nudge.sent audit row scoped to tenant + user", async () => {
+  it("queues a nudge/requested event with the right payload (no inline audit)", async () => {
     const res = await asManager(TENANT_A, NMGR).sprint.nudge({
       sprintId: SPRINT_A,
       userId: NIC,
       channel: "email",
       body: "Just a friendly nudge.",
     });
-    expect(res.ok).toBe(true);
-    const rows = await nudgeRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0].tenantId).toBe(TENANT_A);
-    expect(rows[0].userId).toBe(NIC);
-    expect(rows[0].targetId).toBe(SPRINT_A);
+    // Async now: the procedure returns queued, not ok. The send (audit + email)
+    // happens in the worker (tested in jobs.integration.test.ts).
+    expect(res.queued).toBe(true);
+    expect(inngestSend).toHaveBeenCalledTimes(1);
+    expect(inngestSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "nudge/requested",
+        data: expect.objectContaining({
+          tenantId: TENANT_A,
+          sprintId: SPRINT_A,
+          userId: NIC,
+          actorId: NMGR,
+          channel: "email",
+          body: "Just a friendly nudge.",
+        }),
+      }),
+    );
+    // The tRPC layer no longer writes the audit row itself.
+    expect(await nudgeRows()).toHaveLength(0);
   });
 
-  it("rejects a second nudge within 48h (cooldown)", async () => {
-    await asManager(TENANT_A, NMGR).sprint.nudge({
-      sprintId: SPRINT_A,
-      userId: NIC,
-      channel: "email",
-      body: "First nudge.",
-    });
+  it("rejects nudging on a non-active sprint (BAD_REQUEST, nothing queued)", async () => {
+    await asTenant(TENANT_A).sprint.close({ id: SPRINT_A });
     await expect(
       asManager(TENANT_A, NMGR).sprint.nudge({
         sprintId: SPRINT_A,
         userId: NIC,
         channel: "email",
-        body: "Second nudge.",
+        body: "x",
+      }),
+    ).rejects.toThrow(/active/i);
+    expect(inngestSend).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown recipient (NOT_FOUND, nothing queued)", async () => {
+    await expect(
+      asManager(TENANT_A, NMGR).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: "eeeeeeee-eeee-4eee-8eee-eeeeeeee9999",
+        channel: "email",
+        body: "x",
       }),
     ).rejects.toThrow();
-    expect(await nudgeRows()).toHaveLength(1);
+    expect(inngestSend).not.toHaveBeenCalled();
   });
 
   it("rejects an IC session", async () => {
@@ -1400,12 +1450,12 @@ describe("sprint.nudge", () => {
         body: "x",
       }),
     ).rejects.toThrow();
+    expect(inngestSend).not.toHaveBeenCalled();
   });
 
-  it("caps an actor at 20 nudges / 24h (FORBIDDEN with honest copy)", async () => {
+  it("caps an actor at 20 nudges / 24h (preserved from plan 019; nothing queued)", async () => {
     // Pre-load the actor's limiter to the cap so the nudge is the over-the-limit
-    // consume. The per-recipient cooldown is keyed to the recipient, so each
-    // pre-load targets a distinct synthetic recipient to keep that path clear.
+    // consume. The cap is checked in tRPC BEFORE enqueue, so no event is sent.
     for (let i = 0; i < 20; i++) {
       const r = await consume(`nudge-actor:${NMGR}`, {
         limit: 20,
@@ -1422,8 +1472,7 @@ describe("sprint.nudge", () => {
         body: "One nudge too many.",
       }),
     ).rejects.toThrow(/lot of nudges/i);
-    // The cap short-circuits before the audit row is written.
-    expect(await nudgeRows()).toHaveLength(0);
+    expect(inngestSend).not.toHaveBeenCalled();
   });
 
   it("is cross-tenant rejected (B manager cannot nudge an A user)", async () => {
@@ -1446,7 +1495,7 @@ describe("sprint.nudge", () => {
         body: "x",
       }),
     ).rejects.toThrow();
-    expect(await nudgeRows()).toHaveLength(0);
+    expect(inngestSend).not.toHaveBeenCalled();
   });
 });
 

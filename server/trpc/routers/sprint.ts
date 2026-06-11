@@ -1,9 +1,8 @@
-import { createElement } from "react";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and, ne, gt, inArray } from "drizzle-orm";
+import { eq, desc, and, ne, inArray } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
-import { withTenantContext, withServiceRole } from "@/db/client";
+import { withTenantContext } from "@/db/client";
 import { consume } from "@/lib/rate-limit";
 import {
   sprints,
@@ -11,18 +10,12 @@ import {
   sprintParticipants,
   sessions,
   users,
-  tenants,
   opportunities,
-  auditLog,
 } from "@/db/schema";
 import { loadSprint, loadSprintProgress } from "@/lib/sprint-read";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { LaunchSprintSchema } from "@/lib/schemas";
-import { appUrl } from "@/lib/app-url";
-import { generateInviteLink } from "@/services/email/invite-link";
-import { sendEmail } from "@/services/email/send";
-import { InviteEmail, inviteSubject } from "@/emails/InviteEmail";
-import { NudgeEmail } from "@/emails/NudgeEmail";
+import { inngest } from "@/services/jobs/client";
 import type { ActivityItem } from "@/lib/types";
 
 const idInput = z.object({ id: z.string().uuid() });
@@ -91,11 +84,18 @@ export const sprintRouter = router({
     ),
 
   /**
-   * Send a nudge to a participant. Audited, with a 48-hour per-person cooldown.
-   * Runs as service_role so it can both read the audit trail and write to it;
-   * every check is explicitly tenant-scoped since RLS is bypassed. The email is
-   * sent INSIDE the transaction so a delivery failure rolls back the audit row
-   * and the cooldown isn't burned without a message actually going out.
+   * Queue a nudge to a participant (plan 020, Step 2). The actual send — the 48h
+   * per-recipient cooldown, the audit write, and the email — now runs in the
+   * `nudge/requested` Inngest worker (services/jobs/functions/nudge-send.ts),
+   * which is the sanctioned place for service-role + audit (CLAUDE.md). This
+   * procedure stays the trust boundary: it validates the manager, that the
+   * recipient + sprint exist in the tenant, that the sprint is ACTIVE (plan 024
+   * would add this guard; added here since 024 hasn't landed), and enforces the
+   * per-actor volume cap (plan 019) BEFORE enqueueing, so a tripped cap never
+   * queues a job. The cooldown is re-checked atomically in the worker.
+   *
+   * Validation reads run under tenant RLS (withTenantContext), not service role —
+   * no service-role bypass remains in this router for email.
    */
   nudge: managerProcedure
     .input(
@@ -107,112 +107,66 @@ export const sprintRouter = router({
         body: z.string().min(1).max(5000),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      withServiceRole(
-        { action: "nudge.send", actor: ctx.session.userId },
-        async (tx) => {
-          const tenantId = ctx.session.tenantId;
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = ctx.session.tenantId;
 
-          const [target] = await tx
-            .select({ id: users.id, email: users.email, name: users.name })
-            .from(users)
-            .where(
-              and(eq(users.id, input.userId), eq(users.tenantId, tenantId)),
-            );
-          if (!target) throw new TRPCError({ code: "NOT_FOUND" });
+      // Tenant-membership + sprint-active checks under RLS (no service role).
+      await withTenantContext(ctx.session, async (tx) => {
+        const [target] = await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, input.userId));
+        if (!target) throw new TRPCError({ code: "NOT_FOUND" });
 
-          const [spr] = await tx
-            .select({ id: sprints.id })
-            .from(sprints)
-            .where(
-              and(
-                eq(sprints.id, input.sprintId),
-                eq(sprints.tenantId, tenantId),
-              ),
-            );
-          if (!spr) throw new TRPCError({ code: "NOT_FOUND" });
-
-          const cutoff = new Date(Date.now() - 2 * DAY);
-          const recent = await tx
-            .select({ id: auditLog.id })
-            .from(auditLog)
-            .where(
-              and(
-                eq(auditLog.action, "nudge.sent"),
-                eq(auditLog.tenantId, tenantId),
-                eq(auditLog.userId, input.userId),
-                gt(auditLog.at, cutoff),
-              ),
-            )
-            .limit(1);
-          if (recent.length > 0) {
-            throw new TRPCError({
-              code: "TOO_MANY_REQUESTS",
-              message:
-                "A nudge was already sent to this person in the last 48 hours.",
-            });
-          }
-
-          // Per-actor volume cap (on top of the per-recipient cooldown above):
-          // 20 nudges / 24h keeps one manager from blasting the whole team. Runs
-          // through the shared limiter, which opens its OWN service-role tx, so a
-          // tripped cap surfaces before we write the audit row or send the email.
-          const actorCap = await consume(`nudge-actor:${ctx.session.userId}`, {
-            limit: 20,
-            windowSeconds: 86_400,
+        const [spr] = await tx
+          .select({ status: sprints.status })
+          .from(sprints)
+          .where(eq(sprints.id, input.sprintId));
+        if (!spr) throw new TRPCError({ code: "NOT_FOUND" });
+        if (spr.status !== "active") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "This sprint isn't active, so there's nothing to nudge about.",
           });
-          if (!actorCap.allowed) {
-            throw new TRPCError({
-              code: "TOO_MANY_REQUESTS",
-              message:
-                "You've sent a lot of nudges today — Atlas caps these to keep them meaningful. Try again tomorrow.",
-            });
-          }
+        }
+      });
 
-          await tx.insert(auditLog).values({
-            tenantId,
-            userId: input.userId,
-            action: "nudge.sent",
-            targetId: input.sprintId,
-            metadata: { channel: input.channel, actor: ctx.session.userId },
-          });
+      // Per-actor volume cap (plan 019): 20 nudges / 24h keeps one manager from
+      // blasting the whole team. Checked before we enqueue so a tripped cap never
+      // queues a job. The per-recipient 48h cooldown is enforced in the worker.
+      const actorCap = await consume(`nudge-actor:${ctx.session.userId}`, {
+        limit: 20,
+        windowSeconds: 86_400,
+      });
+      if (!actorCap.allowed) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message:
+            "You've sent a lot of nudges today — Atlas caps these to keep them meaningful. Try again tomorrow.",
+        });
+      }
 
-          // Email channel only (Slack is v1.5). A throw here rolls the tx back.
-          if (input.channel === "email") {
-            const [sender] = await tx
-              .select({ name: users.name })
-              .from(users)
-              .where(
-                and(
-                  eq(users.id, ctx.session.userId),
-                  eq(users.tenantId, tenantId),
-                ),
-              );
-            const [tenant] = await tx
-              .select({ name: tenants.name })
-              .from(tenants)
-              .where(eq(tenants.id, tenantId));
-            await sendEmail({
-              to: target.email,
-              subject: input.subject ?? "A quick nudge on your Atlas sessions",
-              react: createElement(NudgeEmail, {
-                senderName: sender?.name ?? "Your manager",
-                orgName: tenant?.name ?? "Atlas",
-                body: input.body,
-                ctaUrl: `${appUrl()}/me`,
-              }),
-            });
-          }
-
-          return { ok: true as const };
+      await inngest.send({
+        name: "nudge/requested",
+        data: {
+          tenantId,
+          sprintId: input.sprintId,
+          userId: input.userId,
+          actorId: ctx.session.userId,
+          channel: input.channel,
+          ...(input.subject ? { subject: input.subject } : {}),
+          body: input.body,
         },
-      ),
-    ),
+      });
+
+      return { queued: true as const };
+    }),
 
   launch: managerProcedure
     .input(LaunchSprintSchema)
     .mutation(async ({ ctx, input }) => {
-      const launched = await withTenantContext(ctx.session, async (tx) => {
+      const sprintId = await withTenantContext(ctx.session, async (tx) => {
         const selectedTemplates = TOPIC_TEMPLATES.filter((t) =>
           input.topicKeys.includes(t.key),
         );
@@ -223,12 +177,10 @@ export const sprintRouter = router({
           });
         }
 
-        // Selected members (for sponsorId, scope_department, and IC invites).
+        // Selected members (for sponsorId + scope_department).
         const members = await tx
           .select({
             id: users.id,
-            name: users.name,
-            email: users.email,
             role: users.role,
             department: users.department,
           })
@@ -299,53 +251,20 @@ export const sprintRouter = router({
         );
         await tx.insert(sessions).values(sessionValues);
 
-        const [tenant] = await tx
-          .select({ name: tenants.name })
-          .from(tenants)
-          .where(eq(tenants.id, ctx.session.tenantId));
-        const [manager] = await tx
-          .select({ name: users.name })
-          .from(users)
-          .where(eq(users.id, ctx.session.userId));
-
-        return {
-          sprintId: sprint.id,
-          ics: members
-            .filter((m) => m.role === "ic")
-            .map((m) => ({ email: m.email, name: m.name })),
-          orgName: tenant?.name ?? "your organization",
-          inviterName: manager?.name ?? "Your manager",
-          topics: selectedTemplates.map((t) => ({
-            title: t.title,
-            estMinutes: t.estMinutes,
-          })),
-        };
+        return sprint.id;
       });
 
-      // Post-commit, best-effort: tell each IC their sprint is live, with a
-      // topic preview. A failed send never undoes the launch (#3 / ATL-203).
-      await Promise.allSettled(
-        launched.ics.map(async (ic) => {
-          const confirmUrl = await generateInviteLink(ic.email);
-          await sendEmail({
-            to: ic.email,
-            subject: inviteSubject(
-              "ic",
-              launched.inviterName,
-              launched.orgName,
-            ),
-            react: createElement(InviteEmail, {
-              role: "ic",
-              orgName: launched.orgName,
-              inviterName: launched.inviterName,
-              confirmUrl,
-              topics: launched.topics,
-            }),
-          });
-        }),
-      );
+      // Post-commit: hand the IC invites to the `sprint/launched` worker
+      // (services/jobs/functions/invite-send.ts), which sends one per Inngest
+      // step — retried and visible in the dashboard instead of swallowed by a
+      // best-effort Promise.allSettled (plan 020, Step 3). A send failure there
+      // never undoes the committed launch.
+      await inngest.send({
+        name: "sprint/launched",
+        data: { sprintId, tenantId: ctx.session.tenantId },
+      });
 
-      return launched.sprintId;
+      return sprintId;
     }),
 
   get: tenantProcedure

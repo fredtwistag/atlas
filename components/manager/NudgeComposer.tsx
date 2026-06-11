@@ -61,10 +61,10 @@ export function NudgeComposer({
         className="border-success/40 bg-success-soft p-6 text-center"
       >
         <Check className="mx-auto mb-2 h-7 w-7 text-success" />
-        <p className="font-semibold text-success">Nudge sent</p>
+        <p className="font-semibold text-success">Nudge on its way</p>
         <p className="mt-1 text-md text-text-2">
-          Emailed to {name.split(" ")[0]} and recorded to the audit trail. A
-          48-hour cooldown now applies before another reminder.
+          Queued for {name.split(" ")[0]} and recorded to the audit trail. A
+          48-hour cooldown applies before another reminder.
         </p>
         <Link
           href={`/sprint/${sprintId}`}
