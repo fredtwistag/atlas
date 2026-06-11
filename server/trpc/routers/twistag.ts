@@ -18,6 +18,11 @@ import {
   loadSprintProgress,
   listSprintOpportunities,
 } from "@/lib/sprint-read";
+import {
+  updateOpportunity,
+  setOpportunityStatus,
+} from "@/lib/twistag-admin";
+import { recompute as recomputeOpportunities } from "@/services/opportunity/recompute";
 import type { ClientSummary } from "@/lib/types";
 
 export const twistagRouter = router({
@@ -169,6 +174,10 @@ export const twistagRouter = router({
                 id: opportunities.id,
                 sprintId: opportunities.sprintId,
                 title: opportunities.title,
+                description: opportunities.description,
+                rationale: opportunities.rationale,
+                impactLow: opportunities.impactLow,
+                impactHigh: opportunities.impactHigh,
                 compositeScore: opportunities.compositeScore,
                 status: opportunities.status,
               })
@@ -198,6 +207,10 @@ export const twistagRouter = router({
             id: o.id,
             sprintId: o.sprintId,
             title: o.title,
+            description: o.description,
+            rationale: o.rationale,
+            impactLow: o.impactLow,
+            impactHigh: o.impactHigh,
             compositeScore: Number(o.compositeScore),
             status: o.status,
             sowStatus: sowByOpp.get(o.id)?.status ?? null,
@@ -372,4 +385,114 @@ export const twistagRouter = router({
         },
       );
     }),
+
+  /**
+   * Plan 016 Step 5 — recompute a sprint's opportunities from its captures.
+   * Resolves the sprint's tenant via a twistag read first (NOT_FOUND if
+   * missing), then runs the engine (cluster → score → upsert). `recompute`
+   * itself runs as service_role and writes its own audit row; the twistag read
+   * above adds the cross-tenant access record.
+   */
+  recompute: twistagProcedure
+    .input(z.object({ sprintId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const found = await withTwistagContext(
+        {
+          twistagRole: ctx.session.twistagRole,
+          actor: ctx.session.userId,
+          targetId: input.sprintId,
+        },
+        async (tx) => {
+          const [s] = await tx
+            .select({ tenantId: sprints.tenantId })
+            .from(sprints)
+            .where(eq(sprints.id, input.sprintId));
+          return s ?? null;
+        },
+      );
+      if (!found) throw new TRPCError({ code: "NOT_FOUND" });
+      return recomputeOpportunities(input.sprintId, ctx.session.userId);
+    }),
+
+  /**
+   * Plan 016 Step 6 — curation: edit an opportunity's curatable fields. The
+   * tenant is resolved from the opportunity via a twistag read (NOT_FOUND if
+   * missing); the edit refuses approved rows inside updateOpportunity.
+   */
+  opportunityUpdate: twistagProcedure
+    .input(
+      z.object({
+        opportunityId: z.string().uuid(),
+        title: z.string().min(5).max(140).optional(),
+        description: z.string().min(10).max(600).optional(),
+        rationale: z.string().min(10).max(1600).optional(),
+        impactLow: z.number().int().min(0).optional(),
+        impactHigh: z.number().int().min(0).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = await resolveOpportunityTenant(ctx, input.opportunityId);
+      await updateOpportunity(
+        { userId: ctx.session.userId, twistagRole: ctx.session.twistagRole },
+        tenantId,
+        input.opportunityId,
+        {
+          title: input.title,
+          description: input.description,
+          rationale: input.rationale,
+          impactLow: input.impactLow,
+          impactHigh: input.impactHigh,
+        },
+      );
+      return { ok: true as const };
+    }),
+
+  /**
+   * Plan 016 Step 6 — curation: move an opportunity between provisional /
+   * surfaced / hidden. Refuses approved rows inside setOpportunityStatus.
+   */
+  opportunitySetStatus: twistagProcedure
+    .input(
+      z.object({
+        opportunityId: z.string().uuid(),
+        status: z.enum(["provisional", "surfaced", "hidden"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = await resolveOpportunityTenant(ctx, input.opportunityId);
+      await setOpportunityStatus(
+        { userId: ctx.session.userId, twistagRole: ctx.session.twistagRole },
+        tenantId,
+        input.opportunityId,
+        input.status,
+      );
+      return { ok: true as const };
+    }),
 });
+
+/**
+ * Resolve an opportunity's tenant via a twistag cross-tenant read (audited).
+ * Used by the curation mutations so the subsequent service-role write is
+ * explicitly tenant-scoped. Throws NOT_FOUND if the opportunity is unknown.
+ */
+async function resolveOpportunityTenant(
+  ctx: { session: { twistagRole: string; userId: string } },
+  opportunityId: string,
+): Promise<string> {
+  const found = await withTwistagContext(
+    {
+      twistagRole: ctx.session.twistagRole,
+      actor: ctx.session.userId,
+      targetId: opportunityId,
+    },
+    async (tx) => {
+      const [o] = await tx
+        .select({ tenantId: opportunities.tenantId })
+        .from(opportunities)
+        .where(eq(opportunities.id, opportunityId));
+      return o ?? null;
+    },
+  );
+  if (!found) throw new TRPCError({ code: "NOT_FOUND" });
+  return found.tenantId;
+}

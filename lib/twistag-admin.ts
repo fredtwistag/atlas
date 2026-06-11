@@ -14,7 +14,7 @@
  */
 import { eq, and } from "drizzle-orm";
 import { withServiceRole, withTwistagContext } from "@/db/client";
-import { tenants, users, invitations } from "@/db/schema";
+import { tenants, users, invitations, opportunities } from "@/db/schema";
 import { MEMBER_ROLES, removeMemberTx } from "./members";
 
 /** Carried for audit attribution only — NEVER used for authorization. */
@@ -191,6 +191,157 @@ export async function cancelInvitationInTenant(
           and(
             eq(invitations.id, invitationId),
             eq(invitations.tenantId, tenantId),
+          ),
+        );
+    },
+  );
+}
+
+/* ------------------------------------------------------------------------- *
+ * Plan 016 Step 6 — opportunity curation (the launch-week safety valve).
+ *
+ * Twistag reviews every surfaced opportunity before the sponsor sees it. These
+ * let staff polish engine output (title/description/rationale/impact) and move
+ * an opportunity between provisional/surfaced/hidden. Both refuse to touch
+ * `approved` rows — once a sponsor has acted, the opportunity is frozen (same
+ * rule recompute honors). Tenant-scoped explicitly; audited.
+ * ------------------------------------------------------------------------- */
+
+/** Curation statuses Twistag can set. NEVER includes `approved` (sponsor-only). */
+const CURATION_STATUSES = ["provisional", "surfaced", "hidden"] as const;
+export type CurationStatus = (typeof CURATION_STATUSES)[number];
+
+export type OpportunityEditPatch = {
+  title?: string;
+  description?: string;
+  rationale?: string;
+  impactLow?: number;
+  impactHigh?: number;
+};
+
+/**
+ * Edit an opportunity's curatable fields. Refuses if the row is `approved`.
+ * `impactLow`/`impactHigh` are validated as a pair when either is present
+ * (resolved against the row's current values) so a partial edit can't invert
+ * the range.
+ */
+export async function updateOpportunity(
+  actor: TwistagActor,
+  tenantId: string,
+  opportunityId: string,
+  patch: OpportunityEditPatch,
+): Promise<void> {
+  const set: Partial<{
+    title: string;
+    description: string;
+    rationale: string;
+    impactLow: number;
+    impactHigh: number;
+  }> = {};
+  if (patch.title !== undefined) {
+    if (patch.title.trim().length < 5) throw new Error("title too short");
+    set.title = patch.title.trim();
+  }
+  if (patch.description !== undefined) {
+    if (patch.description.trim().length < 10)
+      throw new Error("description too short");
+    set.description = patch.description.trim();
+  }
+  if (patch.rationale !== undefined) {
+    if (patch.rationale.trim().length < 10)
+      throw new Error("rationale too short");
+    set.rationale = patch.rationale.trim();
+  }
+  if (patch.impactLow !== undefined) set.impactLow = patch.impactLow;
+  if (patch.impactHigh !== undefined) set.impactHigh = patch.impactHigh;
+  if (Object.keys(set).length === 0) throw new Error("nothing to update");
+
+  await withServiceRole(
+    {
+      action: "twistag.opportunity.update",
+      actor: actor.userId,
+      tenantId,
+      targetId: opportunityId,
+      metadata: { twistag_role: actor.twistagRole, fields: Object.keys(set) },
+    },
+    async (tx) => {
+      const [row] = await tx
+        .select({
+          status: opportunities.status,
+          impactLow: opportunities.impactLow,
+          impactHigh: opportunities.impactHigh,
+        })
+        .from(opportunities)
+        .where(
+          and(
+            eq(opportunities.id, opportunityId),
+            eq(opportunities.tenantId, tenantId),
+          ),
+        );
+      if (!row) throw new Error("not found");
+      if (row.status === "approved")
+        throw new Error("cannot edit an approved opportunity");
+
+      const low = set.impactLow ?? row.impactLow;
+      const high = set.impactHigh ?? row.impactHigh;
+      if (low > high) throw new Error("impactLow must be <= impactHigh");
+
+      await tx
+        .update(opportunities)
+        .set(set)
+        .where(
+          and(
+            eq(opportunities.id, opportunityId),
+            eq(opportunities.tenantId, tenantId),
+          ),
+        );
+    },
+  );
+}
+
+/**
+ * Move an opportunity between provisional/surfaced/hidden. Refuses if the row
+ * is `approved`. The `approved` transition is sponsor-only (opportunity.approve)
+ * and is never reachable here.
+ */
+export async function setOpportunityStatus(
+  actor: TwistagActor,
+  tenantId: string,
+  opportunityId: string,
+  status: string,
+): Promise<void> {
+  if (!(CURATION_STATUSES as readonly string[]).includes(status)) {
+    throw new Error("invalid status");
+  }
+  await withServiceRole(
+    {
+      action: "twistag.opportunity.status",
+      actor: actor.userId,
+      tenantId,
+      targetId: opportunityId,
+      metadata: { twistag_role: actor.twistagRole, status },
+    },
+    async (tx) => {
+      const [row] = await tx
+        .select({ status: opportunities.status })
+        .from(opportunities)
+        .where(
+          and(
+            eq(opportunities.id, opportunityId),
+            eq(opportunities.tenantId, tenantId),
+          ),
+        );
+      if (!row) throw new Error("not found");
+      if (row.status === "approved")
+        throw new Error("cannot change an approved opportunity");
+
+      await tx
+        .update(opportunities)
+        .set({ status })
+        .where(
+          and(
+            eq(opportunities.id, opportunityId),
+            eq(opportunities.tenantId, tenantId),
           ),
         );
     },

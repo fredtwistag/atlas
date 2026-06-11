@@ -9,15 +9,15 @@ import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Table, THead, Th, HeaderRow, Tr, Td } from "@/components/ui/Table";
-import { ScoreBadge } from "@/components/ScoreBadge";
 import { MemberRow } from "@/components/manager/MemberRow";
 import { PendingInviteRow } from "@/components/manager/PendingInviteRow";
 import { ClientTabs } from "@/components/admin/ClientTabs";
 import { CompanyEditForm } from "@/components/admin/CompanyEditForm";
 import { InviteMemberForm } from "@/components/admin/InviteMemberForm";
 import { CloseSprintButton } from "@/components/admin/CloseSprintButton";
-import { tenantStatusMeta, opportunityStatusMeta } from "@/lib/ui-maps";
-import type { OpportunityStatus } from "@/lib/types";
+import { RecomputeButton } from "@/components/admin/RecomputeButton";
+import { OpportunityCurationCard } from "@/components/admin/OpportunityCurationCard";
+import { tenantStatusMeta } from "@/lib/ui-maps";
 import { getApi } from "@/server/trpc/caller";
 import { requireTwistagSession } from "@/lib/auth-guards";
 import {
@@ -28,6 +28,9 @@ import {
   resendInviteAction,
   cancelInviteAction,
   closeSprintAction,
+  recomputeOpportunitiesAction,
+  updateOpportunityAction,
+  setOpportunityStatusAction,
 } from "./actions";
 
 export const metadata: Metadata = { title: "Client · Atlas admin" };
@@ -78,6 +81,8 @@ export default async function ClientDetailPage({
   const onRemove = removeMemberAction.bind(null, tenantId);
   const onResend = resendInviteAction.bind(null, tenantId);
   const onCancel = cancelInviteAction.bind(null, tenantId);
+  const onUpdateOpp = updateOpportunityAction.bind(null, tenantId);
+  const onSetOppStatus = setOpportunityStatusAction.bind(null, tenantId);
 
   const tabs = [
     {
@@ -180,6 +185,14 @@ export default async function ClientDetailPage({
                           >
                             Report
                           </Link>
+                          <RecomputeButton
+                            action={recomputeOpportunitiesAction.bind(
+                              null,
+                              tenantId,
+                              s.id,
+                            )}
+                            label="Recompute"
+                          />
                           {s.status !== "completed" ? (
                             <CloseSprintButton
                               sprintName={s.name}
@@ -232,6 +245,14 @@ export default async function ClientDetailPage({
                       >
                         Report
                       </Link>
+                      <RecomputeButton
+                        action={recomputeOpportunitiesAction.bind(
+                          null,
+                          tenantId,
+                          s.id,
+                        )}
+                        label="Recompute"
+                      />
                       {s.status !== "completed" ? (
                         <CloseSprintButton
                           sprintName={s.name}
@@ -307,35 +328,34 @@ export default async function ClientDetailPage({
         opportunities.length === 0 ? (
           <EmptyState>
             No opportunities yet. They surface here as Atlas extracts and scores
-            captures from completed sessions.
+            captures from completed sessions. Run “Recompute” on a sprint to
+            generate them from the captures so far.
           </EmptyState>
         ) : (
           <div className="space-y-2">
-            {opportunities.map((o) => {
-              const meta = opportunityStatusMeta[
-                o.status as OpportunityStatus
-              ] ?? { label: o.status, tone: "neutral" as const };
-              return (
-                <Card key={o.id} className="flex items-center gap-3 p-4">
-                  <ScoreBadge score={o.compositeScore} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium leading-tight">
-                      {o.title}
-                    </div>
-                    <div className="text-xs text-text-3">
-                      {sprintName(o.sprintId)}
-                    </div>
-                  </div>
-                  <Badge tone={meta.tone}>{meta.label}</Badge>
-                  {o.sowStatus ? (
-                    <Badge tone="outline">SOW · {o.sowStatus}</Badge>
-                  ) : null}
-                </Card>
-              );
-            })}
+            {opportunities.map((o) => (
+              <OpportunityCurationCard
+                key={o.id}
+                opp={{
+                  id: o.id,
+                  title: o.title,
+                  description: o.description,
+                  rationale: o.rationale,
+                  impactLow: o.impactLow,
+                  impactHigh: o.impactHigh,
+                  compositeScore: o.compositeScore,
+                  status: o.status,
+                  sprintName: sprintName(o.sprintId),
+                  sowStatus: o.sowStatus,
+                }}
+                onUpdate={onUpdateOpp}
+                onSetStatus={onSetOppStatus}
+              />
+            ))}
             <p className="px-1 pt-1 text-xs text-text-3">
-              Read-only. Approving opportunities stays with the client&apos;s
-              sponsor and manager.
+              Twistag curation. Editing and provisional/surfaced/hidden are
+              staff-only; approving an opportunity stays with the client&apos;s
+              sponsor and manager, and approved rows are frozen here.
             </p>
           </div>
         ),

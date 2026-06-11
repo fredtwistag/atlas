@@ -214,3 +214,44 @@ export async function closeSprintAction(
   await api.twistag.sprintClose({ sprintId });
   revalidatePath(`/admin/clients/${tenantId}`);
 }
+
+/** Recompute a sprint's opportunities from its captures (Plan 016 Step 5). */
+export async function recomputeOpportunitiesAction(
+  tenantId: string,
+  sprintId: string,
+): Promise<void> {
+  await requireTwistagActor();
+  const api = await getApi();
+  await api.twistag.recompute({ sprintId });
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** Edit an opportunity's curatable fields (Plan 016 Step 6). */
+export async function updateOpportunityAction(
+  tenantId: string,
+  opportunityId: string,
+  patch: {
+    title?: string;
+    description?: string;
+    rationale?: string;
+    impactLow?: number;
+    impactHigh?: number;
+  },
+): Promise<void> {
+  await requireTwistagActor();
+  const api = await getApi();
+  await api.twistag.opportunityUpdate({ opportunityId, ...patch });
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** Move an opportunity between provisional/surfaced/hidden (Plan 016 Step 6). */
+export async function setOpportunityStatusAction(
+  tenantId: string,
+  opportunityId: string,
+  status: "provisional" | "surfaced" | "hidden",
+): Promise<void> {
+  await requireTwistagActor();
+  const api = await getApi();
+  await api.twistag.opportunitySetStatus({ opportunityId, status });
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
