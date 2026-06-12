@@ -8,6 +8,7 @@ import {
   recomputeNightly,
 } from "@/services/jobs/functions/recompute";
 import { reminderIcIdle } from "@/services/jobs/functions/reminders";
+import { inviteCleanup } from "@/services/jobs/functions/invite-cleanup";
 import {
   digestWeeklySponsor,
   digestWeeklyManager,
@@ -33,6 +34,7 @@ export const { GET, POST, PUT } = serve({
     recomputeOnRequest,
     recomputeNightly,
     reminderIcIdle,
+    inviteCleanup,
     digestWeeklySponsor,
     digestWeeklyManager,
   ],

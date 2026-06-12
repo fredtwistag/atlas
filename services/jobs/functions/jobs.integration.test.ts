@@ -26,6 +26,7 @@ vi.mock("@/services/conversation/extract", async (orig) => {
 import { runNudgeSend } from "./nudge-send";
 import { loadInviteContext, sendInvite } from "./invite-send";
 import { loadIdleIcs, sendIdleReminder } from "./reminders";
+import { runInviteCleanup } from "./invite-cleanup";
 import { buildSprintDigest } from "./digests";
 import { runRecompute, loadActiveSprints } from "./recompute";
 import { runFinalExtractionForSession } from "@/lib/sessions";
@@ -39,6 +40,7 @@ import {
   sessionMessages,
   captures,
   auditLog,
+  invitations,
 } from "@/db/schema";
 import {
   seedRow,
@@ -462,5 +464,77 @@ describe("buildSprintDigest (Step 5 — dashboard-identical numbers)", () => {
   it("returns null for a sprint in another tenant", async () => {
     const data = await buildSprintDigest(SPRINT_A, "00000000-0000-0000-0000-00000000000b");
     expect(data).toBeNull();
+  });
+});
+
+describe("invite-cleanup (Step 4 — prune long-expired pending invites)", () => {
+  const DAY = 86_400_000;
+
+  async function allInvites() {
+    return withServiceRoleRaw((tx) => tx.select().from(invitations));
+  }
+
+  it("deletes a pending invite expired >30 days, audits the count, keeps fresh + accepted", async () => {
+    await seedRow((tx) =>
+      tx.insert(invitations).values([
+        // Stale pending (expired 31 days ago) → deleted.
+        {
+          tenantId: TENANT_A,
+          email: "stale@a.example",
+          role: "ic",
+          invitedByKind: "user",
+          status: "pending",
+          expiresAt: new Date(Date.now() - 31 * DAY),
+        },
+        // Recently expired pending (within the 30-day grace) → kept.
+        {
+          tenantId: TENANT_A,
+          email: "recent@a.example",
+          role: "ic",
+          invitedByKind: "user",
+          status: "pending",
+          expiresAt: new Date(Date.now() - 5 * DAY),
+        },
+        // Accepted, long past expiry → kept forever (provenance).
+        {
+          tenantId: TENANT_A,
+          email: "accepted@a.example",
+          role: "ic",
+          invitedByKind: "user",
+          status: "accepted",
+          acceptedAt: new Date(),
+          expiresAt: new Date(Date.now() - 90 * DAY),
+        },
+      ]),
+    );
+
+    const deleted = await runInviteCleanup();
+    expect(deleted).toBe(1);
+
+    const remaining = (await allInvites()).map((r) => r.email).sort();
+    expect(remaining).toEqual(["accepted@a.example", "recent@a.example"]);
+
+    // Count is audited (content-free).
+    const audit = await auditRows("invite.cleanup");
+    expect(audit).toHaveLength(1);
+    expect(audit[0].metadata).toMatchObject({ deleted: 1 });
+  });
+
+  it("does not delete a cancelled invite even if long expired", async () => {
+    await seedRow((tx) =>
+      tx.insert(invitations).values({
+        tenantId: TENANT_A,
+        email: "cancelled@a.example",
+        role: "ic",
+        invitedByKind: "user",
+        status: "cancelled",
+        expiresAt: new Date(Date.now() - 60 * DAY),
+      }),
+    );
+    const deleted = await runInviteCleanup();
+    expect(deleted).toBe(0);
+    expect((await allInvites()).map((r) => r.email)).toContain(
+      "cancelled@a.example",
+    );
   });
 });
