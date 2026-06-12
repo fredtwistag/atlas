@@ -32,12 +32,17 @@ export async function GET(request: NextRequest) {
 
   // Flip a pending invitation to accepted on first sign-in, under the user's own
   // claims (RLS-authorized, no service role). Idempotent; best-effort.
+  //
+  // Plan 025: an expired *pending* invite must not grant access. We sign the
+  // user out and bounce to /sign-in with friendly copy. This only fires for a
+  // pending-but-expired row — an already-accepted member returns "none" and
+  // sails through, so existing sign-ins are never broken.
   if (claims?.kind === "tenant") {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     try {
-      await markInvitationAccepted(
+      const result = await markInvitationAccepted(
         {
           tenantId: claims.tenantId,
           userId: claims.userId,
@@ -45,6 +50,12 @@ export async function GET(request: NextRequest) {
         },
         user?.email ?? "",
       );
+      if (result === "expired") {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          `${origin}/sign-in?error=invite-expired`,
+        );
+      }
     } catch {
       // Non-fatal: the user is signed in; the invite flips on a later visit.
     }

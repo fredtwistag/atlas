@@ -11,6 +11,8 @@ export function signInErrorMessage(
       return "That sign-in link expired or was already used. Enter your email for a fresh one.";
     case "no-access":
       return "That email isn't part of an Atlas workspace yet. Ask the person who invited you to resend your invite.";
+    case "invite-expired":
+      return "That invitation has expired. Ask your manager to resend it.";
     default:
       return null;
   }

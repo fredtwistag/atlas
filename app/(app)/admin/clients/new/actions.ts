@@ -8,6 +8,7 @@ import { withServiceRole } from "@/db/client";
 import { tenants, users, invitations } from "@/db/schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InviteOrgSchema } from "@/lib/invitations";
+import { inviteExpiresAt } from "@/lib/invitation-expiry";
 import { generateInviteLink } from "@/services/email/invite-link";
 import { sendEmail } from "@/services/email/send";
 import { InviteEmail, inviteSubject } from "@/emails/InviteEmail";
@@ -55,6 +56,8 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
         role: "manager",
         invitedByKind: "twistag",
         invitedById: session.userId,
+        // Plan 025: 14-day expiry, enforced at acceptance.
+        expiresAt: inviteExpiresAt(),
       });
     },
   );

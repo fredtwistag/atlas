@@ -16,6 +16,7 @@ import { eq, and } from "drizzle-orm";
 import { withServiceRole, withTwistagContext } from "@/db/client";
 import { tenants, users, invitations, opportunities } from "@/db/schema";
 import { MEMBER_ROLES, removeMemberTx } from "./members";
+import { inviteExpiresAt } from "./invitation-expiry";
 
 /** Carried for audit attribution only — NEVER used for authorization. */
 export type TwistagActor = { userId: string; twistagRole: string };
@@ -94,6 +95,8 @@ export async function inviteMemberToTenant(
           role: input.role,
         })
         .onConflictDoNothing();
+      // Plan 025: 14-day expiry. A re-invite of the same email refreshes status
+      // to pending and resets the window.
       await tx
         .insert(invitations)
         .values({
@@ -102,8 +105,18 @@ export async function inviteMemberToTenant(
           role: input.role,
           invitedByKind: "twistag",
           invitedById: actor.userId,
+          expiresAt: inviteExpiresAt(),
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [invitations.tenantId, invitations.email],
+          set: {
+            role: input.role,
+            status: "pending",
+            invitedByKind: "twistag",
+            invitedById: actor.userId,
+            expiresAt: inviteExpiresAt(),
+          },
+        });
     },
   );
 }
@@ -187,6 +200,38 @@ export async function cancelInvitationInTenant(
       await tx
         .update(invitations)
         .set({ status: "cancelled" })
+        .where(
+          and(
+            eq(invitations.id, invitationId),
+            eq(invitations.tenantId, tenantId),
+          ),
+        );
+    },
+  );
+}
+
+/**
+ * Resend refresh (plan 025): revive a pending invitation — status back to
+ * 'pending' and a fresh 14-day `expires_at`. Tenant-scoped explicitly (service
+ * role bypasses RLS). Mirrors `members.refreshInvitation` for the Twistag path.
+ */
+export async function refreshInvitationInTenant(
+  actor: TwistagActor,
+  tenantId: string,
+  invitationId: string,
+): Promise<void> {
+  await withServiceRole(
+    {
+      action: "twistag.invite.refresh",
+      actor: actor.userId,
+      tenantId,
+      targetId: invitationId,
+      metadata: { twistag_role: actor.twistagRole },
+    },
+    async (tx) => {
+      await tx
+        .update(invitations)
+        .set({ status: "pending", expiresAt: inviteExpiresAt() })
         .where(
           and(
             eq(invitations.id, invitationId),

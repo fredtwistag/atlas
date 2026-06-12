@@ -33,8 +33,11 @@ export async function confirmInvite(formData: FormData): Promise<void> {
       data: { user },
     } = await supabase.auth.getUser();
     // Best-effort: a failed accept must not strand a freshly signed-in user.
+    // Captured outside the catch so a Next redirect() (which throws) isn't
+    // swallowed.
+    let result: Awaited<ReturnType<typeof markInvitationAccepted>> = "none";
     try {
-      await markInvitationAccepted(
+      result = await markInvitationAccepted(
         {
           tenantId: claims.tenantId,
           userId: claims.userId,
@@ -44,6 +47,13 @@ export async function confirmInvite(formData: FormData): Promise<void> {
       );
     } catch {
       // The user is signed in; the invitation flips on a later visit anyway.
+    }
+    // Plan 025: an expired *pending* invite must not grant access. Sign out and
+    // bounce with friendly copy. Only a pending-but-expired row yields "expired";
+    // an already-accepted member returns "none" and proceeds normally.
+    if (result === "expired") {
+      await supabase.auth.signOut();
+      redirect("/sign-in?error=invite-expired");
     }
   }
 

@@ -9,6 +9,7 @@ import { withServiceRole, withTenantContext } from "@/db/client";
 import { users, invitations, tenants, sprints, topics } from "@/db/schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InviteMemberSchema } from "@/lib/invitations";
+import { inviteExpiresAt } from "@/lib/invitation-expiry";
 import { generateInviteLink } from "@/services/email/invite-link";
 import { sendEmail } from "@/services/email/send";
 import {
@@ -21,6 +22,7 @@ import {
   removeMemberRecord,
   cancelInvitation,
   getPendingInvitation,
+  refreshInvitation,
   type Actor,
 } from "@/lib/members";
 
@@ -117,6 +119,9 @@ export async function inviteMember(formData: FormData): Promise<void> {
         .insert(users)
         .values({ tenantId, email, name, role })
         .onConflictDoNothing();
+      // Plan 025: stamp a 14-day expiry. Re-inviting the same email refreshes
+      // status back to pending and resets the window (the unique (tenant, email)
+      // row may have been cancelled or have lapsed).
       await tx
         .insert(invitations)
         .values({
@@ -125,8 +130,18 @@ export async function inviteMember(formData: FormData): Promise<void> {
           role,
           invitedByKind: "user",
           invitedById: session.userId,
+          expiresAt: inviteExpiresAt(),
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [invitations.tenantId, invitations.email],
+          set: {
+            role,
+            status: "pending",
+            invitedByKind: "user",
+            invitedById: session.userId,
+            expiresAt: inviteExpiresAt(),
+          },
+        });
     },
   );
 
@@ -213,6 +228,10 @@ export async function resendInviteAction(invitationId: string): Promise<void> {
   const actor = await requireManagerActor();
   const invite = await getPendingInvitation(actor, invitationId);
   if (!invite) throw new Error("not found");
+
+  // Plan 025: a resend revives the invite — status back to pending and a fresh
+  // 14-day window — so a lapsed invite the manager re-sends is acceptable again.
+  await refreshInvitation(actor, invitationId);
 
   // The auth user is created at first invite, but a resend after a failed first
   // attempt may still need it — createUser is idempotent.

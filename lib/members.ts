@@ -21,6 +21,7 @@ import {
   captures,
   opportunities,
 } from "@/db/schema";
+import { inviteExpiresAt } from "@/lib/invitation-expiry";
 
 export type Actor = { tenantId: string; userId: string; role: string };
 
@@ -194,5 +195,24 @@ export async function getPendingInvitation(
       .from(invitations)
       .where(eq(invitations.id, invitationId));
     return row ?? null;
+  });
+}
+
+/**
+ * Resend semantics (plan 025): refresh a pending invitation back to a clean,
+ * unexpired state — status 'pending' and a new 14-day `expires_at` — so a manager
+ * re-sending a lapsed invite revives it. Tenant-scoped via RLS (no-op
+ * cross-tenant). Caller re-issues the auth invite + email separately.
+ */
+export async function refreshInvitation(
+  actor: Actor,
+  invitationId: string,
+): Promise<void> {
+  assertManager(actor);
+  await withTenantContext(actor, async (tx) => {
+    await tx
+      .update(invitations)
+      .set({ status: "pending", expiresAt: inviteExpiresAt() })
+      .where(eq(invitations.id, invitationId));
   });
 }

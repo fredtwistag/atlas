@@ -22,6 +22,7 @@ import {
   removeMemberFromTenant,
   cancelInvitationInTenant,
   getPendingInvitationInTenant,
+  refreshInvitationInTenant,
   type TwistagActor,
 } from "@/lib/twistag-admin";
 
@@ -175,6 +176,9 @@ export async function resendInviteAction(
     invitationId,
   );
   if (!invite) throw new Error("not found");
+
+  // Plan 025: revive the invite — status back to pending + fresh 14-day window.
+  await refreshInvitationInTenant(actor, tenantId, invitationId);
 
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.createUser({
