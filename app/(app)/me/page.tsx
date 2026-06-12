@@ -16,7 +16,9 @@ import { getApi } from "@/server/trpc/caller";
 import { getCurrentUser } from "@/lib/session";
 import { requireTenantSession } from "@/lib/auth-guards";
 import { hasAckedPrivacy } from "@/lib/privacy";
+import { getAllowNudges } from "@/lib/nudge-prefs";
 import { PrivacyGate } from "@/components/me/PrivacyGate";
+import { NudgePreferenceToggle } from "@/components/me/NudgePreferenceToggle";
 
 export const metadata: Metadata = { title: "My sprint · Atlas" };
 export const dynamic = "force-dynamic";
@@ -27,6 +29,7 @@ export default async function IcHomePage() {
   const api = await getApi();
   const data = await api.session.myDashboard();
   const needsAck = session.role === "ic" && !(await hasAckedPrivacy(session));
+  const allowNudges = await getAllowNudges(session);
 
   if (!data || data.sessions.length === 0) {
     return (
@@ -201,6 +204,9 @@ export default async function IcHomePage() {
           </div>
         </div>
       )}
+
+      {/* Nudge preference (plan 025, GDPR Art. 21) */}
+      <NudgePreferenceToggle initialAllow={allowNudges} />
 
       {/* Privacy reassurance */}
       <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-2">

@@ -1469,6 +1469,21 @@ describe("sprint.nudge", () => {
     expect(inngestSend).not.toHaveBeenCalled();
   });
 
+  it("refuses to nudge an opted-out recipient with honest copy, nothing queued (plan 025)", async () => {
+    await seedRow((tx) =>
+      tx.update(users).set({ allowNudges: false }).where(eq(users.id, NIC)),
+    );
+    await expect(
+      asManager(TENANT_A, NMGR).sprint.nudge({
+        sprintId: SPRINT_A,
+        userId: NIC,
+        channel: "email",
+        body: "x",
+      }),
+    ).rejects.toThrow(/turned off nudges/i);
+    expect(inngestSend).not.toHaveBeenCalled();
+  });
+
   it("caps an actor at 20 nudges / 24h (preserved from plan 019; nothing queued)", async () => {
     // Pre-load the actor's limiter to the cap so the nudge is the over-the-limit
     // consume. The cap is checked in tRPC BEFORE enqueue, so no event is sent.

@@ -113,10 +113,25 @@ export const sprintRouter = router({
       // Tenant-membership + sprint-active checks under RLS (no service role).
       await withTenantContext(ctx.session, async (tx) => {
         const [target] = await tx
-          .select({ id: users.id })
+          .select({
+            id: users.id,
+            name: users.name,
+            allowNudges: users.allowNudges,
+          })
           .from(users)
           .where(eq(users.id, input.userId));
         if (!target) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // Opt-out (plan 025): tell the manager honestly and don't enqueue. The
+        // worker re-checks as the authority, but failing here gives immediate,
+        // name-specific feedback ("Priya has turned off nudges.").
+        if (!target.allowNudges) {
+          const firstName = target.name.split(" ")[0];
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `${firstName} has turned off nudges. You can't send them a reminder right now.`,
+          });
+        }
 
         const [spr] = await tx
           .select({ status: sprints.status })

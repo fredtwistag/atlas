@@ -30,7 +30,7 @@ export type NudgeJobInput = AtlasEvents["nudge/requested"]["data"];
  */
 export async function runNudgeSend(input: NudgeJobInput): Promise<{
   ok: boolean;
-  reason?: "target_missing" | "sprint_missing" | "cooldown";
+  reason?: "target_missing" | "sprint_missing" | "cooldown" | "opted_out";
 }> {
   return withServiceRole(
     { action: "nudge.send", actor: input.actorId, tenantId: input.tenantId },
@@ -43,18 +43,31 @@ async function sendNudge(
   input: NudgeJobInput,
 ): Promise<{
   ok: boolean;
-  reason?: "target_missing" | "sprint_missing" | "cooldown";
+  reason?: "target_missing" | "sprint_missing" | "cooldown" | "opted_out";
 }> {
   const { tenantId } = input;
 
   const [target] = await tx
-    .select({ id: users.id, email: users.email, name: users.name })
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      allowNudges: users.allowNudges,
+    })
     .from(users)
     .where(and(eq(users.id, input.userId), eq(users.tenantId, tenantId)));
   if (!target) {
     // The recipient vanished between enqueue and run. Content-free.
     log.warn("nudge.send.skipped", { reason: "target_missing", tenantId });
     return { ok: false, reason: "target_missing" };
+  }
+
+  // Opt-out (plan 025, GDPR Art. 21). Authoritative even when the mutation
+  // pre-checked: the IC may have opted out between enqueue and run. No email,
+  // no audit row, no cooldown burned. Content-free log.
+  if (!target.allowNudges) {
+    log.info("nudge.send.skipped", { reason: "opted_out", tenantId });
+    return { ok: false, reason: "opted_out" };
   }
 
   const [spr] = await tx

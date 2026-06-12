@@ -146,6 +146,24 @@ describe("runNudgeSend (Step 2 worker body)", () => {
     expect(sendEmailMock).toHaveBeenCalledTimes(1);
   });
 
+  it("skips an opted-out recipient (no email, no audit, no cooldown burned)", async () => {
+    await withServiceRoleRaw((tx) =>
+      tx.update(users).set({ allowNudges: false }).where(eq(users.id, IC)),
+    );
+    const res = await runNudgeSend({
+      tenantId: TENANT_A,
+      sprintId: SPRINT_A,
+      userId: IC,
+      actorId: MGR,
+      channel: "email",
+      body: "Should be skipped.",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.reason).toBe("opted_out");
+    expect(await auditRows("nudge.sent")).toHaveLength(0);
+    expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
   it("ATOMICITY: a send failure rolls back the audit row (cooldown not burned)", async () => {
     sendEmailMock.mockRejectedValueOnce(new Error("Resend send failed"));
     await expect(
@@ -396,6 +414,14 @@ describe("reminders.ic.idle (Step 5 worker body)", () => {
     const [ic] = await loadIdleIcs();
     await expect(sendIdleReminder(ic)).rejects.toThrow();
     expect(await auditRows("reminder.ic.idle")).toHaveLength(0);
+  });
+
+  it("does not remind an IC who has opted out of nudges (plan 025)", async () => {
+    await withServiceRoleRaw((tx) =>
+      tx.update(users).set({ allowNudges: false }).where(eq(users.id, IC)),
+    );
+    const idle = await loadIdleIcs();
+    expect(idle.map((i) => i.userId)).not.toContain(IC);
   });
 
   it("does not remind an IC who completed a session recently", async () => {

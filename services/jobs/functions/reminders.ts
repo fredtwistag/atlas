@@ -33,9 +33,11 @@ type IdleIc = {
  *  - no completed session in the last 72h,
  *  - no system reminder ("reminder.ic.idle") in the last 72h (no double-nudging).
  *
- * Plan 025's opt-out flag doesn't exist yet, so this stays conservative: a
- * gentle, manager-less, system reminder, only to ICs with remaining work. Read
+ * A gentle, manager-less, system reminder, only to ICs with remaining work. Read
  * under service role (cross-tenant cron, audited).
+ *
+ * Opt-out (plan 025, GDPR Art. 21): ICs with `allow_nudges = false` are excluded
+ * here — the objection right covers system reminders, not just manager nudges.
  */
 export async function loadIdleIcs(now = Date.now()): Promise<IdleIc[]> {
   const cutoff = new Date(now - IDLE_HOURS * HOUR);
@@ -65,6 +67,7 @@ export async function loadIdleIcs(now = Date.now()): Promise<IdleIc[]> {
           and(
             eq(sprints.status, "active"),
             eq(users.role, "ic"),
+            eq(users.allowNudges, true),
             ne(sessions.status, "completed"),
           ),
         );
