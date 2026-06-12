@@ -3,6 +3,7 @@
  * injected by the access-token hook (tenant_id/role/user_id, or twistag_role).
  * Server-only.
  */
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { createClient } from "./supabase/server";
@@ -45,8 +46,12 @@ function roleTitle(role: string): string {
 /**
  * The current user's display profile. Redirects to sign-in if there is no
  * session, or to a no-access state if the email resolves to no workspace.
+ *
+ * Wrapped in `React.cache` so the layout + the page it renders share a single
+ * resolution per request (the layout and most pages each call this) — collapses
+ * the duplicate getUser()/getSession() round-trips and the profile DB read.
  */
-export async function getCurrentUser(): Promise<SessionUser> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<SessionUser> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -91,4 +96,4 @@ export async function getCurrentUser(): Promise<SessionUser> {
     kind: "tenant",
     tenantId: claims.tenantId,
   };
-}
+});

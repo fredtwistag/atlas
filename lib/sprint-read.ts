@@ -8,6 +8,7 @@
  * Privacy: these expose aggregates and opportunity metadata only — never capture
  * quotes or contributor names.
  */
+import { cache } from "react";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import type { Db } from "@/db/client";
@@ -50,8 +51,15 @@ function blankUser(): Sprint["manager"] {
   };
 }
 
-/** Full sprint detail (tenant + topics + participants + sponsor/manager). */
-export async function loadSprint(tx: Db, id: string): Promise<Sprint> {
+/**
+ * Full sprint detail (tenant + topics + participants + sponsor/manager).
+ * `React.cache`-wrapped: dedupes repeat `(tx, id)` reads within one request
+ * (e.g. the twistag report's parallel detail+progress load shares the tx).
+ */
+export const loadSprint = cache(async function loadSprint(
+  tx: Db,
+  id: string,
+): Promise<Sprint> {
   const [s] = await tx.select().from(sprints).where(eq(sprints.id, id));
   if (!s) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -159,10 +167,13 @@ export async function loadSprint(tx: Db, id: string): Promise<Sprint> {
     sponsor: sponsor ?? manager ?? participants[0]?.user ?? blankUser(),
     manager: manager ?? participants[0]?.user ?? blankUser(),
   };
-}
+});
 
-/** The dashboard stat strip for a sprint. */
-export async function loadSprintProgress(
+/**
+ * The dashboard stat strip for a sprint. `React.cache`-wrapped to dedupe repeat
+ * `(tx, id)` reads within a single request.
+ */
+export const loadSprintProgress = cache(async function loadSprintProgress(
   tx: Db,
   id: string,
 ): Promise<SprintProgress> {
@@ -191,7 +202,7 @@ export async function loadSprintProgress(
     capturesCount: caps.length,
     signalQuality: 4.6,
   });
-}
+});
 
 /** Ranked opportunities for a sprint (no evidence — metadata only). */
 export async function listSprintOpportunities(
