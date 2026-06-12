@@ -14,12 +14,20 @@ vi.mock("resend", () => ({
   },
 }));
 
+// Observability is mocked so the failure path doesn't reach Sentry in tests; we
+// still assert it was CALLED (the send-failure visibility contract, plan 027).
+const captureFailureMock = vi.fn();
+vi.mock("@/lib/observability", () => ({
+  captureFailure: (...a: unknown[]) => captureFailureMock(...a),
+}));
+
 import { sendEmail } from "./send";
 
 const element = createElement("div", null, "hi");
 
 beforeEach(() => {
   sendMock.mockReset();
+  captureFailureMock.mockReset();
   delete process.env.RESEND_API_KEY;
   delete process.env.EMAIL_FROM;
 });
@@ -85,5 +93,42 @@ describe("sendEmail", () => {
     await expect(
       sendEmail({ to: "ic@a.example", subject: "Hello", react: element }),
     ).rejects.toThrow(/rate limited/);
+  });
+
+  it("on a Resend failure logs a content-free email.send.failed line + captures it", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    sendMock.mockResolvedValue({
+      data: null,
+      error: { message: "rate limited" },
+    });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      sendEmail({
+        to: "secret-ic@acme.example",
+        subject: "Your sprint with Jane Doe",
+        react: element,
+      }),
+    ).rejects.toThrow();
+
+    // A structured `email.send.failed` line was emitted…
+    expect(errorLog).toHaveBeenCalled();
+    const line = errorLog.mock.calls[0]?.[0] as string;
+    const parsed = JSON.parse(line) as Record<string, unknown>;
+    expect(parsed.event).toBe("email.send.failed");
+    expect(parsed.area).toBe("email");
+    // …and it leaks NEITHER the recipient address NOR the subject (which can
+    // echo a person's name). Domains/counts only — never PII (plan 027 Step 2).
+    expect(line).not.toContain("secret-ic@acme.example");
+    expect(line).not.toContain("acme.example");
+    expect(line).not.toContain("Jane Doe");
+
+    // The failure also reaches Sentry tagged area:email (visibility contract).
+    expect(captureFailureMock).toHaveBeenCalledTimes(1);
+    expect(captureFailureMock.mock.calls[0]?.[1]).toMatchObject({
+      area: "email",
+    });
+
+    errorLog.mockRestore();
   });
 });
