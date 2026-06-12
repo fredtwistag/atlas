@@ -76,6 +76,10 @@ export const invitations = pgTable(
       .notNull()
       .defaultNow(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    // 14-day expiry, enforced at acceptance time (plan 025). Set at every
+    // invite-creation site; a resend refreshes it. Nullable for historical rows;
+    // the acceptance check treats NULL/past as expired.
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (t) => ({ uniqEmail: unique().on(t.tenantId, t.email) }),
 );
@@ -93,6 +97,9 @@ export const users = pgTable(
     department: text("department"),
     title: text("title"),
     optedOut: boolean("opted_out").notNull().default(false),
+    // GDPR Art. 21 objection right (plan 025): when false, manager nudges and
+    // system idle reminders skip this IC. Default true (opted in). Toggled on /me.
+    allowNudges: boolean("allow_nudges").notNull().default(true),
     privacyAckAt: timestamp("privacy_ack_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
