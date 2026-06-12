@@ -12,6 +12,12 @@ describe("signInErrorMessage", () => {
     );
   });
 
+  it("maps invite-expired (plan 025)", () => {
+    expect(signInErrorMessage("invite-expired")).toMatch(
+      /invitation has expired\. Ask your manager to resend it/i,
+    );
+  });
+
   it("returns null for no code or an unknown code", () => {
     expect(signInErrorMessage(null)).toBeNull();
     expect(signInErrorMessage(undefined)).toBeNull();
