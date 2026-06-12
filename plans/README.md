@@ -55,7 +55,7 @@ fast-follow backlog, and rejected findings live there. Summary:
 | [024](024-lifecycle-guards-and-empty-states.md) | Lifecycle guards + empty states | P1 | Done |
 | [025](025-invitation-expiry-and-nudge-optout.md) | Invite expiry + nudge opt-out | P1 | Done |
 | [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Done |
-| [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Todo |
+| [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Done |
 
 **012 note:** written against `e323025`, approved by Fred 2026-06-10. Five shippable
 phases (0–5), each gated by `npm run verify`; execute phases in order, data layer

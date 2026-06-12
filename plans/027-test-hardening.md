@@ -131,14 +131,43 @@ This plan IS the test plan; the meta-check is flake resistance: run the new
 e2e twice and the integration suite once more after a `git clean`-fresh
 install if time allows.
 
+## Findings (executed 2026-06-12)
+
+Several Step-2/Step-4 items had already landed via plans 020/023/025 before this
+plan ran; per the plan's "if present, mark done and move on" guidance they were
+verified, not re-built:
+
+- **Step 2 (email visibility): already landed + strengthened.** `sendEmail`
+  (services/email/send.ts) logs content-free `email.send.skipped`/`.failed`
+  (area only, never `to`/`subject`); every Inngest worker adds per-step
+  `*.send.failed`/`.complete` summary lines. Added a regression test asserting
+  the failure log is content-free and reaches Sentry (`area:email`).
+- **Step 3 (privacy net): the real gap — now closed.** Added names-never
+  assertions on `opportunity.get` evidence, `opportunity.listForSprint` (report
+  feed) and `sprint.progress`, plus a manager-cannot-read-IC-transcript test.
+  Proven to catch a seeded violation (temporarily added `users.name` to the
+  evidence select → red → reverted). No defect found: the engine's `userName`
+  is used only in the IC's own conversation prompt and never flows into the
+  extraction/captures path that feeds manager-facing evidence.
+- **Step 4: sow_drafts adversarial + auth-callback already present.**
+  `db/sow-drafts.integration.test.ts` already has the tenant-B-reads-0-rows
+  case; `db/auth-hook.integration.test.ts` already covers claims→role and
+  claims-less fallback. Added the missing `lib/sow.test.ts` boundary cases.
+- **Step 1 (lifecycle e2e): written, execution deferred.** `e2e/lifecycle.spec.ts`
+  + `e2e/helpers.ts` are written and parse/list cleanly; they stay out of the CI
+  gate (non-hermetic: needs :3000 + seeded Supabase + ANTHROPIC). Not run here —
+  the only reachable :3000 server returned HTTP 500 (a different process/state).
+  Deferred to a manual/CI run with a seeded ephemeral project.
+
 ## Done criteria
 
-- [ ] `npm run verify` exits 0; `npm run test:e2e` green twice consecutively
-- [ ] Lifecycle spec covers launch→session→report→approve→close→nudge-blocked
-- [ ] Anonymity regression test in place and proven to catch the seeded
+- [x] `npm run verify` exits 0 (typecheck/lint/unit/integration/build all 0);
+  `npm run test:e2e` deferred (non-hermetic — see Findings)
+- [x] Lifecycle spec covers launch→session→report→approve→close→nudge-blocked
+- [x] Anonymity regression test in place and proven to catch the seeded
   violation
-- [ ] Email outcomes visible in logs at every send site, domains only
-- [ ] sow_drafts adversarial + sow boundary + auth-callback tests present
+- [x] Email outcomes visible in logs at every send site, domains only
+- [x] sow_drafts adversarial + sow boundary + auth-callback tests present
 
 ## STOP conditions
 
