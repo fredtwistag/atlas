@@ -54,7 +54,7 @@ fast-follow backlog, and rejected findings live there. Summary:
 | [023](023-observability.md) | Sentry + logs + uptime | P1 | Todo |
 | [024](024-lifecycle-guards-and-empty-states.md) | Lifecycle guards + empty states | P1 | Done |
 | [025](025-invitation-expiry-and-nudge-optout.md) | Invite expiry + nudge opt-out | P1 | Done |
-| [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Todo |
+| [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Done |
 | [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Todo |
 
 **012 note:** written against `e323025`, approved by Fred 2026-06-10. Five shippable
