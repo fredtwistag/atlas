@@ -995,6 +995,51 @@ describe("opportunity.get evidence (isRemoved filter)", () => {
     expect(summaries).not.toContain("Removed evidence");
     expect(opp.evidence).toHaveLength(1);
   });
+
+  // PRIVACY REGRESSION NET (CLAUDE.md "Privacy by design", plan 027 Step 3).
+  // IC quotes/evidence are shown with the contributor's ROLE only — NEVER their
+  // name or email — in any manager-facing view. The seeded IC above is
+  // name="Evidence IC", email="evidence-ic@a.example", title="Ops Analyst".
+  // These assertions serialize the WHOLE response and prove the name/email
+  // appear nowhere, while the role still does. If anyone re-adds users.name to
+  // the evidence select (try it — the test goes red), this catches it.
+  it("opportunity.get evidence carries the contributor ROLE, never the name/email", async () => {
+    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({ id: OPP_ID });
+
+    // The role survives (so the manager knows who-shaped the evidence is)…
+    expect(opp.evidence[0]?.contributorRole).toBe("Ops Analyst");
+
+    // …but the individual's name and email appear NOWHERE in the payload.
+    const serialized = JSON.stringify(opp);
+    expect(serialized).not.toContain("Evidence IC");
+    expect(serialized).not.toContain("evidence-ic@a.example");
+    // And no key named like an identity field leaked onto the evidence items.
+    for (const e of opp.evidence) {
+      expect(e).not.toHaveProperty("name");
+      expect(e).not.toHaveProperty("email");
+      expect(e).not.toHaveProperty("userId");
+    }
+  });
+
+  it("opportunity.listForSprint (report feed) never carries contributor names/emails", async () => {
+    // The report's ranked backlog renders from listForSprint — metadata only,
+    // no evidence. Lock the same anonymity invariant on that surface.
+    const opps = await asManager(TENANT_A, MGR_A).opportunity.listForSprint({
+      sprintId: SPRINT_A,
+    });
+    const serialized = JSON.stringify(opps);
+    expect(serialized).not.toContain("Evidence IC");
+    expect(serialized).not.toContain("evidence-ic@a.example");
+  });
+
+  it("sprint.progress (report aggregates) never carries contributor names/emails", async () => {
+    const progress = await asManager(TENANT_A, MGR_A).sprint.progress({
+      id: SPRINT_A,
+    });
+    const serialized = JSON.stringify(progress);
+    expect(serialized).not.toContain("Evidence IC");
+    expect(serialized).not.toContain("evidence-ic@a.example");
+  });
 });
 
 describe("sprint.participant", () => {
@@ -1190,6 +1235,7 @@ describe("session.editView", () => {
 describe("session.start / session.sendMessage (conversation engine)", () => {
   const CUSER = "ffffffff-ffff-4fff-8fff-ffffffff0001";
   const COTHER = "ffffffff-ffff-4fff-8fff-ffffffff0002";
+  const CMGR = "ffffffff-ffff-4fff-8fff-ffffffff0003";
   const CTOPIC = "ffffffff-ffff-4fff-8fff-ffffffff0010";
   const CSES = "ffffffff-ffff-4fff-8fff-ffffffff0020";
 
@@ -1216,6 +1262,14 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
           email: "conv2@a.example",
           name: "Conv Other",
           role: "ic",
+          department: "Ops",
+        },
+        {
+          id: CMGR,
+          tenantId: TENANT_A,
+          email: "convmgr@a.example",
+          name: "Conv Mgr",
+          role: "manager",
           department: "Ops",
         },
       ]),
@@ -1349,6 +1403,31 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
         content: "let me in",
       }),
     ).rejects.toThrow();
+  });
+
+  // PRIVACY REGRESSION NET (CLAUDE.md "Privacy by design", plan 027 Step 3).
+  // A manager must NEVER be able to read an IC's raw session transcript — IC
+  // sessions are owner-only; managers see aggregated evidence (role, not name)
+  // via the report, not the live conversation. session.get / session.editView
+  // are owner-scoped on top of tenant RLS (defense-in-depth); a same-tenant
+  // manager opening another user's session gets NOT_FOUND. Twistag debugging
+  // goes through audited withTwistagContext, never this route.
+  it("a manager cannot read an IC's session transcript (NOT_FOUND)", async () => {
+    // Populate the IC's transcript so there is something to (fail to) read.
+    await asIc(TENANT_A, CUSER).session.start({ id: CSES });
+    await asIc(TENANT_A, CUSER).session.sendMessage({
+      id: CSES,
+      content: "Here is a private detail about how I work.",
+    });
+
+    const mgr = asManager(TENANT_A, CMGR);
+    await expect(mgr.session.get({ id: CSES })).rejects.toThrow();
+    await expect(mgr.session.editView({ id: CSES })).rejects.toThrow();
+
+    // The IC who owns the session still can read it — scoping is by owner,
+    // not a blanket lock.
+    const owner = await asIc(TENANT_A, CUSER).session.get({ id: CSES });
+    expect(owner.id).toBe(CSES);
   });
 
   it("start is cross-tenant rejected (NOT_FOUND under RLS)", async () => {
