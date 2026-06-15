@@ -261,3 +261,30 @@ export const synthesisMemo = z.object({
 });
 
 export type SynthesisMemo = z.infer<typeof synthesisMemo>;
+
+/**
+ * Company enrichment output (CTX-2): the structured public profile produced by
+ * the web-search enrichment, shaped to the company_context columns. `sources`
+ * cites where each fact came from. Public info only — no individuals.
+ */
+export const companyEnrichment = z.object({
+  summary: z.string().max(600).nullable().default(null),
+  industry: z.string().max(120).nullable().default(null),
+  businessModel: z.string().max(160).nullable().default(null),
+  sizeBand: z.string().max(60).nullable().default(null),
+  revenueBand: z.string().max(60).nullable().default(null),
+  maturity: z.string().max(60).nullable().default(null),
+  keySystems: z.array(z.string().max(80)).max(20).default([]),
+  knownPains: z.array(z.string().max(120)).max(20).default([]),
+  sources: z
+    .array(
+      z.object({
+        label: z.string().max(160),
+        ref: z.string().max(400).nullable().default(null),
+      }),
+    )
+    .max(20)
+    .default([]),
+});
+
+export type CompanyEnrichment = z.infer<typeof companyEnrichment>;
