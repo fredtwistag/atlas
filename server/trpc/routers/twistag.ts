@@ -23,6 +23,7 @@ import {
   setOpportunityStatus,
   enrichCompany,
   approveCompanyContext,
+  ingestDocument,
 } from "@/lib/twistag-admin";
 import { recompute as recomputeOpportunities } from "@/services/opportunity/recompute";
 import type { ClientSummary } from "@/lib/types";
@@ -441,6 +442,24 @@ export const twistagRouter = router({
         input.tenantId,
       );
       return { ok: true as const };
+    }),
+
+  /** CTX-3: ingest an uploaded text artifact into the company context (draft). */
+  ingestDocument: twistagProcedure
+    .input(
+      z.object({
+        tenantId: z.string().uuid(),
+        filename: z.string().min(1).max(255),
+        mimeType: z.string().min(1).max(160),
+        text: z.string().min(1).max(200_000),
+        sprintId: z.string().uuid().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ingestDocument(
+        { userId: ctx.session.userId, twistagRole: ctx.session.twistagRole },
+        input,
+      );
     }),
 
   opportunityUpdate: twistagProcedure
