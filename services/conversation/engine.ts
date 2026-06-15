@@ -3,6 +3,7 @@ import type { Db } from "@/db/client";
 import { log } from "@/lib/log";
 import {
   captures,
+  companyContext,
   sessions,
   sessionMessages,
   tenants,
@@ -25,7 +26,11 @@ import {
   type Arc,
 } from "./state";
 import { extractFromTurn } from "./extract";
-import { buildSystemPrompt, type ConversationRole } from "./prompts";
+import {
+  buildSystemPrompt,
+  type ConversationRole,
+  type PromptCompanyContext,
+} from "./prompts";
 
 /**
  * The conversation engine: one user turn → one assistant reply, persisted.
@@ -99,6 +104,7 @@ type SessionContext = {
   role: ConversationRole;
   topicTitle: string;
   topicDescription: string | null;
+  companyContext: PromptCompanyContext | null;
 };
 
 /** Load the static context a prompt needs: the org, the contributor, the topic. */
@@ -114,13 +120,29 @@ async function loadContext(
       userRole: users.role,
       topicTitle: topics.title,
       topicDescription: topics.description,
+      ctxSummary: companyContext.summary,
+      ctxIndustry: companyContext.industry,
+      ctxKeySystems: companyContext.keySystems,
+      ctxKnownPains: companyContext.knownPains,
+      ctxStatus: companyContext.status,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
     .innerJoin(tenants, eq(sessions.tenantId, tenants.id))
     .leftJoin(topics, eq(sessions.topicId, topics.id))
+    .leftJoin(companyContext, eq(sessions.tenantId, companyContext.tenantId))
     .where(eq(sessions.id, sessionId));
   if (!row) return null;
+  // Only feed the prompt context that's been activated (not a draft).
+  const ctx: PromptCompanyContext | null =
+    row.ctxStatus === "active"
+      ? {
+          summary: row.ctxSummary,
+          industry: row.ctxIndustry,
+          keySystems: row.ctxKeySystems ?? [],
+          knownPains: row.ctxKnownPains ?? [],
+        }
+      : null;
   return {
     tenantName: row.tenantName,
     userName: row.userName,
@@ -128,6 +150,7 @@ async function loadContext(
     role: toConversationRole(row.userRole),
     topicTitle: row.topicTitle ?? "Discovery session",
     topicDescription: row.topicDescription,
+    companyContext: ctx,
   };
 }
 
@@ -201,6 +224,7 @@ export async function openSession(
     topicTitle: ctx.topicTitle,
     topicDescription: ctx.topicDescription,
     arc,
+    companyContext: ctx.companyContext,
   });
 
   const assistant = await complete({
@@ -246,6 +270,7 @@ export async function takeTurn(opts: TakeTurnOpts): Promise<TakeTurnResult> {
       ? probesRemaining(userTurnsInArc(history, arc))
       : null,
     capturesSummary,
+    companyContext: ctx.companyContext,
   });
 
   const llmHistory: LlmMessage[] = history.map((m) => ({
