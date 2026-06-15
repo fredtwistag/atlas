@@ -306,6 +306,8 @@ export const opportunities = pgTable("opportunities", {
     precision: 3,
     scale: 1,
   }).notNull(),
+  // Funding horizon derived in TS from dimension scores (Ticket D).
+  horizon: text("horizon").notNull().default("standard"),
   dimensionScores: jsonb("dimension_scores").notNull(),
   rationale: text("rationale").notNull(),
   status: text("status").notNull(),

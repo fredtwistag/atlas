@@ -7,6 +7,7 @@ import {
   type DimensionKey,
   type QuantifiedImpact,
 } from "@/services/llm/schemas";
+import type { Horizon } from "@/lib/types";
 
 /**
  * Plan 016 Step 3 — scoring.
@@ -95,6 +96,43 @@ export function impliedAnnualUsd(
     return Math.round(q.frequencyPerYear * (q.unitMinutes / 60) * hourlyRate);
   }
   return null;
+}
+
+/**
+ * Funding horizon, derived in TS from the dimension scores + ship estimate
+ * (Ticket D — the model never decides this). A barbell:
+ * - quick_win: fast (≤4 wks, time_to_ship ≥7), standalone (dependency ≥7),
+ *   low disruption (change_mgmt ≥6).
+ * - strategic_bet: high financial (≥7) AND slow/disruptive/foundation-dependent
+ *   (time_to_ship ≤5, or change_mgmt ≤4, or dependency ≤4).
+ * - standard: everything else.
+ */
+export function computeHorizon(
+  dimensionScores: { key: DimensionKey; score: number }[],
+  timeToShipWeeksHigh: number,
+): Horizon {
+  const score = (k: DimensionKey) =>
+    dimensionScores.find((d) => d.key === k)?.score ?? 0;
+  const financial = score("financial");
+  const timeToShip = score("time_to_ship");
+  const changeMgmt = score("change_mgmt");
+  const dependency = score("dependency");
+
+  if (
+    timeToShip >= 7 &&
+    dependency >= 7 &&
+    changeMgmt >= 6 &&
+    timeToShipWeeksHigh <= 4
+  ) {
+    return "quick_win";
+  }
+  if (
+    financial >= 7 &&
+    (timeToShip <= 5 || changeMgmt <= 4 || dependency <= 4)
+  ) {
+    return "strategic_bet";
+  }
+  return "standard";
 }
 
 /**

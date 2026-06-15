@@ -321,6 +321,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 5,
     confidenceScore: 5,
     compositeScore: 8.7,
+    horizon: "strategic_bet",
     status: "surfaced",
     contributorCount: 5,
     dimensionScores: [
@@ -414,6 +415,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 7,
     confidenceScore: 4,
     compositeScore: 7.9,
+    horizon: "quick_win",
     status: "surfaced",
     contributorCount: 4,
     dimensionScores: [
@@ -495,6 +497,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 3,
     confidenceScore: 4,
     compositeScore: 7.4,
+    horizon: "standard",
     status: "surfaced",
     contributorCount: 4,
     dimensionScores: [
@@ -570,6 +573,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 8,
     confidenceScore: 3,
     compositeScore: 6.8,
+    horizon: "quick_win",
     status: "surfaced",
     contributorCount: 2,
     dimensionScores: [
@@ -636,6 +640,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 2,
     confidenceScore: 4,
     compositeScore: 6.5,
+    horizon: "standard",
     status: "surfaced",
     contributorCount: 3,
     dimensionScores: [
@@ -700,6 +705,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 4,
     confidenceScore: 3,
     compositeScore: 5.9,
+    horizon: "standard",
     status: "surfaced",
     contributorCount: 3,
     dimensionScores: [
@@ -764,6 +770,7 @@ const opportunities: Opportunity[] = [
     timeToShipWeeksHigh: 3,
     confidenceScore: 3,
     compositeScore: 5.6,
+    horizon: "standard",
     status: "surfaced",
     contributorCount: 2,
     dimensionScores: [

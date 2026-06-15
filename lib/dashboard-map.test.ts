@@ -41,6 +41,7 @@ describe("toOpportunity", () => {
         timeToShipWeeksHigh: 2,
         confidenceScore: 5,
         compositeScore: "8.7",
+        horizon: "standard",
         dimensionScores: [
           { key: "impact", label: "Impact", score: 9, reasoning: "r" },
         ],
