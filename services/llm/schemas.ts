@@ -51,6 +51,29 @@ export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
  * captures ("AE re-keys the quote") survive; the substring guard in extract.ts
  * is the quality gate that drops fabricated quotes.
  */
+/**
+ * Optional quantified impact for a capture (EXT-2). The extractor fills any
+ * subset the contributor actually stated — frequency, time per occurrence,
+ * and/or a direct dollar cost — plus a short `basis` recording their words.
+ * Scoring (services/opportunity/score.ts) turns this into a real annual-dollar
+ * figure (frequency × cost-per-incident) instead of inferring an unstated
+ * salary. All fields are nullable; the whole object is null when the
+ * contributor gave no numbers (the common case).
+ */
+export const quantifiedImpact = z.object({
+  frequencyPerYear: z
+    .number()
+    .positive()
+    .max(1_000_000)
+    .nullable()
+    .default(null),
+  unitMinutes: z.number().positive().max(100_000).nullable().default(null),
+  unitCostUsd: z.number().positive().max(10_000_000).nullable().default(null),
+  basis: z.string().max(200).nullable().default(null),
+});
+
+export type QuantifiedImpact = z.infer<typeof quantifiedImpact>;
+
 export const capturedItem = z.object({
   kind: z.enum([
     "bottleneck",
@@ -64,6 +87,7 @@ export const capturedItem = z.object({
   summary: z.string().min(8).max(280),
   sourceQuote: z.string().min(3),
   tags: z.array(z.string()).max(5).default([]),
+  quantifiedImpact: quantifiedImpact.nullable().optional(),
 });
 
 export type CapturedItem = z.infer<typeof capturedItem>;

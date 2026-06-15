@@ -43,6 +43,7 @@ You can reference EBITDA, cycle time, win rate — they expect this vocabulary.
 
 ### Probe-Cost
 - "Roughly, how much team time does {friction} cost per week or per deal?"
+- "If you annualize that — frequency times the time it eats — or put a dollar figure on it, what's the rough number?" (Aim for frequency × time, or a direct cost, so it can be valued.)
 - "Has anyone tried to fix this before? What happened?"
 
 ### Probe-Customer impact

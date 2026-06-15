@@ -11,7 +11,13 @@ vi.mock("@/services/llm/client", () => ({
   completeStructured: (...args: unknown[]) => completeStructured(...args),
 }));
 
-import { scoreCluster, computeComposite } from "./score";
+import {
+  scoreCluster,
+  computeComposite,
+  rateForRole,
+  impliedAnnualUsd,
+  DEFAULT_LOADED_HOURLY_USD,
+} from "./score";
 
 const ID = {
   a: "11111111-1111-4111-8111-111111111111",
@@ -84,6 +90,113 @@ describe("computeComposite", () => {
       { key: "dependency", score: 5 },
     ]);
     expect(composite).toBe(5.0);
+  });
+});
+
+describe("rateForRole (EXT-2)", () => {
+  it("prefers the role-specific rate, then default, then the benchmark", () => {
+    const basis = { "Account Executive": 65, default: 90 };
+    expect(rateForRole("Account Executive", basis)).toBe(65);
+    expect(rateForRole("Ops Lead", basis)).toBe(90); // default key
+    expect(rateForRole("Ops Lead", { "Account Executive": 65 })).toBe(
+      DEFAULT_LOADED_HOURLY_USD,
+    );
+    expect(rateForRole("anyone", null)).toBe(DEFAULT_LOADED_HOURLY_USD);
+  });
+});
+
+describe("impliedAnnualUsd (EXT-2)", () => {
+  it("uses a direct dollar cost × frequency when given", () => {
+    expect(
+      impliedAnnualUsd(
+        {
+          frequencyPerYear: 100,
+          unitMinutes: null,
+          unitCostUsd: 250,
+          basis: null,
+        },
+        75,
+      ),
+    ).toBe(25_000);
+  });
+
+  it("values time at the hourly rate when no dollar cost is given", () => {
+    // 104×/yr × 30 min × $80/hr = 104 * 0.5 * 80 = 4160
+    expect(
+      impliedAnnualUsd(
+        {
+          frequencyPerYear: 104,
+          unitMinutes: 30,
+          unitCostUsd: null,
+          basis: null,
+        },
+        80,
+      ),
+    ).toBe(4_160);
+  });
+
+  it("returns null without enough to compute (no frequency, or no cost/time)", () => {
+    expect(impliedAnnualUsd(null, 75)).toBeNull();
+    expect(
+      impliedAnnualUsd(
+        {
+          frequencyPerYear: null,
+          unitMinutes: 30,
+          unitCostUsd: null,
+          basis: null,
+        },
+        75,
+      ),
+    ).toBeNull();
+    expect(
+      impliedAnnualUsd(
+        {
+          frequencyPerYear: 50,
+          unitMinutes: null,
+          unitCostUsd: null,
+          basis: null,
+        },
+        75,
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("scoreCluster — financial grounding (EXT-2)", () => {
+  it("passes a TS-computed implied annual and the cost basis into the prompt", async () => {
+    completeStructured.mockResolvedValue(fullScoring());
+    const quantified = cap(ID.a);
+    quantified.quantifiedImpact = {
+      frequencyPerYear: 104,
+      unitMinutes: 30,
+      unitCostUsd: null,
+      basis: "twice a week, half an hour each",
+    };
+
+    await scoreCluster({
+      theme: "Pricing approval delay",
+      tenantName: "Northwind",
+      captures: [quantified, cap(ID.b)],
+      costBasis: { "Account Executive": 80 },
+    });
+
+    const content = completeStructured.mock.calls[0][0].messages[0]
+      .content as string;
+    // 104 × 0.5h × $80 = $4,160 — computed in TS, embedded in the prompt.
+    expect(content).toContain("implied annual ≈ $4,160");
+    expect(content).toContain("Account Executive $80/hr");
+  });
+
+  it("falls back to the benchmark note when no cost basis is provided", async () => {
+    completeStructured.mockResolvedValue(fullScoring());
+    await scoreCluster({
+      theme: "T",
+      tenantName: "Northwind",
+      captures: [cap(ID.a), cap(ID.b)],
+    });
+    const content = completeStructured.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(content).toContain(`$${DEFAULT_LOADED_HOURLY_USD}/hr`);
   });
 });
 

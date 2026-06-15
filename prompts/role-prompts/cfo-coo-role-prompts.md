@@ -41,6 +41,7 @@ see at the financial level?"), but only when it sharpens the next question.
 
 ### Probe-Sizing
 - "Have you put a number on what {friction} costs you per quarter?"
+- "Annualized, is that a frequency-times-cost figure, or a headcount-time figure? Either works — I just want a defensible dollar basis." (Aim for frequency × cost-per-incident, or time that can be valued.)
 
 ### Probe-Past attempts
 - "Have you tried to fix {issue} before? Vendor, internal build, consultant? What was the result?"

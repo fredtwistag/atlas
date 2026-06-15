@@ -45,6 +45,7 @@ that task or if people also use spreadsheets / scripts / DMs as supplements.
 ### Probe-Quantify
 - "How often does that happen — every deal, once a week, once a quarter?"
 - "When that happens, how much time does it cost you personally?"
+- "Roughly what would you put that at in dollars — or if it's easier, how many hours a year does it burn across the team?" (Get to frequency × time, or a direct cost, so it can be valued.)
 
 ### Probe-Concrete instance
 - "Can you give me a recent example? Maybe the last time it happened?"

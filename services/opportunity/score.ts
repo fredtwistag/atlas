@@ -5,6 +5,7 @@ import {
   opportunityScoring,
   type OpportunityScoring,
   type DimensionKey,
+  type QuantifiedImpact,
 } from "@/services/llm/schemas";
 
 /**
@@ -53,7 +54,48 @@ export type ScoreCapture = {
   /** Job title or role label. Falls back upstream to "Contributor". */
   role: string;
   department: string | null;
+  /** Structured numbers the contributor stated (EXT-2), if any. */
+  quantifiedImpact?: QuantifiedImpact | null;
 };
+
+/** Per-role loaded hourly rate (USD), keyed by role label; `default` is the catch-all. */
+export type CostBasis = Record<string, number>;
+
+/**
+ * Fallback loaded hourly rate (USD) when a sprint has no cost basis and the
+ * role isn't listed (EXT-2). A deliberately conservative mid-market blended
+ * rate — the manager can override per role at sprint setup (EXT-2b).
+ */
+export const DEFAULT_LOADED_HOURLY_USD = 75;
+
+/** Resolve the loaded hourly rate for a role from the cost basis, else the default. */
+export function rateForRole(
+  role: string,
+  costBasis: CostBasis | null | undefined,
+): number {
+  return (
+    costBasis?.[role] ?? costBasis?.["default"] ?? DEFAULT_LOADED_HOURLY_USD
+  );
+}
+
+/**
+ * Implied annual USD a capture represents, computed in TS (never the model):
+ * a direct dollar cost × frequency if given, else time × frequency × hourly
+ * rate. Returns null when there isn't enough to compute one.
+ */
+export function impliedAnnualUsd(
+  q: QuantifiedImpact | null | undefined,
+  hourlyRate: number,
+): number | null {
+  if (!q || q.frequencyPerYear == null) return null;
+  if (q.unitCostUsd != null) {
+    return Math.round(q.frequencyPerYear * q.unitCostUsd);
+  }
+  if (q.unitMinutes != null) {
+    return Math.round(q.frequencyPerYear * (q.unitMinutes / 60) * hourlyRate);
+  }
+  return null;
+}
 
 /**
  * Weighted composite from the model's dimension scores, rounded to one decimal.
@@ -69,6 +111,23 @@ export function computeComposite(
     sum += DIMENSION_WEIGHTS[key] * score;
   }
   return Math.round(sum * 10) / 10;
+}
+
+/** A short note telling the scorer how dollar figures were grounded (EXT-2). */
+function costBasisNote(costBasis: CostBasis | null | undefined): string {
+  const hasRates = costBasis && Object.keys(costBasis).length > 0;
+  const rates = hasRates
+    ? Object.entries(costBasis)
+        .map(([role, rate]) => `${role} $${rate}/hr`)
+        .join(", ")
+    : `none provided — assume $${DEFAULT_LOADED_HOURLY_USD}/hr loaded`;
+  return [
+    "COST BASIS (loaded hourly rates, USD): " + rates + ".",
+    "Where a capture shows `quantified` with an `implied annual ≈ $X`, that",
+    "figure was computed deterministically from the contributor's own numbers —",
+    "anchor impactLow/impactHigh and the financial dimension to it, do not invent",
+    "a different basis. Captures with no quantified line carry no measured dollars.",
+  ].join("\n");
 }
 
 function scoringSystem(): string {
@@ -107,6 +166,8 @@ export type ScoreClusterOpts = {
   theme: string;
   captures: ScoreCapture[];
   tenantName: string;
+  /** Per-role loaded hourly rates (USD). Null → benchmark default (EXT-2). */
+  costBasis?: CostBasis | null;
 };
 
 /**
@@ -131,15 +192,30 @@ export async function scoreCluster(
 ): Promise<ScoredOpportunity> {
   const known = new Set(opts.captures.map((c) => c.id));
   const captureBlock = opts.captures
-    .map((c) =>
-      [
+    .map((c) => {
+      const lines = [
         `CAPTURE ${c.id}`,
         `  role: ${c.role}${c.department ? ` · ${c.department}` : ""}`,
         `  kind: ${c.kind}`,
         `  summary: ${c.summary}`,
         `  quote: "${c.sourceQuote}"`,
-      ].join("\n"),
-    )
+      ];
+      const q = c.quantifiedImpact;
+      if (q) {
+        const rate = rateForRole(c.role, opts.costBasis);
+        const parts: string[] = [];
+        if (q.frequencyPerYear != null)
+          parts.push(`~${q.frequencyPerYear}×/yr`);
+        if (q.unitMinutes != null) parts.push(`${q.unitMinutes} min each`);
+        if (q.unitCostUsd != null) parts.push(`$${q.unitCostUsd}/occurrence`);
+        if (q.basis) parts.push(`basis: "${q.basis}"`);
+        const annual = impliedAnnualUsd(q, rate);
+        if (annual != null)
+          parts.push(`implied annual ≈ $${annual.toLocaleString("en-US")}`);
+        if (parts.length) lines.push(`  quantified: ${parts.join(", ")}`);
+      }
+      return lines.join("\n");
+    })
     .join("\n\n");
 
   const scoring = await completeStructured({
@@ -152,6 +228,8 @@ export async function scoreCluster(
         content: [
           `ORGANIZATION: ${opts.tenantName}`,
           `CANDIDATE THEME: ${opts.theme}`,
+          "",
+          costBasisNote(opts.costBasis),
           "",
           "SUPPORTING CAPTURES (attribute by role only, never by name):",
           captureBlock,
