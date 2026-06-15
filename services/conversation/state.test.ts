@@ -6,6 +6,8 @@ import {
   arcName,
   ARCS,
   MAX_TURNS_PER_ARC,
+  MAX_PROBES_PER_ARC,
+  probesRemaining,
   type Arc,
 } from "./state";
 
@@ -56,6 +58,19 @@ describe("isDone", () => {
     for (const arc of ARCS) {
       expect(isDone(arc)).toBe(arc === "DONE");
     }
+  });
+});
+
+describe("probesRemaining", () => {
+  it("offers the full budget for the anchor turn", () => {
+    expect(probesRemaining(0)).toBe(MAX_PROBES_PER_ARC);
+    expect(probesRemaining(1)).toBe(MAX_PROBES_PER_ARC);
+  });
+
+  it("spends one probe per subsequent turn, never going negative", () => {
+    expect(probesRemaining(2)).toBe(1);
+    expect(probesRemaining(3)).toBe(0);
+    expect(probesRemaining(9)).toBe(0);
   });
 });
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buildSystemPrompt } from "./prompts";
 
 const base = {
+  tenantName: "Northwind Trading",
   userName: "Sam Rivera",
   department: "Finance",
   topicTitle: "Quote-to-cash handoffs",
@@ -14,6 +15,11 @@ describe("buildSystemPrompt — composition", () => {
     expect(p).toContain("Quote-to-cash handoffs");
     expect(p).toContain("Sam Rivera");
     expect(p).toContain("Finance");
+  });
+
+  it("anchors the prompt to the client org by name", () => {
+    const p = buildSystemPrompt({ ...base, role: "ic", arc: "ARC_1" });
+    expect(p).toContain("helping Northwind Trading understand");
   });
 
   it("pulls in the IC role corpus", () => {
@@ -73,5 +79,52 @@ describe("buildSystemPrompt — arc sensitivity", () => {
       arc: "ARC_1",
     });
     expect(p).toContain("their department");
+  });
+});
+
+describe("buildSystemPrompt — arc history, probe budget, captures", () => {
+  it("renders arc history and probe budget inside an interview arc", () => {
+    const p = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "ARC_2",
+      arcHistory: "Workflow walkthrough",
+      probesRemaining: 1,
+    });
+    expect(p).toContain("ARC HISTORY: Workflow walkthrough");
+    expect(p).toContain(
+      "PROBE BUDGET FOR THIS ARC: 1 probe(s) remaining out of 2.",
+    );
+  });
+
+  it("falls back to 'none yet' when no arcs are complete", () => {
+    const p = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "ARC_1",
+      arcHistory: "",
+      probesRemaining: 2,
+    });
+    expect(p).toContain("ARC HISTORY: none yet");
+  });
+
+  it("omits arc-progress blocks outside an interview arc", () => {
+    const intro = buildSystemPrompt({ ...base, role: "ic", arc: "INTRO" });
+    expect(intro).not.toContain("ARC HISTORY:");
+    expect(intro).not.toContain("PROBE BUDGET");
+  });
+
+  it("renders the captures summary when present, omits it when absent", () => {
+    const withCaps = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "ARC_2",
+      capturesSummary: "- bottleneck: manual CSV export every Friday",
+    });
+    expect(withCaps).toContain("CAPTURED SO FAR:");
+    expect(withCaps).toContain("manual CSV export every Friday");
+
+    const without = buildSystemPrompt({ ...base, role: "ic", arc: "ARC_2" });
+    expect(without).not.toContain("CAPTURED SO FAR:");
   });
 });
