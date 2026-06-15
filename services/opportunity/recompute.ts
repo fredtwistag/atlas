@@ -9,9 +9,46 @@ import {
   opportunities,
   opportunityEvidence,
 } from "@/db/schema";
-import { DIMENSION_LABELS, scoreCluster, type ScoreCapture } from "./score";
+import {
+  DIMENSION_LABELS,
+  scoreCluster,
+  type ScoreCapture,
+  type CostBasis,
+} from "./score";
 import { clusterCaptures } from "./cluster";
 import type { DimensionScore } from "@/lib/types";
+import type { QuantifiedImpact } from "@/services/llm/schemas";
+
+/**
+ * Coerce a capture's numeric (text) quantified columns back into the structured
+ * QuantifiedImpact the scorer expects. Returns null when none were recorded.
+ */
+function toQuantifiedImpact(c: {
+  quantifiedFrequencyPerYear: string | null;
+  quantifiedUnitMinutes: string | null;
+  quantifiedUnitCostUsd: string | null;
+  quantifiedBasis: string | null;
+}): QuantifiedImpact | null {
+  if (
+    c.quantifiedFrequencyPerYear == null &&
+    c.quantifiedUnitMinutes == null &&
+    c.quantifiedUnitCostUsd == null &&
+    c.quantifiedBasis == null
+  ) {
+    return null;
+  }
+  return {
+    frequencyPerYear:
+      c.quantifiedFrequencyPerYear != null
+        ? Number(c.quantifiedFrequencyPerYear)
+        : null,
+    unitMinutes:
+      c.quantifiedUnitMinutes != null ? Number(c.quantifiedUnitMinutes) : null,
+    unitCostUsd:
+      c.quantifiedUnitCostUsd != null ? Number(c.quantifiedUnitCostUsd) : null,
+    basis: c.quantifiedBasis,
+  };
+}
 
 /**
  * Plan 016 Step 4 — recompute orchestration: captures → cluster → score →
@@ -115,6 +152,7 @@ async function runRecompute(
       id: sprints.id,
       tenantId: sprints.tenantId,
       startDate: sprints.startDate,
+      costBasis: sprints.costBasis,
     })
     .from(sprints)
     .where(eq(sprints.id, sprintId));
@@ -139,6 +177,10 @@ async function runRecompute(
       sourceQuote: captures.sourceQuote,
       role: users.title,
       department: users.department,
+      quantifiedFrequencyPerYear: captures.quantifiedFrequencyPerYear,
+      quantifiedUnitMinutes: captures.quantifiedUnitMinutes,
+      quantifiedUnitCostUsd: captures.quantifiedUnitCostUsd,
+      quantifiedBasis: captures.quantifiedBasis,
     })
     .from(captures)
     .innerJoin(sessions, eq(captures.sessionId, sessions.id))
@@ -181,6 +223,7 @@ async function runRecompute(
         sourceQuote: c.sourceQuote,
         role: c.role ?? "Contributor",
         department: c.department,
+        quantifiedImpact: toQuantifiedImpact(c),
       }));
     if (clusterCapturesData.length < 2) continue;
 
@@ -188,6 +231,7 @@ async function runRecompute(
       theme: cluster.theme,
       tenantName,
       captures: clusterCapturesData,
+      costBasis: (sprint.costBasis as CostBasis | null) ?? null,
     });
 
     const evidenceIds = scoring.evidenceCaptureIds.filter((id) => byId.has(id));

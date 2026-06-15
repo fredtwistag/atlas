@@ -323,6 +323,14 @@ async function extractAndPersist(
         summary: c.summary,
         sourceQuote: c.sourceQuote,
         tags: c.tags,
+        // EXT-2: structured quantified impact, when the contributor gave numbers.
+        quantifiedFrequencyPerYear:
+          c.quantifiedImpact?.frequencyPerYear?.toString() ?? null,
+        quantifiedUnitMinutes:
+          c.quantifiedImpact?.unitMinutes?.toString() ?? null,
+        quantifiedUnitCostUsd:
+          c.quantifiedImpact?.unitCostUsd?.toString() ?? null,
+        quantifiedBasis: c.quantifiedImpact?.basis ?? null,
       })),
     )
     .returning({

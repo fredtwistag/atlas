@@ -123,6 +123,10 @@ export const sprints = pgTable("sprints", {
   status: text("status").notNull(),
   sponsorId: uuid("sponsor_id").references(() => users.id),
   managerId: uuid("manager_id").references(() => users.id),
+  // Per-role loaded hourly rate (USD), keyed by role/title label (EXT-2).
+  // Set by the manager at sprint setup (EXT-2b). NULL → scoring uses a
+  // benchmark default. Shape: { "Sales rep": 65, "default": 75 }.
+  costBasis: jsonb("cost_basis"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -227,6 +231,21 @@ export const captures = pgTable("captures", {
   summary: text("summary").notNull(),
   sourceQuote: text("source_quote").notNull(),
   tags: text("tags").array().notNull().default([]),
+  // Structured quantified impact (EXT-2), nullable — set only when the
+  // contributor stated numbers. Scoring multiplies these into annual dollars.
+  quantifiedFrequencyPerYear: numeric("quantified_frequency_per_year", {
+    precision: 12,
+    scale: 2,
+  }),
+  quantifiedUnitMinutes: numeric("quantified_unit_minutes", {
+    precision: 12,
+    scale: 2,
+  }),
+  quantifiedUnitCostUsd: numeric("quantified_unit_cost_usd", {
+    precision: 14,
+    scale: 2,
+  }),
+  quantifiedBasis: text("quantified_basis"),
   isEdited: boolean("is_edited").notNull().default(false),
   isRemoved: boolean("is_removed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
