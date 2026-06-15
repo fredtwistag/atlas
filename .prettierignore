@@ -3,3 +3,4 @@ node_modules
 prototypes
 package-lock.json
 *.md
+*.sh
