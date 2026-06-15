@@ -20,10 +20,15 @@ import {
   invitations,
   opportunities,
   companyContext,
+  documents,
 } from "@/db/schema";
 import { MEMBER_ROLES, removeMemberTx } from "./members";
 import { inviteExpiresAt } from "./invitation-expiry";
 import { enrichCompanyContext } from "@/services/enrichment/search";
+import {
+  extractDocumentText,
+  summarizeDocumentIntoContext,
+} from "@/services/enrichment/documents";
 
 /** Carried for audit attribution only — NEVER used for authorization. */
 export type TwistagActor = { userId: string; twistagRole: string };
@@ -86,6 +91,78 @@ export async function enrichCompany(
         .onConflictDoUpdate({ target: companyContext.tenantId, set: values });
     },
   );
+}
+
+/**
+ * Ingest an uploaded text artifact (CTX-3): record the document, extract its
+ * text, summarize it into the company context as `draft`, and cite the file as
+ * a source. Binary formats (PDF/DOCX) are recorded but not summarized yet (text
+ * extraction for them is a follow-up). The LLM summarize runs OUTSIDE the DB
+ * transaction. Audited as `document.ingest`.
+ */
+export async function ingestDocument(
+  actor: TwistagActor,
+  input: {
+    tenantId: string;
+    filename: string;
+    mimeType: string;
+    text: string;
+    sprintId?: string | null;
+  },
+): Promise<{ summarized: boolean }> {
+  const extracted = extractDocumentText(input.mimeType, input.text);
+
+  const profile = extracted
+    ? await summarizeDocumentIntoContext({
+        filename: input.filename,
+        text: extracted,
+      })
+    : null;
+
+  await withServiceRole(
+    {
+      action: "document.ingest",
+      actor: actor.userId,
+      tenantId: input.tenantId,
+      metadata: { twistag_role: actor.twistagRole, mime: input.mimeType },
+    },
+    async (tx) => {
+      await tx.insert(documents).values({
+        tenantId: input.tenantId,
+        filename: input.filename,
+        mimeType: input.mimeType,
+        uploadedBy: actor.userId,
+        sprintId: input.sprintId ?? null,
+        status: extracted ? "ingested" : "uploaded",
+        extractedText: extracted,
+      });
+
+      if (profile) {
+        const values = {
+          tenantId: input.tenantId,
+          summary: profile.summary,
+          industry: profile.industry,
+          businessModel: profile.businessModel,
+          sizeBand: profile.sizeBand,
+          revenueBand: profile.revenueBand,
+          maturity: profile.maturity,
+          keySystems: profile.keySystems,
+          knownPains: profile.knownPains,
+          sources: profile.sources,
+          status: "draft",
+          enrichedBy: "document",
+          enrichedAt: new Date(),
+          updatedAt: new Date(),
+        };
+        await tx
+          .insert(companyContext)
+          .values(values)
+          .onConflictDoUpdate({ target: companyContext.tenantId, set: values });
+      }
+    },
+  );
+
+  return { summarized: profile !== null };
 }
 
 /** Approve a draft company context so CTX-4 starts injecting it. Audited. */

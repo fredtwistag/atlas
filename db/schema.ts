@@ -27,6 +27,27 @@ export const tenants = pgTable("tenants", {
 });
 
 /**
+ * Uploaded artifacts (CTX-3). Tenant-readable; service-role writes. Text is
+ * extracted and summarized into company_context. See migration 0019.
+ */
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  storageKey: text("storage_key"),
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  sprintId: uuid("sprint_id").references(() => sprints.id),
+  status: text("status").notNull().default("uploaded"),
+  extractedText: text("extracted_text"),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
  * Structured company profile (CTX-1), one row per tenant. Read by tenant users
  * (injected into prompts server-side) but written only via service_role /
  * Twistag — see migration 0011 RLS. Populated by enrichment (CTX-2/3) and
