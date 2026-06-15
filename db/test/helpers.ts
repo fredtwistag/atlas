@@ -42,7 +42,8 @@ export async function resetDb(): Promise<void> {
     await tx.execute(
       sql`TRUNCATE public.opportunity_evidence, public.opportunities, public.captures,
           public.sessions, public.sprint_participants, public.topics,
-          public.invitations, public.sprints, public.users, public.tenants
+          public.invitations, public.sprints, public.company_context,
+          public.users, public.tenants
           RESTART IDENTITY CASCADE`,
     );
     // audit_log uses a bigserial whose sequence service_role doesn't own, so
