@@ -9,6 +9,31 @@
 
 export type Role = "ic" | "manager" | "sponsor";
 
+/** A single source backing the company context (CTX-1): a doc, a URL, or manual note. */
+export interface CompanyContextSource {
+  kind: "web" | "document" | "manual";
+  label: string;
+  ref?: string;
+}
+
+/** Structured company profile (CTX-1). One per tenant; null fields = unknown. */
+export interface CompanyContext {
+  id: string;
+  tenantId: string;
+  summary: string | null;
+  industry: string | null;
+  businessModel: string | null;
+  sizeBand: string | null;
+  revenueBand: string | null;
+  maturity: string | null;
+  keySystems: string[];
+  knownPains: string[];
+  sources: CompanyContextSource[];
+  status: "draft" | "active";
+  enrichedBy: string | null;
+  enrichedAt: string | null;
+}
+
 export type SprintStatus =
   | "draft"
   | "active"

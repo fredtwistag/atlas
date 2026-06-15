@@ -26,6 +26,38 @@ export const tenants = pgTable("tenants", {
   metadata: jsonb("metadata").default({}),
 });
 
+/**
+ * Structured company profile (CTX-1), one row per tenant. Read by tenant users
+ * (injected into prompts server-side) but written only via service_role /
+ * Twistag — see migration 0011 RLS. Populated by enrichment (CTX-2/3) and
+ * consumed by prompts/scoring/report (CTX-4).
+ */
+export const companyContext = pgTable("company_context", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .unique()
+    .references(() => tenants.id),
+  summary: text("summary"),
+  industry: text("industry"),
+  businessModel: text("business_model"),
+  sizeBand: text("size_band"),
+  revenueBand: text("revenue_band"),
+  maturity: text("maturity"),
+  keySystems: text("key_systems").array().notNull().default([]),
+  knownPains: text("known_pains").array().notNull().default([]),
+  sources: jsonb("sources").notNull().default([]),
+  status: text("status").notNull().default("draft"),
+  enrichedBy: text("enriched_by"),
+  enrichedAt: timestamp("enriched_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const auditLog = pgTable("audit_log", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   tenantId: uuid("tenant_id"),
