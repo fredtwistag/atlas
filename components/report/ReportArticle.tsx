@@ -24,8 +24,10 @@ export function ReportArticle({
   const topFive = opps.slice(0, 5);
   const totalLow = topFive.reduce((s, o) => s + o.impactLow, 0);
   const totalHigh = topFive.reduce((s, o) => s + o.impactHigh, 0);
-  const quickWins = opps.filter((o) => o.timeToShipWeeksHigh <= 3);
-  const highImpact = opps.filter((o) => o.compositeScore >= 7.5);
+  // Barbell by funding horizon (Ticket D), derived at scoring time — not the
+  // old ad-hoc ≤3-weeks / ≥7.5-composite split.
+  const quickWins = opps.filter((o) => o.horizon === "quick_win");
+  const strategicBets = opps.filter((o) => o.horizon === "strategic_bet");
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-12">
@@ -138,15 +140,15 @@ export function ReportArticle({
         <div className="not-prose grid gap-4 sm:grid-cols-2">
           <RoadmapColumn
             title="Quick wins"
-            caption="Ship in ≤ 3 weeks"
+            caption="Fast, standalone, low-disruption"
             items={quickWins.map((o) => o.title)}
             empty="No quick wins yet — short-cycle fixes land here as they surface."
           />
           <RoadmapColumn
-            title="High-impact builds"
-            caption="Score ≥ 7.5"
-            items={highImpact.map((o) => o.title)}
-            empty="No high-impact builds yet — top-scored opportunities land here."
+            title="Strategic bets"
+            caption="High impact, bigger lift"
+            items={strategicBets.map((o) => o.title)}
+            empty="No strategic bets yet — larger, higher-impact plays land here."
           />
         </div>
       </Section>

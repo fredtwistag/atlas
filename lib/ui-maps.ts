@@ -7,6 +7,7 @@ import type {
   ClientSummary,
   CaptureKind,
   OpportunityStatus,
+  Horizon,
 } from "./types";
 
 type BadgeTone =
@@ -34,6 +35,19 @@ export const clientHealthMeta: Record<
   healthy: { label: "Healthy", tone: "success" },
   watch: { label: "Watch", tone: "warning" },
   at_risk: { label: "At risk", tone: "danger" },
+};
+
+/**
+ * Funding horizon → chip (Ticket D). `standard` has no chip (null) — only the
+ * barbell ends earn a label so the card stays uncluttered.
+ */
+export const horizonMeta: Record<
+  Horizon,
+  { label: string; tone: BadgeTone } | null
+> = {
+  quick_win: { label: "Quick win", tone: "success" },
+  strategic_bet: { label: "Strategic bet", tone: "brand" },
+  standard: null,
 };
 
 /**

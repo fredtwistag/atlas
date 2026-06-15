@@ -14,10 +14,25 @@ vi.mock("@/services/llm/client", () => ({
 import {
   scoreCluster,
   computeComposite,
+  computeHorizon,
   rateForRole,
   impliedAnnualUsd,
   DEFAULT_LOADED_HOURLY_USD,
 } from "./score";
+import type { DimensionKey } from "@/services/llm/schemas";
+
+const dims = (
+  o: Partial<Record<DimensionKey, number>>,
+): { key: DimensionKey; score: number }[] =>
+  (
+    [
+      "financial",
+      "time_to_ship",
+      "ai_suitability",
+      "change_mgmt",
+      "dependency",
+    ] as DimensionKey[]
+  ).map((key) => ({ key, score: o[key] ?? 5 }));
 
 const ID = {
   a: "11111111-1111-4111-8111-111111111111",
@@ -90,6 +105,37 @@ describe("computeComposite", () => {
       { key: "dependency", score: 5 },
     ]);
     expect(composite).toBe(5.0);
+  });
+});
+
+describe("computeHorizon (Ticket D)", () => {
+  it("flags a fast, standalone, low-disruption opportunity as a quick win", () => {
+    const h = computeHorizon(
+      dims({ time_to_ship: 8, dependency: 8, change_mgmt: 7 }),
+      4,
+    );
+    expect(h).toBe("quick_win");
+  });
+
+  it("does not call it a quick win if it ships in more than 4 weeks", () => {
+    const h = computeHorizon(
+      dims({ time_to_ship: 8, dependency: 8, change_mgmt: 7 }),
+      6,
+    );
+    expect(h).not.toBe("quick_win");
+  });
+
+  it("flags a big-but-slow/disruptive opportunity as a strategic bet", () => {
+    expect(computeHorizon(dims({ financial: 9, time_to_ship: 4 }), 12)).toBe(
+      "strategic_bet",
+    );
+    expect(computeHorizon(dims({ financial: 8, change_mgmt: 3 }), 10)).toBe(
+      "strategic_bet",
+    );
+  });
+
+  it("falls back to standard for middling profiles", () => {
+    expect(computeHorizon(dims({}), 8)).toBe("standard");
   });
 });
 

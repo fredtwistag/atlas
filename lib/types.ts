@@ -148,6 +148,8 @@ export interface Opportunity {
   timeToShipWeeksHigh: number;
   confidenceScore: number; // 1–5
   compositeScore: number; // 0–10, one decimal
+  /** Funding horizon, derived in TS from the dimension scores (Ticket D). */
+  horizon: Horizon;
   dimensionScores: DimensionScore[];
   rationale: string;
   status: OpportunityStatus;
@@ -155,6 +157,13 @@ export interface Opportunity {
   contributorCount: number;
   patternMatch?: { title: string; deploys: number; similarity: number };
 }
+
+/**
+ * Funding horizon for an opportunity (Ticket D). A barbell, not a flat list:
+ * `quick_win` = cheap fast proof point; `strategic_bet` = big, slower or more
+ * disruptive; `standard` = everything else.
+ */
+export type Horizon = "quick_win" | "strategic_bet" | "standard";
 
 export interface SowDraft {
   title: string;

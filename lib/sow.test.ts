@@ -15,6 +15,7 @@ const opp = {
   timeToShipWeeksHigh: 5,
   confidenceScore: 5,
   compositeScore: 8.7,
+  horizon: "standard",
   dimensionScores: [],
   rationale: "r",
   status: "surfaced",
