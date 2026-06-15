@@ -57,6 +57,16 @@ fast-follow backlog, and rejected findings live there. Summary:
 | [026](026-perf-and-caching-pass.md) | Perf + caching pass | P1 | Done |
 | [027](027-test-hardening.md) | Test hardening + privacy regression net | P1 | Done |
 
+## Engine improvements & context enrichment (028)
+
+Added 2026-06-15. [028](028-engine-improvements-and-context-enrichment.md) — backlog-level
+design (not yet scheduled): **Part 1** maps the 10 McKinsey discovery sub-skills to 7
+synthesis tickets (horizon classification, build-vs-buy, adoption-risk heatmap, shadow-IT
+inventory, stakeholder map, **pilot portfolio designer**, synthesis memo). **Part 2** adds 8
+input-quality tickets (CTX-1…4 company-context enrichment; EXT-1…4 extraction/financial-signal
++ cross-session coverage). Self-contained, with build order, per-ticket acceptance criteria/DoD,
+and open questions to resolve before scheduling. Status: `Todo` (design only).
+
 **012 note:** written against `e323025`, approved by Fred 2026-06-10. Five shippable
 phases (0–5), each gated by `npm run verify`; execute phases in order, data layer
 before UI. Routes consolidate under `/admin` (not `/twistag`). Full detail in the
