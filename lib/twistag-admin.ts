@@ -14,12 +14,105 @@
  */
 import { eq, and } from "drizzle-orm";
 import { withServiceRole, withTwistagContext } from "@/db/client";
-import { tenants, users, invitations, opportunities } from "@/db/schema";
+import {
+  tenants,
+  users,
+  invitations,
+  opportunities,
+  companyContext,
+} from "@/db/schema";
 import { MEMBER_ROLES, removeMemberTx } from "./members";
 import { inviteExpiresAt } from "./invitation-expiry";
+import { enrichCompanyContext } from "@/services/enrichment/search";
 
 /** Carried for audit attribution only — NEVER used for authorization. */
 export type TwistagActor = { userId: string; twistagRole: string };
+
+/**
+ * Enrich a tenant's company context from the public web (CTX-2, ADR-004). Runs
+ * the web-search LLM call OUTSIDE the DB transaction, then upserts the profile
+ * as `status='draft'` — CTX-4 only injects `active`, so nothing reaches an IC
+ * until approveCompanyContext flips it. Audited as `company_context.enrich`.
+ */
+export async function enrichCompany(
+  actor: TwistagActor,
+  tenantId: string,
+): Promise<void> {
+  const tenant = await withServiceRole(
+    { action: "company_context.enrich.read", actor: actor.userId, tenantId },
+    async (tx) => {
+      const [t] = await tx
+        .select({ name: tenants.name, slug: tenants.slug })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId));
+      return t;
+    },
+  );
+  if (!tenant) throw new Error("tenant not found");
+
+  // External web-search enrichment — outside any DB transaction.
+  const profile = await enrichCompanyContext({
+    companyName: tenant.name,
+    domain: tenant.slug ? `${tenant.slug}.com` : null,
+  });
+
+  await withServiceRole(
+    {
+      action: "company_context.enrich",
+      actor: actor.userId,
+      tenantId,
+      metadata: { twistag_role: actor.twistagRole, source: "web_search" },
+    },
+    async (tx) => {
+      const values = {
+        tenantId,
+        summary: profile.summary,
+        industry: profile.industry,
+        businessModel: profile.businessModel,
+        sizeBand: profile.sizeBand,
+        revenueBand: profile.revenueBand,
+        maturity: profile.maturity,
+        keySystems: profile.keySystems,
+        knownPains: profile.knownPains,
+        sources: profile.sources,
+        status: "draft",
+        enrichedBy: "web_search",
+        enrichedAt: new Date(),
+        updatedAt: new Date(),
+      };
+      await tx
+        .insert(companyContext)
+        .values(values)
+        .onConflictDoUpdate({ target: companyContext.tenantId, set: values });
+    },
+  );
+}
+
+/** Approve a draft company context so CTX-4 starts injecting it. Audited. */
+export async function approveCompanyContext(
+  actor: TwistagActor,
+  tenantId: string,
+): Promise<void> {
+  await withServiceRole(
+    {
+      action: "company_context.approve",
+      actor: actor.userId,
+      tenantId,
+      metadata: { twistag_role: actor.twistagRole },
+    },
+    async (tx) => {
+      const [row] = await tx
+        .select({ id: companyContext.id })
+        .from(companyContext)
+        .where(eq(companyContext.tenantId, tenantId));
+      if (!row) throw new Error("no company context to approve");
+      await tx
+        .update(companyContext)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(eq(companyContext.tenantId, tenantId));
+    },
+  );
+}
 
 const TENANT_STATUSES = ["active", "onboarding", "paused", "churned"] as const;
 

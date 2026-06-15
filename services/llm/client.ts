@@ -173,3 +173,47 @@ export async function completeStructured<T>(
   // Unreachable: the loop either returns or throws on attempt 1.
   throw new LlmOutputError("Structured completion exhausted its retry.");
 }
+
+/** Anthropic's server-side web search tool (ADR-004). Version pinned in one place. */
+const WEB_SEARCH_TOOL = {
+  type: "web_search_20250305" as const,
+  name: "web_search" as const,
+  max_uses: 5,
+};
+
+/**
+ * A structured completion that may use Claude's web search tool (ADR-004,
+ * CTX-2). The search runs server-side on Anthropic's servers over the same
+ * connection — no new app egress, no manual tool-use loop. Output is parsed +
+ * Zod-validated like completeStructured (single attempt; the tool call already
+ * costs latency). Throws LlmOutputError if the model returns unparseable JSON.
+ */
+export async function completeWithWebSearch<T>(
+  opts: CompleteOpts & { schema: z.ZodType<T> },
+): Promise<T> {
+  const anthropic = client();
+  const message = await createMessage(anthropic, {
+    model: modelId(),
+    max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+    system: `${opts.system}\n\nAfter searching, respond with valid JSON only. No prose, no markdown fences.`,
+    messages: opts.messages,
+    tools: [WEB_SEARCH_TOOL],
+  });
+  const raw = textOf(message);
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(extractJson(raw));
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "invalid JSON";
+    throw new LlmOutputError(`Web-search output was not valid JSON: ${reason}`);
+  }
+
+  const result = opts.schema.safeParse(parsedJson);
+  if (!result.success) {
+    throw new LlmOutputError(
+      `Web-search output failed schema validation: ${result.error.message}`,
+    );
+  }
+  return result.data;
+}

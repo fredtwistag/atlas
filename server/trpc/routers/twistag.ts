@@ -18,7 +18,12 @@ import {
   loadSprintProgress,
   listSprintOpportunities,
 } from "@/lib/sprint-read";
-import { updateOpportunity, setOpportunityStatus } from "@/lib/twistag-admin";
+import {
+  updateOpportunity,
+  setOpportunityStatus,
+  enrichCompany,
+  approveCompanyContext,
+} from "@/lib/twistag-admin";
 import { recompute as recomputeOpportunities } from "@/services/opportunity/recompute";
 import type { ClientSummary } from "@/lib/types";
 
@@ -416,6 +421,28 @@ export const twistagRouter = router({
    * tenant is resolved from the opportunity via a twistag read (NOT_FOUND if
    * missing); the edit refuses approved rows inside updateOpportunity.
    */
+  /** CTX-2: enrich a tenant's company context from the public web (→ draft). */
+  enrichCompany: twistagProcedure
+    .input(z.object({ tenantId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await enrichCompany(
+        { userId: ctx.session.userId, twistagRole: ctx.session.twistagRole },
+        input.tenantId,
+      );
+      return { ok: true as const };
+    }),
+
+  /** CTX-2: approve a draft company context so CTX-4 starts injecting it. */
+  approveCompanyContext: twistagProcedure
+    .input(z.object({ tenantId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await approveCompanyContext(
+        { userId: ctx.session.userId, twistagRole: ctx.session.twistagRole },
+        input.tenantId,
+      );
+      return { ok: true as const };
+    }),
+
   opportunityUpdate: twistagProcedure
     .input(
       z.object({
