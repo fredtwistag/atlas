@@ -14,6 +14,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { TeamProgress } from "@/components/manager/TeamProgress";
 import { AdoptionRiskHeatmap } from "@/components/manager/AdoptionRiskHeatmap";
+import { PilotPortfolio } from "@/components/manager/PilotPortfolio";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
@@ -45,11 +46,12 @@ export default async function ManagerDashboard({
 
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();
-  const [p, opps, activity, adoptionRisk] = await Promise.all([
+  const [p, opps, activity, adoptionRisk, portfolio] = await Promise.all([
     api.sprint.progress({ id }),
     api.opportunity.listForSprint({ sprintId: id }),
     api.sprint.activity({ id }),
     api.sprint.adoptionRisk({ id }),
+    api.sprint.portfolio({ id }),
   ]);
 
   const stats: {
@@ -185,9 +187,14 @@ export default async function ManagerDashboard({
           </Card>
         </div>
 
-        {/* Right: opportunities */}
+        {/* Right: pilot portfolio + opportunities */}
         <div>
-          <div className="mb-3 flex items-center justify-between px-1">
+          <h2 className="mb-3 px-1 text-sm font-semibold text-text-2">
+            Pilot portfolio
+          </h2>
+          <PilotPortfolio portfolio={portfolio} />
+
+          <div className="mb-3 mt-6 flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold text-text-2">
               Opportunities surfacing
             </h2>

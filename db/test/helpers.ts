@@ -40,7 +40,8 @@ export function withServiceRoleRaw<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
 export async function resetDb(): Promise<void> {
   await withServiceRole({ action: "test.reset", actor: "test" }, async (tx) => {
     await tx.execute(
-      sql`TRUNCATE public.opportunity_evidence, public.opportunities, public.captures,
+      sql`TRUNCATE public.portfolio_items, public.portfolios,
+          public.opportunity_evidence, public.opportunities, public.captures,
           public.sessions, public.sprint_participants, public.topics,
           public.invitations, public.sprints, public.company_context,
           public.users, public.tenants

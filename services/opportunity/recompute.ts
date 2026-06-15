@@ -9,7 +9,14 @@ import {
   users,
   opportunities,
   opportunityEvidence,
+  portfolios,
+  portfolioItems,
 } from "@/db/schema";
+import {
+  selectPortfolio,
+  writePortfolioNarrative,
+  type PortfolioCandidate,
+} from "@/services/synthesis/portfolio";
 import {
   DIMENSION_LABELS,
   scoreCluster,
@@ -339,6 +346,8 @@ async function runRecompute(
 
   let inserted = 0;
   let updated = 0;
+  // Persisted opportunity id per candidate key — feeds the portfolio (Ticket A).
+  const idByKey = new Map<string, string>();
   for (const c of finalCandidates) {
     const status = surfacedKeys.has(c.key) ? "surfaced" : "provisional";
     const prior = existingByKey.get(c.key);
@@ -372,6 +381,7 @@ async function runRecompute(
           ),
         );
       await replaceEvidence(tx, tenantId, prior.id, c.evidenceCaptureIds);
+      idByKey.set(c.key, prior.id);
       updated++;
     } else {
       const [row] = await tx
@@ -399,9 +409,31 @@ async function runRecompute(
         })
         .returning({ id: opportunities.id });
       await replaceEvidence(tx, tenantId, row.id, c.evidenceCaptureIds);
+      idByKey.set(c.key, row.id);
       inserted++;
     }
   }
+
+  // --- pilot portfolio (Ticket A) ------------------------------------------
+  // Select a balanced 3-5 set from the surfaced opportunities and persist it
+  // with an LLM narrative. Regenerated each recompute (derived artifact).
+  await buildPortfolio(tx, {
+    tenantId,
+    sprintId,
+    tenantName,
+    candidates: finalCandidates
+      .filter((c) => surfacedKeys.has(c.key) && idByKey.has(c.key))
+      .map((c) => ({
+        id: idByKey.get(c.key)!,
+        title: c.title,
+        horizon: c.horizon,
+        departments: c.departments,
+        compositeScore: c.compositeScore,
+        confidenceScore: c.confidenceScore,
+        impactLow: c.impactLow,
+        impactHigh: c.impactHigh,
+      })),
+  });
 
   return {
     sprintId,
@@ -413,6 +445,86 @@ async function runRecompute(
     surfaced: surfacedKeys.size,
     skippedApproved,
   };
+}
+
+/**
+ * Build (or replace) the sprint's pilot portfolio: TS selection + LLM narrative,
+ * persisted as one `draft` portfolio + its items. Idempotent — items are
+ * replaced each run. A narrative failure degrades to an empty string (never
+ * fails recompute). No portfolio row is written when nothing is surfaced.
+ */
+async function buildPortfolio(
+  tx: Db,
+  opts: {
+    tenantId: string;
+    sprintId: string;
+    tenantName: string;
+    candidates: (PortfolioCandidate & {
+      impactLow: number;
+      impactHigh: number;
+    })[];
+  },
+): Promise<void> {
+  const selection = selectPortfolio(opts.candidates);
+  if (selection.items.length === 0) return;
+
+  const byId = new Map(opts.candidates.map((c) => [c.id, c]));
+  let narrative = "";
+  try {
+    narrative = await writePortfolioNarrative({
+      tenantName: opts.tenantName,
+      underfilled: selection.underfilled,
+      items: selection.items.map((it) => {
+        const c = byId.get(it.opportunityId)!;
+        return {
+          title: c.title,
+          horizon: c.horizon,
+          impactLow: c.impactLow,
+          impactHigh: c.impactHigh,
+        };
+      }),
+    });
+  } catch {
+    narrative = ""; // best-effort; selection still persists.
+  }
+
+  const [existing] = await tx
+    .select({ id: portfolios.id })
+    .from(portfolios)
+    .where(eq(portfolios.sprintId, opts.sprintId));
+
+  let portfolioId: string;
+  if (existing) {
+    portfolioId = existing.id;
+    await tx
+      .update(portfolios)
+      .set({ narrative, updatedAt: new Date() })
+      .where(eq(portfolios.id, portfolioId));
+    await tx
+      .delete(portfolioItems)
+      .where(eq(portfolioItems.portfolioId, portfolioId));
+  } else {
+    const [row] = await tx
+      .insert(portfolios)
+      .values({
+        tenantId: opts.tenantId,
+        sprintId: opts.sprintId,
+        narrative,
+        status: "draft",
+      })
+      .returning({ id: portfolios.id });
+    portfolioId = row.id;
+  }
+
+  await tx.insert(portfolioItems).values(
+    selection.items.map((it) => ({
+      portfolioId,
+      opportunityId: it.opportunityId,
+      tenantId: opts.tenantId,
+      sequenceOrder: it.sequenceOrder,
+      inclusionRationale: it.inclusionRationale,
+    })),
+  );
 }
 
 /** Replace an opportunity's evidence links (non-approved rows only — caller-checked). */

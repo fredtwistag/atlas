@@ -194,3 +194,15 @@ export const opportunityScoring = z
   });
 
 export type OpportunityScoring = z.infer<typeof opportunityScoring>;
+
+/**
+ * Pilot-portfolio narrative (Ticket A): the prose that frames why these 3-5
+ * opportunities, why now, and how they sequence into an operating-model move.
+ * The SELECTION is done in TS (services/synthesis/portfolio.ts) — the model
+ * only writes the paragraph. No individual names.
+ */
+export const portfolioNarrative = z.object({
+  narrative: z.string().min(40).max(2000),
+});
+
+export type PortfolioNarrative = z.infer<typeof portfolioNarrative>;
