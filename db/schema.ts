@@ -157,6 +157,8 @@ export const sprints = pgTable("sprints", {
   managerId: uuid("manager_id").references(() => users.id),
   // Board-ready synthesis memo (Ticket G), generated once at sprint close.
   synthesisMemo: jsonb("synthesis_memo"),
+  // Privacy-safe theme labels (EXT-1) injected into later sessions. No names.
+  sprintThemes: jsonb("sprint_themes"),
   // Per-role loaded hourly rate (USD), keyed by role/title label (EXT-2).
   // Set by the manager at sprint setup (EXT-2b). NULL → scoring uses a
   // benchmark default. Shape: { "Sales rep": 65, "default": 75 }.

@@ -108,6 +108,32 @@ describe("buildSystemPrompt — company context (CTX-4)", () => {
   });
 });
 
+describe("buildSystemPrompt — cross-session themes (EXT-1)", () => {
+  it("injects sprint themes inside an interview arc with a corroborate/extend nudge", () => {
+    const p = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "ARC_1",
+      sprintThemes: ["Pricing approval delay", "Manual CSV exports"],
+    });
+    expect(p).toContain("THEMES OTHERS ON THIS SPRINT HAVE RAISED");
+    expect(p).toContain("Pricing approval delay; Manual CSV exports");
+    expect(p).toContain("corroborate or extend");
+  });
+
+  it("omits the themes line when there are none, or outside an interview arc", () => {
+    const none = buildSystemPrompt({ ...base, role: "ic", arc: "ARC_1" });
+    expect(none).not.toContain("THEMES OTHERS ON THIS SPRINT");
+    const intro = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "INTRO",
+      sprintThemes: ["Pricing approval delay"],
+    });
+    expect(intro).not.toContain("THEMES OTHERS ON THIS SPRINT");
+  });
+});
+
 describe("buildSystemPrompt — arc history, probe budget, captures", () => {
   it("renders arc history and probe budget inside an interview arc", () => {
     const p = buildSystemPrompt({

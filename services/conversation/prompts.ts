@@ -45,6 +45,8 @@ export type BuildSystemPromptOpts = {
   capturesSummary?: string | null;
   /** Company context (CTX-4) to make the interview org-aware. Null when unknown. */
   companyContext?: PromptCompanyContext | null;
+  /** Theme labels other contributors have raised this sprint (EXT-1). No names. */
+  sprintThemes?: string[] | null;
 };
 
 /** The slice of the company profile the prompt uses (CTX-4). */
@@ -155,6 +157,9 @@ export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
     isInterviewArc ? `ARC HISTORY: ${opts.arcHistory || "none yet"}` : "",
     isInterviewArc && typeof opts.probesRemaining === "number"
       ? `PROBE BUDGET FOR THIS ARC: ${opts.probesRemaining} probe(s) remaining out of 2.`
+      : "",
+    isInterviewArc && opts.sprintThemes && opts.sprintThemes.length > 0
+      ? `THEMES OTHERS ON THIS SPRINT HAVE RAISED (corroborate or extend, don't just restate; never name anyone): ${opts.sprintThemes.join("; ")}.`
       : "",
     "",
     "STANDING RULES:",
