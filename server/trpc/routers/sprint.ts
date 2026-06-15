@@ -13,6 +13,7 @@ import {
   opportunities,
 } from "@/db/schema";
 import { loadSprint, loadSprintProgress } from "@/lib/sprint-read";
+import { computeAdoptionRisk } from "@/lib/adoption-risk";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { LaunchSprintSchema } from "@/lib/schemas";
 import { inngest } from "@/services/jobs/client";
@@ -292,6 +293,13 @@ export const sprintRouter = router({
     .input(idInput)
     .query(({ ctx, input }) =>
       withTenantContext(ctx.session, (tx) => loadSprintProgress(tx, input.id)),
+    ),
+
+  /** Per-department adoption-risk heatmap (Ticket E). Role/department only. */
+  adoptionRisk: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => computeAdoptionRisk(tx, input.id)),
     ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>
