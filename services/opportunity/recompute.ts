@@ -5,6 +5,7 @@ import {
   tenants,
   sessions,
   captures,
+  companyContext,
   users,
   opportunities,
   opportunityEvidence,
@@ -166,6 +167,20 @@ async function runRecompute(
     .where(eq(tenants.id, tenantId));
   const tenantName = tenant?.name ?? "your organization";
 
+  // Company profile (CTX-4) grounds financial baselines. Only active context.
+  const [ctx] = await tx
+    .select({
+      industry: companyContext.industry,
+      sizeBand: companyContext.sizeBand,
+      status: companyContext.status,
+    })
+    .from(companyContext)
+    .where(eq(companyContext.tenantId, tenantId));
+  const companyProfile =
+    ctx && ctx.status === "active"
+      ? { industry: ctx.industry, sizeBand: ctx.sizeBand }
+      : null;
+
   // Non-removed captures for this sprint, with role/department (NEVER name).
   // captures has no sprint_id; scope via sessions.sprintId.
   const captureRows = await tx
@@ -232,6 +247,7 @@ async function runRecompute(
       tenantName,
       captures: clusterCapturesData,
       costBasis: (sprint.costBasis as CostBasis | null) ?? null,
+      companyProfile,
     });
 
     const evidenceIds = scoring.evidenceCaptureIds.filter((id) => byId.has(id));

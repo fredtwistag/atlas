@@ -43,7 +43,41 @@ export type BuildSystemPromptOpts = {
   probesRemaining?: number | null;
   /** Compact "kind: summary" list of what this session has captured so far. */
   capturesSummary?: string | null;
+  /** Company context (CTX-4) to make the interview org-aware. Null when unknown. */
+  companyContext?: PromptCompanyContext | null;
 };
+
+/** The slice of the company profile the prompt uses (CTX-4). */
+export type PromptCompanyContext = {
+  summary: string | null;
+  industry: string | null;
+  keySystems: string[];
+  knownPains: string[];
+};
+
+/** Render the company-context block, or "" when there's nothing useful to say. */
+function companyContextBlock(
+  ctx: PromptCompanyContext | null | undefined,
+): string {
+  if (!ctx) return "";
+  const lines: string[] = [];
+  if (ctx.industry || ctx.summary) {
+    lines.push(
+      `CONTEXT ON THE BUSINESS: ${[ctx.industry, ctx.summary].filter(Boolean).join(" — ")}`,
+    );
+  }
+  if (ctx.keySystems.length > 0) {
+    lines.push(`Known systems in play: ${ctx.keySystems.join(", ")}.`);
+  }
+  if (ctx.knownPains.length > 0) {
+    lines.push(`Known pain areas to listen for: ${ctx.knownPains.join(", ")}.`);
+  }
+  if (lines.length === 0) return "";
+  lines.push(
+    "Use this only to ask sharper, specific questions — do not recite it back or assume it's complete.",
+  );
+  return lines.join("\n");
+}
 
 /** Arc-specific instruction appended to the system prompt (docs/03 §2, §3). */
 function arcInstruction(arc: Arc): string {
@@ -110,6 +144,8 @@ export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
     "",
     `You are running a conversational interview with ${opts.userName}, who works`,
     `in the ${dept} department.`,
+    "",
+    companyContextBlock(opts.companyContext),
     "",
     `CURRENT TOPIC: ${opts.topicTitle}`,
     opts.topicDescription ? opts.topicDescription : "",

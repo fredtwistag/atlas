@@ -187,6 +187,24 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
     expect(content).toContain("Account Executive $80/hr");
   });
 
+  it("includes the company profile in the prompt when provided (CTX-4)", async () => {
+    completeStructured.mockResolvedValue(fullScoring());
+    await scoreCluster({
+      theme: "T",
+      tenantName: "Northwind",
+      captures: [cap(ID.a), cap(ID.b)],
+      companyProfile: {
+        industry: "Wholesale distribution",
+        sizeBand: "200-500",
+      },
+    });
+    const content = completeStructured.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(content).toContain(
+      "BUSINESS PROFILE: Wholesale distribution, 200-500",
+    );
+  });
+
   it("falls back to the benchmark note when no cost basis is provided", async () => {
     completeStructured.mockResolvedValue(fullScoring());
     await scoreCluster({

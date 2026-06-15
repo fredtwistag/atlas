@@ -82,6 +82,32 @@ describe("buildSystemPrompt — arc sensitivity", () => {
   });
 });
 
+describe("buildSystemPrompt — company context (CTX-4)", () => {
+  it("renders industry, summary, systems and pains when provided", () => {
+    const p = buildSystemPrompt({
+      ...base,
+      role: "ic",
+      arc: "ARC_1",
+      companyContext: {
+        summary: "manual quoting slows enterprise deals",
+        industry: "Wholesale distribution",
+        keySystems: ["NetSuite", "Excel"],
+        knownPains: ["pricing approvals"],
+      },
+    });
+    expect(p).toContain("CONTEXT ON THE BUSINESS:");
+    expect(p).toContain("Wholesale distribution");
+    expect(p).toContain("Known systems in play: NetSuite, Excel.");
+    expect(p).toContain("Known pain areas to listen for: pricing approvals.");
+  });
+
+  it("omits the block entirely when there is no company context", () => {
+    const p = buildSystemPrompt({ ...base, role: "ic", arc: "ARC_1" });
+    expect(p).not.toContain("CONTEXT ON THE BUSINESS:");
+    expect(p).not.toContain("Known systems in play:");
+  });
+});
+
 describe("buildSystemPrompt — arc history, probe budget, captures", () => {
   it("renders arc history and probe budget inside an interview arc", () => {
     const p = buildSystemPrompt({

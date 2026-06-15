@@ -113,6 +113,15 @@ export function computeComposite(
   return Math.round(sum * 10) / 10;
 }
 
+/** One line of company profile to ground baselines (CTX-4), or "" when unknown. */
+function companyProfileLine(
+  profile: ScoreClusterOpts["companyProfile"],
+): string {
+  if (!profile) return "";
+  const bits = [profile.industry, profile.sizeBand].filter(Boolean);
+  return bits.length ? `BUSINESS PROFILE: ${bits.join(", ")}` : "";
+}
+
 /** A short note telling the scorer how dollar figures were grounded (EXT-2). */
 function costBasisNote(costBasis: CostBasis | null | undefined): string {
   const hasRates = costBasis && Object.keys(costBasis).length > 0;
@@ -168,6 +177,8 @@ export type ScoreClusterOpts = {
   tenantName: string;
   /** Per-role loaded hourly rates (USD). Null → benchmark default (EXT-2). */
   costBasis?: CostBasis | null;
+  /** Company profile to ground financial baselines (CTX-4). Null when unknown. */
+  companyProfile?: { industry: string | null; sizeBand: string | null } | null;
 };
 
 /**
@@ -227,13 +238,16 @@ export async function scoreCluster(
         role: "user",
         content: [
           `ORGANIZATION: ${opts.tenantName}`,
+          companyProfileLine(opts.companyProfile),
           `CANDIDATE THEME: ${opts.theme}`,
           "",
           costBasisNote(opts.costBasis),
           "",
           "SUPPORTING CAPTURES (attribute by role only, never by name):",
           captureBlock,
-        ].join("\n"),
+        ]
+          .filter((line) => line !== "")
+          .join("\n"),
       },
     ],
   });
