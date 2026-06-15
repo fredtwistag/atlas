@@ -13,6 +13,7 @@ import { MemberRow } from "@/components/manager/MemberRow";
 import { PendingInviteRow } from "@/components/manager/PendingInviteRow";
 import { ClientTabs } from "@/components/admin/ClientTabs";
 import { CompanyEditForm } from "@/components/admin/CompanyEditForm";
+import { CompanyContextPanel } from "@/components/admin/CompanyContextPanel";
 import { InviteMemberForm } from "@/components/admin/InviteMemberForm";
 import { CloseSprintButton } from "@/components/admin/CloseSprintButton";
 import { RecomputeButton } from "@/components/admin/RecomputeButton";
@@ -31,6 +32,9 @@ import {
   recomputeOpportunitiesAction,
   updateOpportunityAction,
   setOpportunityStatusAction,
+  enrichCompanyAction,
+  approveCompanyContextAction,
+  ingestDocumentAction,
 } from "./actions";
 
 export const metadata: Metadata = { title: "Client · Atlas admin" };
@@ -66,6 +70,9 @@ export default async function ClientDetailPage({
   const activity = await api.twistag
     .auditLog({ tenantId, includeReads: false, limit: 20 })
     .catch(() => ({ rows: [], nextCursor: null }));
+  const companyContext = await api.twistag
+    .companyContext({ tenantId })
+    .catch(() => null);
 
   const statusMeta = tenantStatusMeta[tenant.status] ?? {
     label: tenant.status,
@@ -83,6 +90,9 @@ export default async function ClientDetailPage({
   const onCancel = cancelInviteAction.bind(null, tenantId);
   const onUpdateOpp = updateOpportunityAction.bind(null, tenantId);
   const onSetOppStatus = setOpportunityStatusAction.bind(null, tenantId);
+  const onEnrich = enrichCompanyAction.bind(null, tenantId);
+  const onApproveContext = approveCompanyContextAction.bind(null, tenantId);
+  const onIngestDoc = ingestDocumentAction.bind(null, tenantId);
 
   const tabs = [
     {
@@ -116,6 +126,42 @@ export default async function ClientDetailPage({
             />
           </Card>
         </div>
+      ),
+    },
+    {
+      id: "context",
+      label: "Context",
+      content: (
+        <Card className="p-5">
+          <h2 className="mb-1 text-md font-semibold">Company context</h2>
+          <p className="mb-4 text-sm text-text-3">
+            Seed what Atlas knows about this company. Enrichment and ingested
+            docs land as a draft; approve it to start steering IC prompts and
+            scoring.
+          </p>
+          <CompanyContextPanel
+            context={
+              companyContext
+                ? {
+                    status: companyContext.status,
+                    summary: companyContext.summary,
+                    industry: companyContext.industry,
+                    businessModel: companyContext.businessModel,
+                    sizeBand: companyContext.sizeBand,
+                    revenueBand: companyContext.revenueBand,
+                    maturity: companyContext.maturity,
+                    keySystems: companyContext.keySystems ?? [],
+                    knownPains: companyContext.knownPains ?? [],
+                    sources: companyContext.sources,
+                    enrichedBy: companyContext.enrichedBy,
+                  }
+                : null
+            }
+            onEnrich={onEnrich}
+            onIngest={onIngestDoc}
+            onApprove={onApproveContext}
+          />
+        </Card>
       ),
     },
     {
