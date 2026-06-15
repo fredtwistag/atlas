@@ -64,6 +64,16 @@ export const deliveryMeta: Record<
   configure: { label: "Configure", tone: "outline" },
 };
 
+/** Adoption-risk band → chip (Ticket E). */
+export const adoptionRiskMeta: Record<
+  "low" | "medium" | "high",
+  { label: string; tone: BadgeTone }
+> = {
+  low: { label: "Low resistance", tone: "success" },
+  medium: { label: "Some resistance", tone: "warning" },
+  high: { label: "High resistance", tone: "danger" },
+};
+
 /**
  * Tenant lifecycle status → badge. `status` is free text in the DB, so callers
  * fall back to `{ label: status, tone: "neutral" }` for anything unmapped.

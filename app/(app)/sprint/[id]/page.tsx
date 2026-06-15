@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { TeamProgress } from "@/components/manager/TeamProgress";
+import { AdoptionRiskHeatmap } from "@/components/manager/AdoptionRiskHeatmap";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
@@ -44,10 +45,11 @@ export default async function ManagerDashboard({
 
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();
-  const [p, opps, activity] = await Promise.all([
+  const [p, opps, activity, adoptionRisk] = await Promise.all([
     api.sprint.progress({ id }),
     api.opportunity.listForSprint({ sprintId: id }),
     api.sprint.activity({ id }),
+    api.sprint.adoptionRisk({ id }),
   ]);
 
   const stats: {
@@ -148,6 +150,12 @@ export default async function ManagerDashboard({
             Team progress
           </h2>
           <TeamProgress sprintId={id} participants={sprint.participants} />
+
+          {/* Adoption risk by department (Ticket E) */}
+          <h2 className="mb-3 mt-6 px-1 text-sm font-semibold text-text-2">
+            Adoption risk by department
+          </h2>
+          <AdoptionRiskHeatmap rows={adoptionRisk} />
 
           {/* Activity feed */}
           <h2 className="mb-3 mt-6 px-1 text-sm font-semibold text-text-2">
