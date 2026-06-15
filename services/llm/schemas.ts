@@ -206,3 +206,22 @@ export const portfolioNarrative = z.object({
 });
 
 export type PortfolioNarrative = z.infer<typeof portfolioNarrative>;
+
+/**
+ * Current-state systems inventory (Ticket F): cluster `tooling` + `workaround`
+ * captures into named systems, each categorized as an official `system`, an
+ * unofficial `shadow_tool`, or a missing `integration_gap`.
+ */
+export const systemInventoryItem = z.object({
+  name: z.string().min(2).max(80),
+  category: z.enum(["system", "shadow_tool", "integration_gap"]),
+  summary: z.string().min(10).max(400),
+  captureIds: z.array(z.string().uuid()).min(1),
+});
+
+export const systemsInventory = z.object({
+  items: z.array(systemInventoryItem),
+});
+
+export type SystemsInventory = z.infer<typeof systemsInventory>;
+export type SystemInventoryItem = z.infer<typeof systemInventoryItem>;

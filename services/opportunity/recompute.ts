@@ -11,12 +11,18 @@ import {
   opportunityEvidence,
   portfolios,
   portfolioItems,
+  systemInventoryItems,
+  systemInventoryEvidence,
 } from "@/db/schema";
 import {
   selectPortfolio,
   writePortfolioNarrative,
   type PortfolioCandidate,
 } from "@/services/synthesis/portfolio";
+import {
+  clusterSystems,
+  type SystemCapture,
+} from "@/services/synthesis/systems";
 import {
   DIMENSION_LABELS,
   scoreCluster,
@@ -435,6 +441,17 @@ async function runRecompute(
       })),
   });
 
+  // --- current-state systems inventory (Ticket F) --------------------------
+  await buildSystemsInventory(tx, {
+    tenantId,
+    sprintId,
+    captures: captureRows.map((c) => ({
+      id: c.id,
+      kind: c.kind,
+      summary: c.summary,
+    })),
+  });
+
   return {
     sprintId,
     capturesConsidered: captureRows.length,
@@ -445,6 +462,52 @@ async function runRecompute(
     surfaced: surfacedKeys.size,
     skippedApproved,
   };
+}
+
+/**
+ * Cluster tooling/workaround captures into a categorized systems inventory and
+ * persist it (Ticket F). Idempotent: the sprint's existing items are deleted
+ * (cascading evidence) and rebuilt. A clustering failure degrades to leaving
+ * the prior inventory in place (best-effort, never fails recompute).
+ */
+async function buildSystemsInventory(
+  tx: Db,
+  opts: { tenantId: string; sprintId: string; captures: SystemCapture[] },
+): Promise<void> {
+  let items;
+  try {
+    items = await clusterSystems(opts.captures);
+  } catch {
+    return; // best-effort
+  }
+  if (items.length === 0) return;
+
+  // Replace the sprint's inventory (cascade clears evidence).
+  await tx
+    .delete(systemInventoryItems)
+    .where(eq(systemInventoryItems.sprintId, opts.sprintId));
+
+  for (const item of items) {
+    const [row] = await tx
+      .insert(systemInventoryItems)
+      .values({
+        tenantId: opts.tenantId,
+        sprintId: opts.sprintId,
+        name: item.name,
+        category: item.category,
+        summary: item.summary,
+      })
+      .returning({ id: systemInventoryItems.id });
+    if (item.captureIds.length > 0) {
+      await tx.insert(systemInventoryEvidence).values(
+        item.captureIds.map((captureId) => ({
+          tenantId: opts.tenantId,
+          itemId: row.id,
+          captureId,
+        })),
+      );
+    }
+  }
 }
 
 /**

@@ -16,6 +16,7 @@ import {
   loadSprint,
   loadSprintProgress,
   loadSprintPortfolio,
+  loadSystemsInventory,
 } from "@/lib/sprint-read";
 import { computeAdoptionRisk } from "@/lib/adoption-risk";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
@@ -311,6 +312,15 @@ export const sprintRouter = router({
     .input(idInput)
     .query(({ ctx, input }) =>
       withTenantContext(ctx.session, (tx) => loadSprintPortfolio(tx, input.id)),
+    ),
+
+  /** Current-state systems & shadow-IT inventory for a sprint (Ticket F). */
+  systemsInventory: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) =>
+        loadSystemsInventory(tx, input.id),
+      ),
     ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>

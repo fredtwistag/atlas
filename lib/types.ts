@@ -194,6 +194,16 @@ export interface SprintPortfolio {
   items: PortfolioEntry[];
 }
 
+/** A current-state system / shadow tool / integration gap (Ticket F). */
+export type SystemCategory = "system" | "shadow_tool" | "integration_gap";
+
+export interface SystemInventoryEntry {
+  id: string;
+  name: string;
+  category: SystemCategory;
+  summary: string;
+}
+
 export interface SowDraft {
   title: string;
   scope: string;

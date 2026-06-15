@@ -74,6 +74,16 @@ export const adoptionRiskMeta: Record<
   high: { label: "High resistance", tone: "danger" },
 };
 
+/** Systems-inventory category → chip (Ticket F). */
+export const systemCategoryMeta: Record<
+  "system" | "shadow_tool" | "integration_gap",
+  { label: string; tone: BadgeTone }
+> = {
+  system: { label: "Official system", tone: "neutral" },
+  shadow_tool: { label: "Shadow tool", tone: "warning" },
+  integration_gap: { label: "Integration gap", tone: "danger" },
+};
+
 /**
  * Tenant lifecycle status → badge. `status` is free text in the DB, so callers
  * fall back to `{ label: status, tone: "neutral" }` for anything unmapped.

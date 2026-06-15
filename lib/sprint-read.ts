@@ -23,6 +23,7 @@ import {
   captures,
   portfolios,
   portfolioItems,
+  systemInventoryItems,
 } from "@/db/schema";
 import {
   computeProgress,
@@ -36,6 +37,7 @@ import type {
   Opportunity,
   SprintPortfolio,
   PortfolioEntry,
+  SystemInventoryEntry,
 } from "./types";
 
 const DAY = 86_400_000;
@@ -276,4 +278,27 @@ export async function loadSprintPortfolio(
       inclusionRationale: r.inclusionRationale,
     })),
   };
+}
+
+/** Current-state systems inventory for a sprint (Ticket F). */
+export async function loadSystemsInventory(
+  tx: Db,
+  sprintId: string,
+): Promise<SystemInventoryEntry[]> {
+  const rows = await tx
+    .select({
+      id: systemInventoryItems.id,
+      name: systemInventoryItems.name,
+      category: systemInventoryItems.category,
+      summary: systemInventoryItems.summary,
+    })
+    .from(systemInventoryItems)
+    .where(eq(systemInventoryItems.sprintId, sprintId))
+    .orderBy(systemInventoryItems.category);
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    category: r.category as SystemInventoryEntry["category"],
+    summary: r.summary,
+  }));
 }

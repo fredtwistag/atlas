@@ -384,6 +384,43 @@ export const portfolioItems = pgTable(
   }),
 );
 
+/**
+ * Current-state systems & shadow-IT inventory (Ticket F): tooling/workaround
+ * captures clustered into named systems. Service-role writes (recompute);
+ * tenant read (see 0015 RLS).
+ */
+export const systemInventoryItems = pgTable("system_inventory_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const systemInventoryEvidence = pgTable(
+  "system_inventory_evidence",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => systemInventoryItems.id, { onDelete: "cascade" }),
+    captureId: uuid("capture_id")
+      .notNull()
+      .references(() => captures.id),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.itemId, t.captureId] }) }),
+);
+
 export const sowDrafts = pgTable("sow_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
