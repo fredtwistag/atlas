@@ -73,7 +73,15 @@ describe("log", () => {
       }),
     );
     expect(Object.keys(parsed).sort()).toEqual(
-      ["captured", "configured", "event", "level", "sessionId", "tenantId", "userId"].sort(),
+      [
+        "captured",
+        "configured",
+        "event",
+        "level",
+        "sessionId",
+        "tenantId",
+        "userId",
+      ].sort(),
     );
     // No value is an object/array — everything is a scalar.
     for (const v of Object.values(parsed)) {

@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { completeStructured } from "@/services/llm/client";
-import {
-  captureExtraction,
-  type CapturedItem,
-} from "@/services/llm/schemas";
+import { captureExtraction, type CapturedItem } from "@/services/llm/schemas";
 
 /**
  * Capture extraction (plan 014): turn raw user turns into Zod-validated captures.

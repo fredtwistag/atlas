@@ -86,9 +86,7 @@ async function seedCaptures() {
       },
     ]),
   );
-  await seedRow((tx) =>
-    tx.insert(sprints).values(sprintRow()),
-  );
+  await seedRow((tx) => tx.insert(sprints).values(sprintRow()));
   await seedRow((tx) =>
     tx.insert(sessions).values({
       id: SESSION,
@@ -307,9 +305,7 @@ describe("recompute — empty/thin sprints", () => {
     await withServiceRoleRaw((tx) =>
       tx
         .delete(captures)
-        .where(
-          and(eq(captures.sessionId, SESSION), eq(captures.userId, U2)),
-        ),
+        .where(and(eq(captures.sessionId, SESSION), eq(captures.userId, U2))),
     );
     await withServiceRoleRaw((tx) =>
       tx.delete(captures).where(eq(captures.id, CAP3)),

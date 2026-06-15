@@ -51,11 +51,7 @@ describe("DigestEmail", () => {
 
   it("renders the manager digest with the dashboard CTA", async () => {
     const html = await render(
-      <DigestEmail
-        audience="manager"
-        {...base}
-        ctaUrl="https://atlas.test/"
-      />,
+      <DigestEmail audience="manager" {...base} ctaUrl="https://atlas.test/" />,
     );
     expect(html).toContain("Open the dashboard");
     expect(html).toContain("Ops Discovery");

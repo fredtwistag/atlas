@@ -15,7 +15,11 @@ import { setNudgePreference } from "@/app/(app)/me/actions";
  * Default on (allow). When off, manager nudges and system idle reminders skip
  * this person entirely.
  */
-export function NudgePreferenceToggle({ initialAllow }: { initialAllow: boolean }) {
+export function NudgePreferenceToggle({
+  initialAllow,
+}: {
+  initialAllow: boolean;
+}) {
   const [allow, setAllow] = useState(initialAllow);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -41,9 +41,9 @@ describe("NudgePreferenceToggle (plan 025)", () => {
     const matches = await screen.findAllByText(/nudges are off/i);
     expect(matches.length).toBeGreaterThan(0);
     // One of them is the aria-live status region.
-    expect(
-      matches.some((el) => el.getAttribute("role") === "status"),
-    ).toBe(true);
+    expect(matches.some((el) => el.getAttribute("role") === "status")).toBe(
+      true,
+    );
   });
 
   it("turning on calls the action with true", async () => {
@@ -63,7 +63,10 @@ describe("NudgePreferenceToggle (plan 025)", () => {
   });
 
   it("reverts the toggle and shows an error when the save fails", async () => {
-    setNudgePreference.mockResolvedValue({ ok: false, error: "Couldn't save." });
+    setNudgePreference.mockResolvedValue({
+      ok: false,
+      error: "Couldn't save.",
+    });
     const user = userEvent.setup();
     render(<NudgePreferenceToggle initialAllow={true} />);
 
@@ -76,6 +79,8 @@ describe("NudgePreferenceToggle (plan 025)", () => {
         "true",
       ),
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /couldn't save/i,
+    );
   });
 });

@@ -18,10 +18,7 @@ import {
   loadSprintProgress,
   listSprintOpportunities,
 } from "@/lib/sprint-read";
-import {
-  updateOpportunity,
-  setOpportunityStatus,
-} from "@/lib/twistag-admin";
+import { updateOpportunity, setOpportunityStatus } from "@/lib/twistag-admin";
 import { recompute as recomputeOpportunities } from "@/services/opportunity/recompute";
 import type { ClientSummary } from "@/lib/types";
 

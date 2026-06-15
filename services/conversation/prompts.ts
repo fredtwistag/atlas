@@ -91,9 +91,7 @@ function arcInstruction(arc: Arc): string {
 export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
   const idx = arcIndex(opts.arc);
   const arcLabel =
-    idx === null
-      ? arcName(opts.arc)
-      : `ARC ${idx} of 4: ${arcName(opts.arc)}`;
+    idx === null ? arcName(opts.arc) : `ARC ${idx} of 4: ${arcName(opts.arc)}`;
   const dept = opts.department ?? "their";
 
   return [

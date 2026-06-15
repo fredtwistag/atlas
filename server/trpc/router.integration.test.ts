@@ -31,12 +31,17 @@ vi.mock("@/services/llm/client", async (orig) => {
 // sending email inline. Mock `inngest.send` so the tRPC-level tests assert the
 // enqueue (payload) without any worker/network plumbing. The worker BODIES are
 // tested directly in services/jobs/functions/jobs.integration.test.ts.
-const inngestSend = vi.fn(async (..._a: unknown[]) => ({ ids: [] as string[] }));
+const inngestSend = vi.fn(async (..._a: unknown[]) => ({
+  ids: [] as string[],
+}));
 vi.mock("@/services/jobs/client", async (orig) => {
   const actual = await orig<typeof import("@/services/jobs/client")>();
   return {
     ...actual,
-    inngest: { ...actual.inngest, send: (...a: unknown[]) => inngestSend(...a) },
+    inngest: {
+      ...actual.inngest,
+      send: (...a: unknown[]) => inngestSend(...a),
+    },
   };
 });
 
@@ -989,7 +994,9 @@ describe("opportunity.get evidence (isRemoved filter)", () => {
   });
 
   it("excludes removed captures from rendered evidence", async () => {
-    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({ id: OPP_ID });
+    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({
+      id: OPP_ID,
+    });
     const summaries = opp.evidence.map((e) => e.summary);
     expect(summaries).toContain("Kept evidence");
     expect(summaries).not.toContain("Removed evidence");
@@ -1004,7 +1011,9 @@ describe("opportunity.get evidence (isRemoved filter)", () => {
   // appear nowhere, while the role still does. If anyone re-adds users.name to
   // the evidence select (try it — the test goes red), this catches it.
   it("opportunity.get evidence carries the contributor ROLE, never the name/email", async () => {
-    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({ id: OPP_ID });
+    const opp = await asManager(TENANT_A, MGR_A).opportunity.get({
+      id: OPP_ID,
+    });
 
     // The role survives (so the manager knows who-shaped the evidence is)…
     expect(opp.evidence[0]?.contributorRole).toBe("Ops Analyst");
@@ -1437,9 +1446,7 @@ describe("session.start / session.sendMessage (conversation engine)", () => {
   });
 
   it("maps a missing ANTHROPIC_API_KEY to a clear PRECONDITION_FAILED", async () => {
-    llmComplete.mockRejectedValueOnce(
-      new LlmNotConfiguredError(),
-    );
+    llmComplete.mockRejectedValueOnce(new LlmNotConfiguredError());
     await expect(
       asIc(TENANT_A, CUSER).session.start({ id: CSES }),
     ).rejects.toThrow(/ANTHROPIC_API_KEY/);

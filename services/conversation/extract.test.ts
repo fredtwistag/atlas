@@ -77,9 +77,7 @@ describe("extractFromTurn", () => {
 
   it("matches quotes case-insensitively and across collapsed whitespace", async () => {
     completeStructured.mockResolvedValue({
-      captures: [
-        item({ sourceQuote: "RE-KEY  the   quote\nby hand" }),
-      ],
+      captures: [item({ sourceQuote: "RE-KEY  the   quote\nby hand" })],
     });
 
     const out = await extractFromTurn({
@@ -141,7 +139,10 @@ describe("extractFromSession", () => {
         { role: "assistant", content: "Walk me through it." },
         { role: "user", content: "First we draft the quote." },
         { role: "assistant", content: "And exceptions?" },
-        { role: "user", content: "When it breaks we escalate to finance on Slack." },
+        {
+          role: "user",
+          content: "When it breaks we escalate to finance on Slack.",
+        },
       ],
     });
 

@@ -27,12 +27,17 @@ vi.mock("@/services/conversation/extract", () => ({
 // the worker). Mock `inngest.send` so the default path doesn't touch the network
 // and we can assert the emit. Tests that exercise the INLINE fallback set
 // ATLAS_INLINE_SESSION_EXTRACTION=1 (see below).
-const inngestSend = vi.fn(async (..._a: unknown[]) => ({ ids: [] as string[] }));
+const inngestSend = vi.fn(async (..._a: unknown[]) => ({
+  ids: [] as string[],
+}));
 vi.mock("@/services/jobs/client", async (orig) => {
   const actual = await orig<typeof import("@/services/jobs/client")>();
   return {
     ...actual,
-    inngest: { ...actual.inngest, send: (...a: unknown[]) => inngestSend(...a) },
+    inngest: {
+      ...actual.inngest,
+      send: (...a: unknown[]) => inngestSend(...a),
+    },
   };
 });
 

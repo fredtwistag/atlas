@@ -1,7 +1,13 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { log } from "@/lib/log";
-import { captures, sessions, sessionMessages, topics, users } from "@/db/schema";
+import {
+  captures,
+  sessions,
+  sessionMessages,
+  topics,
+  users,
+} from "@/db/schema";
 import {
   complete,
   LlmNotConfiguredError,
@@ -11,10 +17,7 @@ import {
 import type { CapturedItem } from "@/services/llm/schemas";
 import { nextArc, isDone, type Arc } from "./state";
 import { extractFromTurn } from "./extract";
-import {
-  buildSystemPrompt,
-  type ConversationRole,
-} from "./prompts";
+import { buildSystemPrompt, type ConversationRole } from "./prompts";
 
 /**
  * The conversation engine: one user turn → one assistant reply, persisted.
@@ -72,9 +75,7 @@ function userTurnsInArc(
  * we take the arc of the latest assistant message, count the user turns spent
  * in it, and advance per the state machine.
  */
-function arcForNextTurn(
-  history: { role: string; arc: string }[],
-): Arc {
+function arcForNextTurn(history: { role: string; arc: string }[]): Arc {
   const lastAssistant = [...history]
     .reverse()
     .find((m) => m.role === "assistant");
@@ -242,10 +243,7 @@ async function extractAndPersist(
     // Extraction is best-effort: a turn whose reply already succeeded must not
     // fail because extraction produced bad output (LlmOutputError) or isn't
     // configured (LlmNotConfiguredError). Anything else is a real bug — rethrow.
-    if (
-      err instanceof LlmOutputError ||
-      err instanceof LlmNotConfiguredError
-    ) {
+    if (err instanceof LlmOutputError || err instanceof LlmNotConfiguredError) {
       // Count-only: never the message, never the quote. This is the expected
       // best-effort path (bad/absent extraction), so it's a structured warn, not
       // a Sentry capture — the underlying LLM transport failure, if any, was

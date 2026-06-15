@@ -12,13 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { withServiceRole, withTenantContext } from "@/db/client";
-import {
-  tenants,
-  users,
-  sprints,
-  topics,
-  sessions,
-} from "@/db/schema";
+import { tenants, users, sprints, topics, sessions } from "@/db/schema";
 import { openSession, takeTurn } from "@/services/conversation/engine";
 
 const TOPIC_TITLE = "Quote-to-cash handoffs";
@@ -159,8 +153,16 @@ async function main() {
         ok: true,
         latencyMs: timings,
         openerArc: opener.arc,
-        replyA: { arc: replyA.arc, done: replyA.done, chars: replyA.assistant.length },
-        replyB: { arc: replyB.arc, done: replyB.done, chars: replyB.assistant.length },
+        replyA: {
+          arc: replyA.arc,
+          done: replyA.done,
+          chars: replyA.assistant.length,
+        },
+        replyB: {
+          arc: replyB.arc,
+          done: replyB.done,
+          chars: replyB.assistant.length,
+        },
         repliesDiffer: differ,
         openerReferencesTopic: openerRefsTopic,
       },

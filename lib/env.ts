@@ -96,7 +96,12 @@ function schemaFor(prod: boolean) {
     });
   }
   return z
-    .object({ ...alwaysRequired, ...observability, ...inngestKeys, ...prodOnly })
+    .object({
+      ...alwaysRequired,
+      ...observability,
+      ...inngestKeys,
+      ...prodOnly,
+    })
     .refine((e) => e.DATABASE_URL.includes(":6543"), {
       path: ["DATABASE_URL"],
       message:

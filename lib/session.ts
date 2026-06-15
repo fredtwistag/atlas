@@ -51,49 +51,51 @@ function roleTitle(role: string): string {
  * resolution per request (the layout and most pages each call this) — collapses
  * the duplicate getUser()/getSession() round-trips and the profile DB read.
  */
-export const getCurrentUser = cache(async function getCurrentUser(): Promise<SessionUser> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+export const getCurrentUser = cache(
+  async function getCurrentUser(): Promise<SessionUser> {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect("/sign-in");
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const claims = parseClaims(decodeJwtPayload(session?.access_token ?? ""));
-  if (!claims) redirect("/sign-in?error=no-access");
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const claims = parseClaims(decodeJwtPayload(session?.access_token ?? ""));
+    if (!claims) redirect("/sign-in?error=no-access");
 
-  const email = user.email ?? "";
+    const email = user.email ?? "";
 
-  if (claims.kind === "twistag") {
-    const rows = await withServiceRole(
-      { action: "session.read", actor: user.id },
-      (tx) =>
-        tx.select().from(twistagUsers).where(eq(twistagUsers.email, email)),
+    if (claims.kind === "twistag") {
+      const rows = await withServiceRole(
+        { action: "session.read", actor: user.id },
+        (tx) =>
+          tx.select().from(twistagUsers).where(eq(twistagUsers.email, email)),
+      );
+      const t = rows[0];
+      return {
+        id: t?.id ?? user.id,
+        email,
+        name: t?.name ?? "Twistag",
+        title: twistagTitle(claims.twistagRole),
+        role: claims.twistagRole,
+        kind: "twistag",
+      };
+    }
+
+    const rows = await withTenantContext(claims, (tx) =>
+      tx.select().from(users).where(eq(users.id, claims.userId)),
     );
-    const t = rows[0];
+    const u = rows[0];
     return {
-      id: t?.id ?? user.id,
+      id: claims.userId,
       email,
-      name: t?.name ?? "Twistag",
-      title: twistagTitle(claims.twistagRole),
-      role: claims.twistagRole,
-      kind: "twistag",
+      name: u?.name ?? email,
+      title: u?.title ?? roleTitle(claims.role),
+      role: claims.role,
+      kind: "tenant",
+      tenantId: claims.tenantId,
     };
-  }
-
-  const rows = await withTenantContext(claims, (tx) =>
-    tx.select().from(users).where(eq(users.id, claims.userId)),
-  );
-  const u = rows[0];
-  return {
-    id: claims.userId,
-    email,
-    name: u?.name ?? email,
-    title: u?.title ?? roleTitle(claims.role),
-    role: claims.role,
-    kind: "tenant",
-    tenantId: claims.tenantId,
-  };
-});
+  },
+);

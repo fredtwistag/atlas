@@ -30,7 +30,8 @@ import type { ErrorEvent, EventHint } from "@sentry/nextjs";
  */
 
 /** Keys whose VALUES may carry conversation content or PII — scrubbed everywhere. */
-const SENSITIVE_KEY = /content|message|summary|sourcequote|source_quote|quote|transcript|email|body|prompt|completion|token|password|secret|apikey|api_key|authorization/i;
+const SENSITIVE_KEY =
+  /content|message|summary|sourcequote|source_quote|quote|transcript|email|body|prompt|completion|token|password|secret|apikey|api_key|authorization/i;
 
 const REDACTED = "[redacted]";
 
@@ -85,8 +86,10 @@ export function scrubEvent(event: ErrorEvent, _hint?: EventHint): ErrorEvent {
 
   // 3. Scrub our own attached data by key name.
   if (event.extra) event.extra = scrubBag(event.extra as Bag);
-  if (event.contexts) event.contexts = scrubBag(event.contexts as Bag) as ErrorEvent["contexts"];
-  if (event.tags) event.tags = scrubBag(event.tags as Bag) as ErrorEvent["tags"];
+  if (event.contexts)
+    event.contexts = scrubBag(event.contexts as Bag) as ErrorEvent["contexts"];
+  if (event.tags)
+    event.tags = scrubBag(event.tags as Bag) as ErrorEvent["tags"];
 
   // 4. Breadcrumbs: keep the category/message-slug shape but scrub their data
   //    bags. (Our breadcrumb messages are content-free slugs by convention; the

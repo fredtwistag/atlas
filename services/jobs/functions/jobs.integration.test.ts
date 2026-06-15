@@ -13,14 +13,20 @@ vi.mock("@/services/email/send", () => ({
 
 // Mock the invite-link generator (it would hit Supabase admin otherwise).
 vi.mock("@/services/email/invite-link", () => ({
-  generateInviteLink: vi.fn(async (email: string) => `https://atlas.test/c/${email}`),
+  generateInviteLink: vi.fn(
+    async (email: string) => `https://atlas.test/c/${email}`,
+  ),
 }));
 
 // Mock the LLM extraction so the session-completion job runs deterministically.
 const extractFromSessionMock = vi.fn(async () => [] as unknown[]);
 vi.mock("@/services/conversation/extract", async (orig) => {
   const actual = await orig<typeof import("@/services/conversation/extract")>();
-  return { ...actual, extractFromSession: (...a: unknown[]) => extractFromSessionMock(...(a as [])) };
+  return {
+    ...actual,
+    extractFromSession: (...a: unknown[]) =>
+      extractFromSessionMock(...(a as [])),
+  };
 });
 
 import { runNudgeSend } from "./nudge-send";
@@ -54,7 +60,11 @@ const SPRINT_A = "33333333-3333-4333-8333-3333333333a1";
 const MGR = "44444444-4444-4444-8444-44444444a001";
 const IC = "44444444-4444-4444-8444-44444444a002";
 
-function sprintRow(id: string, tenantId: string, over: Record<string, unknown> = {}) {
+function sprintRow(
+  id: string,
+  tenantId: string,
+  over: Record<string, unknown> = {},
+) {
   return {
     id,
     tenantId,
@@ -102,7 +112,9 @@ beforeEach(async () => {
       },
     ]),
   );
-  await seedRow((tx) => tx.insert(sprints).values(sprintRow(SPRINT_A, TENANT_A)));
+  await seedRow((tx) =>
+    tx.insert(sprints).values(sprintRow(SPRINT_A, TENANT_A)),
+  );
 });
 
 describe("runNudgeSend (Step 2 worker body)", () => {
@@ -231,7 +243,10 @@ describe("invite-send (Step 3 worker body)", () => {
   });
 
   it("loads only IC participants, plus org/inviter/topics context", async () => {
-    const ctx = await loadInviteContext({ sprintId: SPRINT_A, tenantId: TENANT_A });
+    const ctx = await loadInviteContext({
+      sprintId: SPRINT_A,
+      tenantId: TENANT_A,
+    });
     expect(ctx.ics.map((i) => i.email)).toEqual(["ic@a.example"]);
     expect(ctx.orgName).toBe("Tenant A");
     expect(ctx.inviterName).toBe("Mgr A");
@@ -239,7 +254,10 @@ describe("invite-send (Step 3 worker body)", () => {
   });
 
   it("sends one invite email per IC", async () => {
-    const ctx = await loadInviteContext({ sprintId: SPRINT_A, tenantId: TENANT_A });
+    const ctx = await loadInviteContext({
+      sprintId: SPRINT_A,
+      tenantId: TENANT_A,
+    });
     await sendInvite(ctx.ics[0], ctx);
     expect(sendEmailMock).toHaveBeenCalledTimes(1);
   });
@@ -355,13 +373,11 @@ describe("runRecompute (Steps 4/6 — LLM-key guard)", () => {
 
   it("loadActiveSprints returns only active sprints", async () => {
     await seedRow((tx) =>
-      tx
-        .insert(sprints)
-        .values(
-          sprintRow("33333333-3333-4333-8333-3333333333c1", TENANT_A, {
-            status: "completed",
-          }),
-        ),
+      tx.insert(sprints).values(
+        sprintRow("33333333-3333-4333-8333-3333333333c1", TENANT_A, {
+          status: "completed",
+        }),
+      ),
     );
     const active = await loadActiveSprints();
     const ids = active.map((s) => s.id);
@@ -462,7 +478,10 @@ describe("buildSprintDigest (Step 5 — dashboard-identical numbers)", () => {
   });
 
   it("returns null for a sprint in another tenant", async () => {
-    const data = await buildSprintDigest(SPRINT_A, "00000000-0000-0000-0000-00000000000b");
+    const data = await buildSprintDigest(
+      SPRINT_A,
+      "00000000-0000-0000-0000-00000000000b",
+    );
     expect(data).toBeNull();
   });
 });

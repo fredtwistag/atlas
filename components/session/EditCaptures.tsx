@@ -135,7 +135,9 @@ export function EditCaptures({
         <p className="mb-6 text-md text-text-2">
           This is what Atlas captured from your session. Edit anything
           that&apos;s off, or remove what you&apos;d rather not share.{" "}
-          <span className="text-text-3">Editable until {editWindowEndsAt}.</span>
+          <span className="text-text-3">
+            Editable until {editWindowEndsAt}.
+          </span>
         </p>
       ) : (
         <p className="mb-6 text-md text-text-2">

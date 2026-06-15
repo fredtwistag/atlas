@@ -234,8 +234,16 @@ describe("takeTurn", () => {
 
     // Result carries {id, kind, summary} for plan 015.
     expect(res.captures).toEqual([
-      { id: "cap-0", kind: "bottleneck", summary: "Re-keys the quote by hand." },
-      { id: "cap-1", kind: "tooling", summary: "Uses a spreadsheet to track it." },
+      {
+        id: "cap-0",
+        kind: "bottleneck",
+        summary: "Re-keys the quote by hand.",
+      },
+      {
+        id: "cap-1",
+        kind: "tooling",
+        summary: "Uses a spreadsheet to track it.",
+      },
     ]);
 
     // captureCount bumped (the second update; first is messages_count).
