@@ -204,6 +204,18 @@ export interface SystemInventoryEntry {
   summary: string;
 }
 
+/** A role-level stakeholder in the sprint's approval/adoption chain (Ticket B). */
+export type StakeholderType = "decision_maker" | "blocker" | "adopter";
+
+export interface StakeholderEntry {
+  id: string;
+  roleLabel: string;
+  department: string | null;
+  type: StakeholderType;
+  summary: string;
+  gatedOpportunityIds: string[];
+}
+
 export interface SowDraft {
   title: string;
   scope: string;

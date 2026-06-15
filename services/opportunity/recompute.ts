@@ -13,6 +13,8 @@ import {
   portfolioItems,
   systemInventoryItems,
   systemInventoryEvidence,
+  stakeholders,
+  stakeholderOpportunity,
 } from "@/db/schema";
 import {
   selectPortfolio,
@@ -23,6 +25,11 @@ import {
   clusterSystems,
   type SystemCapture,
 } from "@/services/synthesis/systems";
+import {
+  mapStakeholders,
+  type StakeholderCapture,
+  type StakeholderOpportunity,
+} from "@/services/synthesis/stakeholders";
 import {
   DIMENSION_LABELS,
   scoreCluster,
@@ -452,6 +459,21 @@ async function runRecompute(
     })),
   });
 
+  // --- stakeholder map (Ticket B) ------------------------------------------
+  await buildStakeholderMap(tx, {
+    tenantId,
+    sprintId,
+    captures: captureRows.map((c) => ({
+      kind: c.kind,
+      summary: c.summary,
+      role: c.role ?? "Contributor",
+    })),
+    opportunities: finalCandidates
+      .filter((c) => idByKey.has(c.key))
+      .map((c) => ({ id: idByKey.get(c.key)!, title: c.title })),
+    roles: captureRows.map((c) => c.role ?? "Contributor"),
+  });
+
   return {
     sprintId,
     capturesConsidered: captureRows.length,
@@ -470,6 +492,59 @@ async function runRecompute(
  * (cascading evidence) and rebuilt. A clustering failure degrades to leaving
  * the prior inventory in place (best-effort, never fails recompute).
  */
+/**
+ * Derive + persist the stakeholder map (Ticket B). Best-effort (a failure
+ * leaves the prior map); idempotent — the sprint's stakeholders are replaced
+ * (cascading the opportunity join). Role labels only, never names.
+ */
+async function buildStakeholderMap(
+  tx: Db,
+  opts: {
+    tenantId: string;
+    sprintId: string;
+    captures: StakeholderCapture[];
+    opportunities: StakeholderOpportunity[];
+    roles: string[];
+  },
+): Promise<void> {
+  let mapped;
+  try {
+    mapped = await mapStakeholders({
+      captures: opts.captures,
+      opportunities: opts.opportunities,
+      roles: opts.roles,
+    });
+  } catch {
+    return; // best-effort
+  }
+  if (mapped.length === 0) return;
+
+  await tx.delete(stakeholders).where(eq(stakeholders.sprintId, opts.sprintId));
+
+  for (const s of mapped) {
+    const [row] = await tx
+      .insert(stakeholders)
+      .values({
+        tenantId: opts.tenantId,
+        sprintId: opts.sprintId,
+        roleLabel: s.roleLabel,
+        department: s.department,
+        type: s.type,
+        summary: s.summary,
+      })
+      .returning({ id: stakeholders.id });
+    if (s.gatedOpportunityIds.length > 0) {
+      await tx.insert(stakeholderOpportunity).values(
+        s.gatedOpportunityIds.map((opportunityId) => ({
+          tenantId: opts.tenantId,
+          stakeholderId: row.id,
+          opportunityId,
+        })),
+      );
+    }
+  }
+}
+
 async function buildSystemsInventory(
   tx: Db,
   opts: { tenantId: string; sprintId: string; captures: SystemCapture[] },

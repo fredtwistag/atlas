@@ -17,6 +17,7 @@ import {
   loadSprintProgress,
   loadSprintPortfolio,
   loadSystemsInventory,
+  loadStakeholders,
 } from "@/lib/sprint-read";
 import { computeAdoptionRisk } from "@/lib/adoption-risk";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
@@ -321,6 +322,13 @@ export const sprintRouter = router({
       withTenantContext(ctx.session, (tx) =>
         loadSystemsInventory(tx, input.id),
       ),
+    ),
+
+  /** Stakeholder map for a sprint (Ticket B). Role labels only. */
+  stakeholders: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadStakeholders(tx, input.id)),
     ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>

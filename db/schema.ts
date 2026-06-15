@@ -421,6 +421,44 @@ export const systemInventoryEvidence = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.itemId, t.captureId] }) }),
 );
 
+/**
+ * Stakeholder map (Ticket B): role-level stakeholders per sprint + the
+ * opportunities each gates. Role labels only (never names). Service-role
+ * writes; tenant read (see 0016 RLS).
+ */
+export const stakeholders = pgTable("stakeholders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  roleLabel: text("role_label").notNull(),
+  department: text("department"),
+  type: text("type").notNull(),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const stakeholderOpportunity = pgTable(
+  "stakeholder_opportunity",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    stakeholderId: uuid("stakeholder_id")
+      .notNull()
+      .references(() => stakeholders.id, { onDelete: "cascade" }),
+    opportunityId: uuid("opportunity_id")
+      .notNull()
+      .references(() => opportunities.id),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.stakeholderId, t.opportunityId] }) }),
+);
+
 export const sowDrafts = pgTable("sow_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")

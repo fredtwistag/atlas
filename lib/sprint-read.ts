@@ -24,6 +24,8 @@ import {
   portfolios,
   portfolioItems,
   systemInventoryItems,
+  stakeholders,
+  stakeholderOpportunity,
 } from "@/db/schema";
 import {
   computeProgress,
@@ -38,6 +40,7 @@ import type {
   SprintPortfolio,
   PortfolioEntry,
   SystemInventoryEntry,
+  StakeholderEntry,
 } from "./types";
 
 const DAY = 86_400_000;
@@ -300,5 +303,51 @@ export async function loadSystemsInventory(
     name: r.name,
     category: r.category as SystemInventoryEntry["category"],
     summary: r.summary,
+  }));
+}
+
+/** Stakeholder map for a sprint (Ticket B). Role labels only — never names. */
+export async function loadStakeholders(
+  tx: Db,
+  sprintId: string,
+): Promise<StakeholderEntry[]> {
+  const rows = await tx
+    .select({
+      id: stakeholders.id,
+      roleLabel: stakeholders.roleLabel,
+      department: stakeholders.department,
+      type: stakeholders.type,
+      summary: stakeholders.summary,
+    })
+    .from(stakeholders)
+    .where(eq(stakeholders.sprintId, sprintId));
+  if (rows.length === 0) return [];
+
+  const links = await tx
+    .select({
+      stakeholderId: stakeholderOpportunity.stakeholderId,
+      opportunityId: stakeholderOpportunity.opportunityId,
+    })
+    .from(stakeholderOpportunity)
+    .innerJoin(
+      stakeholders,
+      eq(stakeholderOpportunity.stakeholderId, stakeholders.id),
+    )
+    .where(eq(stakeholders.sprintId, sprintId));
+
+  const gatedBy = new Map<string, string[]>();
+  for (const l of links) {
+    const arr = gatedBy.get(l.stakeholderId) ?? [];
+    arr.push(l.opportunityId);
+    gatedBy.set(l.stakeholderId, arr);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    roleLabel: r.roleLabel,
+    department: r.department,
+    type: r.type as StakeholderEntry["type"],
+    summary: r.summary,
+    gatedOpportunityIds: gatedBy.get(r.id) ?? [],
   }));
 }
