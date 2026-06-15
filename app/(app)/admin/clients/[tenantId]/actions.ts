@@ -23,6 +23,9 @@ import {
   cancelInvitationInTenant,
   getPendingInvitationInTenant,
   refreshInvitationInTenant,
+  enrichCompany,
+  approveCompanyContext,
+  ingestDocument,
   type TwistagActor,
 } from "@/lib/twistag-admin";
 
@@ -104,6 +107,32 @@ export async function updateTenantAction(
 ): Promise<void> {
   const actor = await requireTwistagActor();
   await updateTenant(actor, tenantId, input);
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** CTX-2: enrich the company context from the public web (→ draft). */
+export async function enrichCompanyAction(tenantId: string): Promise<void> {
+  const actor = await requireTwistagActor();
+  await enrichCompany(actor, tenantId);
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** CTX-2: approve a draft company context so it starts steering IC prompts. */
+export async function approveCompanyContextAction(
+  tenantId: string,
+): Promise<void> {
+  const actor = await requireTwistagActor();
+  await approveCompanyContext(actor, tenantId);
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** CTX-3: ingest a pasted/uploaded text artifact into the company context. */
+export async function ingestDocumentAction(
+  tenantId: string,
+  input: { filename: string; mimeType: string; text: string },
+): Promise<void> {
+  const actor = await requireTwistagActor();
+  await ingestDocument(actor, { tenantId, ...input });
   revalidatePath(`/admin/clients/${tenantId}`);
 }
 

@@ -12,6 +12,7 @@ import {
   invitations,
   sowDrafts,
   auditLog,
+  companyContext,
 } from "@/db/schema";
 import {
   loadSprint,
@@ -422,6 +423,26 @@ export const twistagRouter = router({
    * tenant is resolved from the opportunity via a twistag read (NOT_FOUND if
    * missing); the edit refuses approved rows inside updateOpportunity.
    */
+  /** Read a tenant's company context for the admin panel (CTX-1/2/3). */
+  companyContext: twistagProcedure
+    .input(z.object({ tenantId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTwistagContext(
+        {
+          twistagRole: ctx.session.twistagRole,
+          actor: ctx.session.userId,
+          tenantId: input.tenantId,
+        },
+        async (tx) => {
+          const [row] = await tx
+            .select()
+            .from(companyContext)
+            .where(eq(companyContext.tenantId, input.tenantId));
+          return row ?? null;
+        },
+      ),
+    ),
+
   /** CTX-2: enrich a tenant's company context from the public web (→ draft). */
   enrichCompany: twistagProcedure
     .input(z.object({ tenantId: z.string().uuid() }))
