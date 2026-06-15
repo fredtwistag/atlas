@@ -237,6 +237,18 @@ We need to measure conversation quality from day 1.
 - **Probe appropriateness:** % of Atlas probes rated "useful" by reviewer (binary)
 - **Off-arc rate:** % of Atlas messages that wandered from the current arc
 
+#### Report-relevant coverage (EXT-4)
+These measure whether the sprint captured what the **report** needs, not just raw
+capture quality. Computed deterministically from persisted data by
+`lib/report-coverage.ts` (pure, unit-tested):
+- **Financial-signal coverage:** % of surfaced opportunities whose evidence backs
+  the financial dimension with BOTH a frequency AND a cost/time basis (so the
+  dollar figure multiplies real numbers — see EXT-2). Target ≥60%.
+- **Dimension coverage:** % of surfaced opportunities scored on all five rubric
+  dimensions with a non-zero score. Target ≥90%.
+- **Cross-session gap detection:** whether the sprint flags under-evidenced
+  dimensions across sessions (lands with EXT-1's coverage-aware loop).
+
 ### Targets (week 16 alpha)
 - Coverage ≥75%
 - Precision ≥80% (calibrated from 85% — realistic for LLM extraction)
@@ -244,9 +256,12 @@ We need to measure conversation quality from day 1.
 - Off-arc rate ≤10%
 
 ### Eval running
-- CI runs ground-truth eval on every prompt change
-- Production sample eval runs weekly via Inngest cron + Twistag-side reviewer
-- Drift alert: if any metric drops >5pp in a week, halt rollouts of prompt changes
+- CI runs ground-truth eval on every prompt change; the report-relevant
+  coverage metrics (EXT-4) also run in CI via `lib/report-coverage.ts`
+- Production sample eval runs weekly via Inngest cron + Twistag-side reviewer,
+  including financial-signal + dimension coverage
+- Drift alert: if any metric (including the report-relevant coverage metrics)
+  drops >5pp in a week, halt rollouts of prompt changes
 
 ## 10. Costs
 
