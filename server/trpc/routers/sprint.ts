@@ -11,13 +11,17 @@ import {
   sessions,
   users,
   opportunities,
+  tenants,
 } from "@/db/schema";
+import { generateSynthesisMemo } from "@/services/synthesis/memo";
+import type { Db } from "@/db/client";
 import {
   loadSprint,
   loadSprintProgress,
   loadSprintPortfolio,
   loadSystemsInventory,
   loadStakeholders,
+  loadSynthesisMemo,
 } from "@/lib/sprint-read";
 import { computeAdoptionRisk } from "@/lib/adoption-risk";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
@@ -27,6 +31,51 @@ import type { ActivityItem } from "@/lib/types";
 
 const idInput = z.object({ id: z.string().uuid() });
 const DAY = 86_400_000;
+
+/**
+ * Build the board-ready synthesis memo (Ticket G) from the sprint's portfolio,
+ * stakeholders, and adoption risk, and cache it on the sprint. Runs under the
+ * caller's tenant context (all inputs are tenant-readable). Best-effort: the
+ * memo service swallows LLM failures and returns empty fields.
+ */
+async function buildAndStoreMemo(
+  tx: Db,
+  sprintId: string,
+  tenantId: string,
+): Promise<void> {
+  const [portfolio, stakeholderRows, adoptionRisk, tenant] = await Promise.all([
+    loadSprintPortfolio(tx, sprintId),
+    loadStakeholders(tx, sprintId),
+    computeAdoptionRisk(tx, sprintId),
+    tx
+      .select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .then((r) => r[0]),
+  ]);
+  if (!portfolio || portfolio.items.length === 0) return;
+
+  const memo = await generateSynthesisMemo({
+    tenantName: tenant?.name ?? "your organization",
+    portfolio: portfolio.items.map((it) => ({
+      title: it.title,
+      horizon: it.horizon,
+      inclusionRationale: it.inclusionRationale,
+    })),
+    stakeholders: stakeholderRows.map((s) => ({
+      roleLabel: s.roleLabel,
+      type: s.type,
+    })),
+    adoptionRisk: adoptionRisk.map((r) => ({
+      department: r.department,
+      level: r.level,
+    })),
+  });
+  await tx
+    .update(sprints)
+    .set({ synthesisMemo: memo })
+    .where(eq(sprints.id, sprintId));
+}
 
 export const sprintRouter = router({
   currentForTenant: tenantProcedure.query(({ ctx }) =>
@@ -54,6 +103,11 @@ export const sprintRouter = router({
         .update(sprints)
         .set({ status: "completed", closedAt: new Date() })
         .where(eq(sprints.id, input.id));
+      // Ticket G: generate the board-ready synthesis memo once, at close, and
+      // cache it on the sprint. Best-effort — a memo failure never fails close.
+      await buildAndStoreMemo(tx, input.id, ctx.session.tenantId).catch(
+        () => undefined,
+      );
       return { id: input.id, status: "completed" as const };
     }),
   ),
@@ -329,6 +383,13 @@ export const sprintRouter = router({
     .input(idInput)
     .query(({ ctx, input }) =>
       withTenantContext(ctx.session, (tx) => loadStakeholders(tx, input.id)),
+    ),
+
+  /** Cached board-ready synthesis memo for a sprint (Ticket G), or null. */
+  synthesisMemo: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadSynthesisMemo(tx, input.id)),
     ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>
