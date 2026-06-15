@@ -41,6 +41,7 @@ import type {
   PortfolioEntry,
   SystemInventoryEntry,
   StakeholderEntry,
+  SynthesisMemo,
 } from "./types";
 
 const DAY = 86_400_000;
@@ -304,6 +305,18 @@ export async function loadSystemsInventory(
     category: r.category as SystemInventoryEntry["category"],
     summary: r.summary,
   }));
+}
+
+/** The cached board-ready synthesis memo for a sprint (Ticket G), or null. */
+export async function loadSynthesisMemo(
+  tx: Db,
+  sprintId: string,
+): Promise<SynthesisMemo | null> {
+  const [row] = await tx
+    .select({ memo: sprints.synthesisMemo })
+    .from(sprints)
+    .where(eq(sprints.id, sprintId));
+  return (row?.memo as SynthesisMemo | null) ?? null;
 }
 
 /** Stakeholder map for a sprint (Ticket B). Role labels only — never names. */

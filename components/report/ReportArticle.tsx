@@ -2,7 +2,12 @@ import { Check } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { usdShort } from "@/lib/format";
-import type { Sprint, SprintProgress, Opportunity } from "@/lib/types";
+import type {
+  Sprint,
+  SprintProgress,
+  Opportunity,
+  SynthesisMemo,
+} from "@/lib/types";
 
 /**
  * The discovery report body, shared by the manager/sponsor report and the
@@ -14,11 +19,13 @@ export function ReportArticle({
   sprint,
   progress: p,
   opps,
+  memo,
   opportunityHref,
 }: {
   sprint: Sprint;
   progress: SprintProgress;
   opps: Opportunity[];
+  memo?: SynthesisMemo | null;
   opportunityHref?: (id: string) => string;
 }) {
   const topFive = opps.slice(0, 5);
@@ -58,6 +65,22 @@ export function ReportArticle({
           </span>
         </div>
       </header>
+
+      {/* Synthesis memo (Ticket G) — the board-ready narrative, when generated. */}
+      {memo && memo.openingNarrative ? (
+        <Section title="Synthesis">
+          <p>{memo.openingNarrative}</p>
+          {memo.portfolioStory ? <p>{memo.portfolioStory}</p> : null}
+          {memo.sequencingLogic ? <p>{memo.sequencingLogic}</p> : null}
+          {memo.riskNarrative ? <p>{memo.riskNarrative}</p> : null}
+          {memo.recommendedNextStep ? (
+            <p>
+              <strong>Recommended next step. </strong>
+              {memo.recommendedNextStep}
+            </p>
+          ) : null}
+        </Section>
+      ) : null}
 
       {/* Executive summary */}
       <Section title="Executive summary">

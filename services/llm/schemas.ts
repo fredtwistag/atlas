@@ -245,3 +245,19 @@ export const stakeholderMap = z.object({
 
 export type StakeholderMap = z.infer<typeof stakeholderMap>;
 export type Stakeholder = z.infer<typeof stakeholder>;
+
+/**
+ * Board-ready synthesis memo (Ticket G): the connective narrative that packages
+ * the portfolio (A), stakeholder approvals (B), and adoption risks (E) into a
+ * sequenced operating-model story. Generated once at sprint close, cached. No
+ * marketing-speak, no individual names.
+ */
+export const synthesisMemo = z.object({
+  openingNarrative: z.string().min(20).max(1200),
+  portfolioStory: z.string().min(20).max(1200),
+  sequencingLogic: z.string().min(20).max(1200),
+  riskNarrative: z.string().min(20).max(1200),
+  recommendedNextStep: z.string().min(10).max(600),
+});
+
+export type SynthesisMemo = z.infer<typeof synthesisMemo>;

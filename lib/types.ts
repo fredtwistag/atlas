@@ -204,6 +204,15 @@ export interface SystemInventoryEntry {
   summary: string;
 }
 
+/** Board-ready synthesis memo (Ticket G), cached on the sprint. */
+export interface SynthesisMemo {
+  openingNarrative: string;
+  portfolioStory: string;
+  sequencingLogic: string;
+  riskNarrative: string;
+  recommendedNextStep: string;
+}
+
 /** A role-level stakeholder in the sprint's approval/adoption chain (Ticket B). */
 export type StakeholderType = "decision_maker" | "blocker" | "adopter";
 
