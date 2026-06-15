@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { usdRange } from "@/lib/format";
-import { horizonMeta } from "@/lib/ui-maps";
+import { horizonMeta, deliveryMeta } from "@/lib/ui-maps";
 import { cn } from "@/lib/cn";
 import type { Opportunity } from "@/lib/types";
 
@@ -63,6 +63,11 @@ export function OpportunityCard({
             {horizonMeta[opp.horizon] ? (
               <Badge tone={horizonMeta[opp.horizon]!.tone}>
                 {horizonMeta[opp.horizon]!.label}
+              </Badge>
+            ) : null}
+            {deliveryMeta[opp.delivery] ? (
+              <Badge tone={deliveryMeta[opp.delivery]!.tone}>
+                {deliveryMeta[opp.delivery]!.label}
               </Badge>
             ) : null}
           </div>

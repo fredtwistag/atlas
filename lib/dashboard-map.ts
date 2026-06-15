@@ -57,6 +57,8 @@ export interface OpportunityRow {
   confidenceScore: number;
   compositeScore: string;
   horizon: string;
+  delivery: string;
+  deliveryRationale: string;
   dimensionScores: unknown;
   rationale: string;
   status: string;
@@ -82,6 +84,8 @@ export function toOpportunity(
     confidenceScore: row.confidenceScore,
     compositeScore: Number(row.compositeScore),
     horizon: (row.horizon as Opportunity["horizon"]) ?? "standard",
+    delivery: (row.delivery as Opportunity["delivery"]) ?? "build",
+    deliveryRationale: row.deliveryRationale ?? "",
     dimensionScores: (row.dimensionScores as DimensionScore[]) ?? [],
     rationale: row.rationale,
     status: row.status as Opportunity["status"],

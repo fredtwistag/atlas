@@ -137,6 +137,21 @@ Tone: honest, not over-confident. The reader is a sponsor making a decision.
 Avoid corporate language. No marketing-speak.
 ```
 
+## Delivery path (build vs buy vs configure)
+
+Pick the honest delivery path for each opportunity. Atlas is owned by a services
+firm, so recommending **buy** or **configure** when that's right is a trust
+signal — never manufacture build work.
+
+- **build** — needs a custom FDE build; no mature off-the-shelf product fits.
+- **buy** — a mature vendor product already solves this; the work is selection +
+  integration, not building.
+- **configure** — solvable by configuring/automating a system the client already
+  owns (no new build, no new vendor).
+
+Give a one-sentence `deliveryRationale` naming the deciding factor (e.g. "mature
+CPQ vendors cover this end to end" → buy).
+
 ## Examples
 
 ### Example: High-confidence high-impact

@@ -198,6 +198,8 @@ function scoringSystem(): string {
     "- rationale: a 100-150 word paragraph per the rubric's Auto-rationale",
     "  section. Cite 2-3 captures by ROLE only (never a name), name the single",
     "  biggest uncertainty, and end with a recommended next step.",
+    "- delivery: 'build' | 'buy' | 'configure' per the Delivery-path section —",
+    "  be honest, do not manufacture build work. deliveryRationale: one sentence.",
     "- evidenceCaptureIds: the capture ids (from the input) that actually drove",
     "  this score. At least one; prefer the 2-5 strongest.",
     "",

@@ -322,6 +322,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 5,
     compositeScore: 8.7,
     horizon: "strategic_bet",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 5,
     dimensionScores: [
@@ -416,6 +418,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 4,
     compositeScore: 7.9,
     horizon: "quick_win",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 4,
     dimensionScores: [
@@ -498,6 +502,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 4,
     compositeScore: 7.4,
     horizon: "standard",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 4,
     dimensionScores: [
@@ -574,6 +580,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 3,
     compositeScore: 6.8,
     horizon: "quick_win",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 2,
     dimensionScores: [
@@ -641,6 +649,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 4,
     compositeScore: 6.5,
     horizon: "standard",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 3,
     dimensionScores: [
@@ -706,6 +716,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 3,
     compositeScore: 5.9,
     horizon: "standard",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 3,
     dimensionScores: [
@@ -771,6 +783,8 @@ const opportunities: Opportunity[] = [
     confidenceScore: 3,
     compositeScore: 5.6,
     horizon: "standard",
+    delivery: "build",
+    deliveryRationale: "Custom workflow with no off-the-shelf fit.",
     status: "surfaced",
     contributorCount: 2,
     dimensionScores: [

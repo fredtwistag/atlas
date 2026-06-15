@@ -42,6 +42,8 @@ describe("toOpportunity", () => {
         confidenceScore: 5,
         compositeScore: "8.7",
         horizon: "standard",
+        delivery: "build",
+        deliveryRationale: "",
         dimensionScores: [
           { key: "impact", label: "Impact", score: 9, reasoning: "r" },
         ],

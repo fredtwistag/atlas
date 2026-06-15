@@ -18,7 +18,7 @@ import {
   type CostBasis,
 } from "./score";
 import { clusterCaptures } from "./cluster";
-import type { DimensionScore, Horizon } from "@/lib/types";
+import type { DimensionScore, Horizon, DeliveryPath } from "@/lib/types";
 import type { QuantifiedImpact } from "@/services/llm/schemas";
 
 /**
@@ -139,6 +139,8 @@ type Candidate = {
   confidenceScore: number;
   compositeScore: number;
   horizon: Horizon;
+  delivery: DeliveryPath;
+  deliveryRationale: string;
   dimensionScores: DimensionScore[];
   rationale: string;
   evidenceCaptureIds: string[];
@@ -282,6 +284,8 @@ async function runRecompute(
         scoring.dimensionScores,
         scoring.timeToShipWeeksHigh,
       ),
+      delivery: scoring.delivery,
+      deliveryRationale: scoring.deliveryRationale,
       dimensionScores,
       rationale: scoring.rationale,
       evidenceCaptureIds: evidenceIds,
@@ -354,6 +358,8 @@ async function runRecompute(
           confidenceScore: c.confidenceScore,
           compositeScore: c.compositeScore.toFixed(1),
           horizon: c.horizon,
+          delivery: c.delivery,
+          deliveryRationale: c.deliveryRationale,
           dimensionScores: c.dimensionScores,
           rationale: c.rationale,
           status,
@@ -384,6 +390,8 @@ async function runRecompute(
           confidenceScore: c.confidenceScore,
           compositeScore: c.compositeScore.toFixed(1),
           horizon: c.horizon,
+          delivery: c.delivery,
+          deliveryRationale: c.deliveryRationale,
           dimensionScores: c.dimensionScores,
           rationale: c.rationale,
           status,
