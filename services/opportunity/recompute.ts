@@ -459,6 +459,17 @@ async function runRecompute(
     })),
   });
 
+  // --- sprint themes cache (EXT-1) -----------------------------------------
+  // Privacy-safe theme labels (no names/quotes) injected into later sessions so
+  // contributors corroborate/extend rather than restate. Capped + deduped.
+  const themes = [...new Set(clusters.map((c) => c.theme.trim()))]
+    .filter(Boolean)
+    .slice(0, 8);
+  await tx
+    .update(sprints)
+    .set({ sprintThemes: { themes } })
+    .where(eq(sprints.id, sprintId));
+
   // --- stakeholder map (Ticket B) ------------------------------------------
   await buildStakeholderMap(tx, {
     tenantId,

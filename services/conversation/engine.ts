@@ -6,6 +6,7 @@ import {
   companyContext,
   sessions,
   sessionMessages,
+  sprints,
   tenants,
   topics,
   users,
@@ -105,6 +106,7 @@ type SessionContext = {
   topicTitle: string;
   topicDescription: string | null;
   companyContext: PromptCompanyContext | null;
+  sprintThemes: string[];
 };
 
 /** Load the static context a prompt needs: the org, the contributor, the topic. */
@@ -125,14 +127,21 @@ async function loadContext(
       ctxKeySystems: companyContext.keySystems,
       ctxKnownPains: companyContext.knownPains,
       ctxStatus: companyContext.status,
+      sprintThemes: sprints.sprintThemes,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
     .innerJoin(tenants, eq(sessions.tenantId, tenants.id))
     .leftJoin(topics, eq(sessions.topicId, topics.id))
     .leftJoin(companyContext, eq(sessions.tenantId, companyContext.tenantId))
+    .leftJoin(sprints, eq(sessions.sprintId, sprints.id))
     .where(eq(sessions.id, sessionId));
   if (!row) return null;
+  const sprintThemes = Array.isArray(
+    (row.sprintThemes as { themes?: unknown } | null)?.themes,
+  )
+    ? ((row.sprintThemes as { themes: string[] }).themes ?? [])
+    : [];
   // Only feed the prompt context that's been activated (not a draft).
   const ctx: PromptCompanyContext | null =
     row.ctxStatus === "active"
@@ -151,6 +160,7 @@ async function loadContext(
     topicTitle: row.topicTitle ?? "Discovery session",
     topicDescription: row.topicDescription,
     companyContext: ctx,
+    sprintThemes,
   };
 }
 
@@ -225,6 +235,7 @@ export async function openSession(
     topicDescription: ctx.topicDescription,
     arc,
     companyContext: ctx.companyContext,
+    sprintThemes: ctx.sprintThemes,
   });
 
   const assistant = await complete({
@@ -271,6 +282,7 @@ export async function takeTurn(opts: TakeTurnOpts): Promise<TakeTurnResult> {
       : null,
     capturesSummary,
     companyContext: ctx.companyContext,
+    sprintThemes: ctx.sprintThemes,
   });
 
   const llmHistory: LlmMessage[] = history.map((m) => ({
