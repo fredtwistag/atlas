@@ -84,6 +84,16 @@ export const systemCategoryMeta: Record<
   integration_gap: { label: "Integration gap", tone: "danger" },
 };
 
+/** Stakeholder type → chip (Ticket B). */
+export const stakeholderTypeMeta: Record<
+  "decision_maker" | "blocker" | "adopter",
+  { label: string; tone: BadgeTone }
+> = {
+  decision_maker: { label: "Decision-maker", tone: "brand" },
+  blocker: { label: "Blocker", tone: "danger" },
+  adopter: { label: "Adopter", tone: "neutral" },
+};
+
 /**
  * Tenant lifecycle status → badge. `status` is free text in the DB, so callers
  * fall back to `{ label: status, tone: "neutral" }` for anything unmapped.

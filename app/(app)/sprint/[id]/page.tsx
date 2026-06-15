@@ -16,6 +16,7 @@ import { TeamProgress } from "@/components/manager/TeamProgress";
 import { AdoptionRiskHeatmap } from "@/components/manager/AdoptionRiskHeatmap";
 import { PilotPortfolio } from "@/components/manager/PilotPortfolio";
 import { SystemsInventory } from "@/components/manager/SystemsInventory";
+import { StakeholderMap } from "@/components/manager/StakeholderMap";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { notFound } from "next/navigation";
 import { getApi } from "@/server/trpc/caller";
@@ -47,7 +48,7 @@ export default async function ManagerDashboard({
 
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();
-  const [p, opps, activity, adoptionRisk, portfolio, systems] =
+  const [p, opps, activity, adoptionRisk, portfolio, systems, stakeholders] =
     await Promise.all([
       api.sprint.progress({ id }),
       api.opportunity.listForSprint({ sprintId: id }),
@@ -55,6 +56,7 @@ export default async function ManagerDashboard({
       api.sprint.adoptionRisk({ id }),
       api.sprint.portfolio({ id }),
       api.sprint.systemsInventory({ id }),
+      api.sprint.stakeholders({ id }),
     ]);
 
   const stats: {
@@ -167,6 +169,12 @@ export default async function ManagerDashboard({
             Systems &amp; shadow IT
           </h2>
           <SystemsInventory items={systems} />
+
+          {/* Stakeholder map (Ticket B) */}
+          <h2 className="mb-3 mt-6 px-1 text-sm font-semibold text-text-2">
+            Stakeholder map
+          </h2>
+          <StakeholderMap items={stakeholders} />
 
           {/* Activity feed */}
           <h2 className="mb-3 mt-6 px-1 text-sm font-semibold text-text-2">

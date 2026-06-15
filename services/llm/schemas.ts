@@ -225,3 +225,23 @@ export const systemsInventory = z.object({
 
 export type SystemsInventory = z.infer<typeof systemsInventory>;
 export type SystemInventoryItem = z.infer<typeof systemInventoryItem>;
+
+/**
+ * Stakeholder map (Ticket B): from decision/handoff captures + the roster,
+ * role-level stakeholders typed decision_maker / blocker / adopter, each with
+ * the opportunities they gate. ROLE LABELS ONLY — never an individual name.
+ */
+export const stakeholder = z.object({
+  roleLabel: z.string().min(2).max(80),
+  department: z.string().max(80).nullable().default(null),
+  type: z.enum(["decision_maker", "blocker", "adopter"]),
+  summary: z.string().min(10).max(400),
+  gatedOpportunityIds: z.array(z.string().uuid()).default([]),
+});
+
+export const stakeholderMap = z.object({
+  stakeholders: z.array(stakeholder),
+});
+
+export type StakeholderMap = z.infer<typeof stakeholderMap>;
+export type Stakeholder = z.infer<typeof stakeholder>;
