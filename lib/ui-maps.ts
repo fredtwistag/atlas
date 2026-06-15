@@ -8,6 +8,7 @@ import type {
   CaptureKind,
   OpportunityStatus,
   Horizon,
+  DeliveryPath,
 } from "./types";
 
 type BadgeTone =
@@ -48,6 +49,19 @@ export const horizonMeta: Record<
   quick_win: { label: "Quick win", tone: "success" },
   strategic_bet: { label: "Strategic bet", tone: "brand" },
   standard: null,
+};
+
+/**
+ * Delivery path → chip (Ticket C). `build` is the default/common path and gets
+ * no chip; `buy` and `configure` earn a label since they're the trust signal.
+ */
+export const deliveryMeta: Record<
+  DeliveryPath,
+  { label: string; tone: BadgeTone } | null
+> = {
+  build: null,
+  buy: { label: "Buy", tone: "warning" },
+  configure: { label: "Configure", tone: "outline" },
 };
 
 /**

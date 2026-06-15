@@ -178,6 +178,10 @@ export const opportunityScoring = z
         },
       ),
     rationale: z.string().min(40).max(1600),
+    // Capability-gap / delivery path (Ticket C): honestly say build vs buy vs
+    // configure so the report doesn't manufacture build work.
+    delivery: z.enum(["build", "buy", "configure"]),
+    deliveryRationale: z.string().min(10).max(400),
     evidenceCaptureIds: z.array(z.string().uuid()).min(1),
   })
   .refine((o) => o.impactLow <= o.impactHigh, {

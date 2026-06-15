@@ -17,6 +17,8 @@ const opp: Opportunity = {
   confidenceScore: 5,
   compositeScore: 8.4,
   horizon: "quick_win",
+  delivery: "build",
+  deliveryRationale: "",
   dimensionScores: [],
   rationale: "",
   status: "surfaced",

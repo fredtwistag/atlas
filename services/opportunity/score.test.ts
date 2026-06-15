@@ -62,6 +62,8 @@ function fullScoring(
     ],
     rationale:
       "VP Sales gates custom pricing; quotes wait 2-4 days. Two AEs and one ops lead corroborate. Main uncertainty: share auto-routable. Recommended next step: Approve for FDE.",
+    delivery: "build",
+    deliveryRationale: "No mature vendor covers this custom pricing flow.",
     evidenceCaptureIds: [ID.a, ID.b],
     ...over,
   };

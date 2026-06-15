@@ -16,6 +16,8 @@ const opp = {
   confidenceScore: 5,
   compositeScore: 8.7,
   horizon: "standard",
+  delivery: "build",
+  deliveryRationale: "",
   dimensionScores: [],
   rationale: "r",
   status: "surfaced",
@@ -74,6 +76,22 @@ describe("buildSowDraft", () => {
     expect(sow.durationWeeks).toBeLessThanOrEqual(WEEKS_CEILING);
     expect(sow.priceUsd).toBeGreaterThanOrEqual(PRICE_FLOOR);
     expect(sow.priceUsd).toBeLessThanOrEqual(PRICE_CEILING);
+  });
+
+  it("scopes a vendor-selection engagement for a `buy` opportunity (Ticket C)", () => {
+    const buy = {
+      ...opp,
+      delivery: "buy",
+      deliveryRationale: "Mature CPQ vendors cover this end to end.",
+    } as Opportunity;
+    const sow = buildSowDraft(buy, "Northwind");
+    expect(sow.title).toContain("vendor selection");
+    expect(sow.scope).toMatch(/vendor/i);
+    expect(sow.scope).toMatch(/no custom build/i);
+    // It should flag that vendor license fees are out of scope.
+    expect(sow.exclusions.join(" ")).toMatch(/license|subscription/i);
+    // And cost less than a full custom build.
+    expect(sow.priceUsd).toBeLessThan(68_000);
   });
 
   it("produces a non-empty, well-formed draft even with empty string fields", () => {

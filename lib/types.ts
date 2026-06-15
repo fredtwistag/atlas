@@ -150,6 +150,9 @@ export interface Opportunity {
   compositeScore: number; // 0–10, one decimal
   /** Funding horizon, derived in TS from the dimension scores (Ticket D). */
   horizon: Horizon;
+  /** Delivery path: build a custom FDE, buy a vendor tool, or configure (Ticket C). */
+  delivery: DeliveryPath;
+  deliveryRationale: string;
   dimensionScores: DimensionScore[];
   rationale: string;
   status: OpportunityStatus;
@@ -164,6 +167,12 @@ export interface Opportunity {
  * disruptive; `standard` = everything else.
  */
 export type Horizon = "quick_win" | "strategic_bet" | "standard";
+
+/**
+ * Delivery path for an opportunity (Ticket C): `build` a custom FDE, `buy` a
+ * mature vendor product, or `configure` a system the client already owns.
+ */
+export type DeliveryPath = "build" | "buy" | "configure";
 
 export interface SowDraft {
   title: string;
