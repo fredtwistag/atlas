@@ -30,11 +30,19 @@ const ROLE_PROMPTS: Record<ConversationRole, string> = {
 
 export type BuildSystemPromptOpts = {
   role: ConversationRole;
+  /** Client org name — anchors the prompt to a real company (docs/03 §3). */
+  tenantName: string;
   userName: string;
   department: string | null;
   topicTitle: string;
   topicDescription?: string | null;
   arc: Arc;
+  /** Names of interview arcs already completed this session, or null at the opener. */
+  arcHistory?: string | null;
+  /** Probes left for THIS arc (0–2). Omitted for non-interview arcs. */
+  probesRemaining?: number | null;
+  /** Compact "kind: summary" list of what this session has captured so far. */
+  capturesSummary?: string | null;
 };
 
 /** Arc-specific instruction appended to the system prompt (docs/03 §2, §3). */
@@ -93,9 +101,11 @@ export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
   const arcLabel =
     idx === null ? arcName(opts.arc) : `ARC ${idx} of 4: ${arcName(opts.arc)}`;
   const dept = opts.department ?? "their";
+  // Arc-progress + probe budget only make sense inside a numbered interview arc.
+  const isInterviewArc = idx !== null;
 
   return [
-    "You are Atlas, a discovery copilot helping a client team understand how",
+    `You are Atlas, a discovery copilot helping ${opts.tenantName} understand how`,
     "work actually happens across its teams.",
     "",
     `You are running a conversational interview with ${opts.userName}, who works`,
@@ -106,6 +116,10 @@ export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
     "",
     `You are currently in ${arcLabel}.`,
     arcInstruction(opts.arc),
+    isInterviewArc ? `ARC HISTORY: ${opts.arcHistory || "none yet"}` : "",
+    isInterviewArc && typeof opts.probesRemaining === "number"
+      ? `PROBE BUDGET FOR THIS ARC: ${opts.probesRemaining} probe(s) remaining out of 2.`
+      : "",
     "",
     "STANDING RULES:",
     "1. Ask ONE question at a time. Open-ended. Concrete.",
@@ -119,6 +133,9 @@ export function buildSystemPrompt(opts: BuildSystemPromptOpts): string {
     "   names someone, you may use that name to follow up.",
     "8. Tone: peer to peer. Short sentences. Conversational, not corporate.",
     "9. Your output is ONLY the single message to the user — no JSON, no commentary.",
+    "",
+    opts.capturesSummary ? "CAPTURED SO FAR:" : "",
+    opts.capturesSummary ? opts.capturesSummary : "",
     "",
     "=== ROLE GUIDANCE ===",
     ROLE_PROMPTS[opts.role],

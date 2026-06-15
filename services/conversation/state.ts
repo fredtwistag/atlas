@@ -37,6 +37,23 @@ export type Arc = (typeof ARCS)[number];
 /** Max user turns spent in an arc before we force-advance to the next. */
 export const MAX_TURNS_PER_ARC = 3;
 
+/**
+ * Probe budget per arc (docs/03 §3 "out of 2"): an arc is 1 anchor + up to 2
+ * probes. The anchor is the first user turn; every later turn spends a probe.
+ */
+export const MAX_PROBES_PER_ARC = 2;
+
+/**
+ * Probes still available for the NEXT question in an arc, given how many user
+ * turns have already been spent in it. Surfaced in the system prompt so the
+ * model self-limits (docs/03 §3 PROBE BUDGET line). The anchor (turnsInArc 0–1)
+ * has not spent a probe; each subsequent turn has.
+ */
+export function probesRemaining(turnsInArc: number): number {
+  const used = Math.max(0, turnsInArc - 1);
+  return Math.max(0, MAX_PROBES_PER_ARC - used);
+}
+
 /** 1-based index of an interview arc (1..4), for the system prompt. INTRO/CLOSE/etc. have no number. */
 export function arcIndex(arc: Arc): number | null {
   switch (arc) {

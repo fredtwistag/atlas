@@ -5,6 +5,7 @@ import {
   captures,
   sessions,
   sessionMessages,
+  tenants,
   topics,
   users,
 } from "@/db/schema";
@@ -15,7 +16,14 @@ import {
   type LlmMessage,
 } from "@/services/llm/client";
 import type { CapturedItem } from "@/services/llm/schemas";
-import { nextArc, isDone, type Arc } from "./state";
+import {
+  arcIndex,
+  arcName,
+  nextArc,
+  isDone,
+  probesRemaining,
+  type Arc,
+} from "./state";
 import { extractFromTurn } from "./extract";
 import { buildSystemPrompt, type ConversationRole } from "./prompts";
 
@@ -85,6 +93,7 @@ function arcForNextTurn(history: { role: string; arc: string }[]): Arc {
 }
 
 type SessionContext = {
+  tenantName: string;
   userName: string;
   department: string | null;
   role: ConversationRole;
@@ -92,13 +101,14 @@ type SessionContext = {
   topicDescription: string | null;
 };
 
-/** Load the static context a prompt needs: the contributor and the topic. */
+/** Load the static context a prompt needs: the org, the contributor, the topic. */
 async function loadContext(
   db: Db,
   sessionId: string,
 ): Promise<SessionContext | null> {
   const [row] = await db
     .select({
+      tenantName: tenants.name,
       userName: users.name,
       department: users.department,
       userRole: users.role,
@@ -107,16 +117,51 @@ async function loadContext(
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
+    .innerJoin(tenants, eq(sessions.tenantId, tenants.id))
     .leftJoin(topics, eq(sessions.topicId, topics.id))
     .where(eq(sessions.id, sessionId));
   if (!row) return null;
   return {
+    tenantName: row.tenantName,
     userName: row.userName,
     department: row.department,
     role: toConversationRole(row.userRole),
     topicTitle: row.topicTitle ?? "Discovery session",
     topicDescription: row.topicDescription,
   };
+}
+
+/** Interview arcs already completed before `upcoming`, as a readable list. */
+function completedArcs(history: { arc: string }[], upcoming: Arc): string {
+  const upcomingIdx = arcIndex(upcoming);
+  if (upcomingIdx === null) return "";
+  const seen = new Set(history.map((m) => m.arc));
+  const done: string[] = [];
+  for (const arc of ["ARC_1", "ARC_2", "ARC_3", "ARC_4"] as const) {
+    const i = arcIndex(arc);
+    if (i !== null && i < upcomingIdx && seen.has(arc)) done.push(arcName(arc));
+  }
+  return done.join("; ");
+}
+
+/**
+ * Compact within-session capture summary for the prompt's CAPTURED SO FAR block
+ * (docs/03 §3). Most-recent-last, capped to bound prompt size. RLS already
+ * scopes captures to the owning contributor. Never returns source quotes.
+ */
+async function loadCaptureSummary(db: Db, sessionId: string): Promise<string> {
+  const rows = await db
+    .select({ kind: captures.kind, summary: captures.summary })
+    .from(captures)
+    .where(
+      and(eq(captures.sessionId, sessionId), eq(captures.isRemoved, false)),
+    )
+    .orderBy(asc(captures.createdAt));
+  if (rows.length === 0) return "";
+  return rows
+    .slice(-12)
+    .map((r) => `- ${r.kind}: ${r.summary}`)
+    .join("\n");
 }
 
 /** Ordered transcript for a session (RLS already scopes to the owner). */
@@ -147,8 +192,10 @@ export async function openSession(
   if (!ctx) throw new Error("Session not found or not readable");
 
   const arc = nextArc("INIT", 0); // INTRO
+  // The opener has no history and no captures yet; arc/probe blocks are omitted.
   const system = buildSystemPrompt({
     role: ctx.role,
+    tenantName: ctx.tenantName,
     userName: ctx.userName,
     department: ctx.department,
     topicTitle: ctx.topicTitle,
@@ -183,14 +230,22 @@ export async function takeTurn(opts: TakeTurnOpts): Promise<TakeTurnResult> {
 
   const history = await loadHistory(opts.db, opts.sessionId);
   const arc = arcForNextTurn(history);
+  const interview = arcIndex(arc) !== null;
+  const capturesSummary = await loadCaptureSummary(opts.db, opts.sessionId);
 
   const system = buildSystemPrompt({
     role: ctx.role,
+    tenantName: ctx.tenantName,
     userName: ctx.userName,
     department: ctx.department,
     topicTitle: ctx.topicTitle,
     topicDescription: ctx.topicDescription,
     arc,
+    arcHistory: completedArcs(history, arc),
+    probesRemaining: interview
+      ? probesRemaining(userTurnsInArc(history, arc))
+      : null,
+    capturesSummary,
   });
 
   const llmHistory: LlmMessage[] = history.map((m) => ({

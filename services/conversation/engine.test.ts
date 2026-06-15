@@ -38,6 +38,7 @@ function makeDb(history: { role: string; content: string; arc: string }[]) {
   let selectCount = 0;
 
   const contextRow = {
+    tenantName: "Northwind Trading",
     userName: "Sam Rivera",
     department: "Finance",
     userRole: "ic",
@@ -56,10 +57,12 @@ function makeDb(history: { role: string; content: string; arc: string }[]) {
   }
 
   const db = {
+    // Select order within a turn: 0 = context join, 1 = history, 2 = capture
+    // summary (returns no rows by default so the CAPTURED block stays absent).
     select() {
-      const isContext = selectCount === 0;
+      const n = selectCount;
       selectCount++;
-      return chain(() => (isContext ? [contextRow] : history));
+      return chain(() => (n === 0 ? [contextRow] : n === 1 ? history : []));
     },
     insert() {
       return {
