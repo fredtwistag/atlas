@@ -35,8 +35,16 @@ fi
 echo "→ Installing dependencies…"
 npm install
 
-echo "→ Applying migrations (0001–0019)…"
-npm run db:migrate
+echo "→ Applying migrations…"
+if ! npm run db:migrate; then
+  echo ""
+  echo "✗ Migrations failed. The most common cause is pointing DDL at the Supabase"
+  echo "  transaction pooler (port 6543). Add your DIRECT (session, port 5432)"
+  echo "  connection to .env.local and re-run:"
+  echo "    DIRECT_URL=postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres"
+  echo "  (Leave DATABASE_URL as-is for the app.)"
+  exit 1
+fi
 
 echo "→ Seeding the demo dashboard (Northwind tenant + sprint + opportunities)…"
 npm run db:seed:dashboard

@@ -21,8 +21,16 @@ Fill in `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (seed + workers) |
-| `DATABASE_URL` | Postgres connection string (the Supabase DB) |
+| `DATABASE_URL` | Postgres connection string the app uses (Supabase pooler, port 6543, is fine) |
+| `DIRECT_URL` | **Recommended** — a direct/session connection (port 5432) used **for migrations**. Supabase's transaction pooler (6543) can't run the multi-statement DDL transactions migrations use. Settings → Database → Connection string → "Session". |
 | `ANTHROPIC_API_KEY` | **Recommended** — needed for the conversation engine, opportunity recompute, and CTX-2/CTX-3 enrichment. Without it those panels stay empty. |
+
+> ⚠️ **You must run migrations before starting the app.** `npm run dev` on its
+> own does **not** migrate — if the DB is behind, you'll get errors like
+> `column "synthesis_memo" does not exist`. Use `./scripts/dev-up.sh` (it
+> migrates first) or run `npm run db:migrate` yourself. The runner applies every
+> `db/migrations/*.sql` not yet in the `schema_migrations` table, so on an
+> existing DB it just applies the new ones (`0010–0019`).
 
 ## 2. One command
 
