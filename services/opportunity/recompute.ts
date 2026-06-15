@@ -236,8 +236,7 @@ async function runRecompute(
   // Eligible = day >= 7 AND confidence >= 3. Cap surfaced at 10 by composite.
   const eligible = finalCandidates
     .filter(
-      (c) =>
-        day >= SURFACE_DAY && c.confidenceScore >= SURFACE_MIN_CONFIDENCE,
+      (c) => day >= SURFACE_DAY && c.confidenceScore >= SURFACE_MIN_CONFIDENCE,
     )
     .sort((a, b) => b.compositeScore - a.compositeScore);
   const surfacedKeys = new Set(
@@ -255,10 +254,7 @@ async function runRecompute(
     .from(opportunities)
     .where(eq(opportunities.sprintId, sprintId));
 
-  const existingByKey = new Map<
-    string,
-    { id: string; status: string }
-  >();
+  const existingByKey = new Map<string, { id: string; status: string }>();
   let skippedApproved = 0;
   for (const row of existing) {
     if (row.status === "approved") {

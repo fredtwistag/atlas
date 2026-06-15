@@ -52,9 +52,7 @@ export async function GET(request: NextRequest) {
       );
       if (result === "expired") {
         await supabase.auth.signOut();
-        return NextResponse.redirect(
-          `${origin}/sign-in?error=invite-expired`,
-        );
+        return NextResponse.redirect(`${origin}/sign-in?error=invite-expired`);
       }
     } catch {
       // Non-fatal: the user is signed in; the invite flips on a later visit.

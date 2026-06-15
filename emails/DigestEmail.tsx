@@ -88,8 +88,8 @@ export function DigestEmail(props: DigestEmailProps) {
       <Section style={{ margin: "0 0 16px" }}>
         <p style={statRow}>{participationPct}% of the team has taken part</p>
         <p style={statRow}>
-          {capturesCount} {capturesCount === 1 ? "capture" : "captures"} recorded
-          so far
+          {capturesCount} {capturesCount === 1 ? "capture" : "captures"}{" "}
+          recorded so far
         </p>
         <p style={statRow}>
           {opportunitiesCount}{" "}

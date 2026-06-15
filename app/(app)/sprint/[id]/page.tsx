@@ -194,9 +194,9 @@ export default async function ManagerDashboard({
                   No opportunities yet
                 </p>
                 <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-text-3">
-                  They surface here as your team&apos;s sessions add up — usually
-                  from day 7. Until then, keep an eye on team progress on the
-                  left.
+                  They surface here as your team&apos;s sessions add up —
+                  usually from day 7. Until then, keep an eye on team progress
+                  on the left.
                 </p>
               </Card>
             ) : (

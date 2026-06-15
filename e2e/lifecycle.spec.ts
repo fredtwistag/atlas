@@ -151,7 +151,10 @@ test.describe("sprint lifecycle", () => {
     await page.goto(`/sprint/${sprintId}/settings`, {
       waitUntil: "networkidle",
     });
-    await page.getByRole("button", { name: /close sprint/i }).first().click();
+    await page
+      .getByRole("button", { name: /close sprint/i })
+      .first()
+      .click();
     // Confirm in the ConfirmDialog.
     await page
       .getByRole("dialog")

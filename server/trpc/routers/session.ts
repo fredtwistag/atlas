@@ -13,10 +13,7 @@ import {
   captures,
 } from "@/db/schema";
 import type { MyDashboard, SessionStatus } from "@/lib/types";
-import {
-  openSession,
-  takeTurn,
-} from "@/services/conversation/engine";
+import { openSession, takeTurn } from "@/services/conversation/engine";
 import { LlmNotConfiguredError } from "@/services/llm/client";
 
 /** Map an LLM-config error to a clear tRPC error; rethrow anything else. */
@@ -208,10 +205,9 @@ export const sessionRouter = router({
           summary: z.string().min(3).max(500).optional(),
           isRemoved: z.boolean().optional(),
         })
-        .refine(
-          (v) => v.summary !== undefined || v.isRemoved !== undefined,
-          { message: "Provide a new summary or a removal change." },
-        ),
+        .refine((v) => v.summary !== undefined || v.isRemoved !== undefined, {
+          message: "Provide a new summary or a removal change.",
+        }),
     )
     .mutation(({ ctx, input }) =>
       withTenantContext(ctx.session, async (tx) => {

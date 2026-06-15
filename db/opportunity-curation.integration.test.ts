@@ -8,10 +8,7 @@ import {
   withServiceRoleRaw,
   TENANT_A,
 } from "./test/helpers";
-import {
-  updateOpportunity,
-  setOpportunityStatus,
-} from "@/lib/twistag-admin";
+import { updateOpportunity, setOpportunityStatus } from "@/lib/twistag-admin";
 
 /**
  * Plan 016 Step 6 — curation mutation integration tests. These exercise the
@@ -23,7 +20,10 @@ import {
 const SPRINT = "ee111111-1111-4111-8111-111111111111";
 const OPP = "ff111111-1111-4111-8111-111111111111";
 const APPROVED_OPP = "ff222222-2222-4222-8222-222222222222";
-const ACTOR = { userId: "00000000-0000-4000-8000-0000000000ff", twistagRole: "twistag_admin" };
+const ACTOR = {
+  userId: "00000000-0000-4000-8000-0000000000ff",
+  twistagRole: "twistag_admin",
+};
 
 function sprintRow() {
   return {
@@ -157,7 +157,12 @@ describe("setOpportunityStatus", () => {
 
   it("does not cross tenants (wrong tenant id is a no-op not-found)", async () => {
     await expect(
-      setOpportunityStatus(ACTOR, "00000000-0000-0000-0000-00000000000b", OPP, "hidden"),
+      setOpportunityStatus(
+        ACTOR,
+        "00000000-0000-0000-0000-00000000000b",
+        OPP,
+        "hidden",
+      ),
     ).rejects.toThrow(/not found/i);
     expect((await read(OPP)).status).toBe("surfaced");
   });

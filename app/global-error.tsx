@@ -41,8 +41,8 @@ export default function GlobalError({
             Atlas hit an error.
           </h1>
           <p style={{ marginTop: "0.5rem", color: "#555" }}>
-            The page failed to load. Reload to try again — if it keeps happening,
-            the service may be briefly unavailable.
+            The page failed to load. Reload to try again — if it keeps
+            happening, the service may be briefly unavailable.
           </p>
           <button
             type="button"

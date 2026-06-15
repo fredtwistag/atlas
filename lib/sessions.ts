@@ -213,9 +213,7 @@ async function finalExtraction(
     .where(eq(captures.sessionId, opts.sessionId));
   const seen = new Set(existing.map((c) => c.summary.toLowerCase().trim()));
 
-  const fresh = items.filter(
-    (c) => !seen.has(c.summary.toLowerCase().trim()),
-  );
+  const fresh = items.filter((c) => !seen.has(c.summary.toLowerCase().trim()));
   if (fresh.length === 0) return;
 
   await tx.insert(captures).values(
@@ -263,7 +261,9 @@ export async function runFinalExtractionForSession(
           topicId: sessions.topicId,
         })
         .from(sessions)
-        .where(and(eq(sessions.id, sessionId), eq(sessions.tenantId, tenantId)));
+        .where(
+          and(eq(sessions.id, sessionId), eq(sessions.tenantId, tenantId)),
+        );
       if (!s) return null;
 
       const transcript = await tx

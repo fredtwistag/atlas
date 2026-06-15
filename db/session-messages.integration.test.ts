@@ -134,9 +134,8 @@ describe("session_messages — owner-only read (privacy by design)", () => {
         department: "Ops",
       }),
     );
-    const rows = await asUser(
-      { tenantId: TENANT_A, userId: OTHER_IC },
-      (tx) => tx.select().from(sessionMessages),
+    const rows = await asUser({ tenantId: TENANT_A, userId: OTHER_IC }, (tx) =>
+      tx.select().from(sessionMessages),
     );
     expect(rows).toHaveLength(0);
   });

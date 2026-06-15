@@ -18,7 +18,9 @@ const ID = {
   b: "22222222-2222-4222-8222-222222222222",
 };
 
-function fullScoring(over: Partial<OpportunityScoring> = {}): OpportunityScoring {
+function fullScoring(
+  over: Partial<OpportunityScoring> = {},
+): OpportunityScoring {
   return {
     title: "Automate pricing pre-approval",
     description:

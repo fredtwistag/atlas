@@ -148,9 +148,10 @@ export const opportunityScoring = z
       .length(DIMENSION_KEYS.length)
       // exactly one entry per dimension key, no dupes, no omissions
       .refine(
-        (arr) =>
-          new Set(arr.map((d) => d.key)).size === DIMENSION_KEYS.length,
-        { message: "dimensionScores must cover each of the 5 keys exactly once" },
+        (arr) => new Set(arr.map((d) => d.key)).size === DIMENSION_KEYS.length,
+        {
+          message: "dimensionScores must cover each of the 5 keys exactly once",
+        },
       ),
     rationale: z.string().min(40).max(1600),
     evidenceCaptureIds: z.array(z.string().uuid()).min(1),

@@ -69,7 +69,10 @@ export const recomputeOnRequest = inngest.createFunction(
  * completions. Skips silently per-sprint when the LLM key is unset (count log).
  */
 export const recomputeNightly = inngest.createFunction(
-  { id: "opportunity-recompute-nightly", name: "Nightly opportunity recompute" },
+  {
+    id: "opportunity-recompute-nightly",
+    name: "Nightly opportunity recompute",
+  },
   { cron: "0 2 * * *" },
   async ({ step }) => {
     const active = await step.run("load-active-sprints", () =>
