@@ -12,7 +12,11 @@ import {
   users,
   opportunities,
 } from "@/db/schema";
-import { loadSprint, loadSprintProgress } from "@/lib/sprint-read";
+import {
+  loadSprint,
+  loadSprintProgress,
+  loadSprintPortfolio,
+} from "@/lib/sprint-read";
 import { computeAdoptionRisk } from "@/lib/adoption-risk";
 import { TOPIC_TEMPLATES } from "@/lib/topic-templates";
 import { LaunchSprintSchema } from "@/lib/schemas";
@@ -300,6 +304,13 @@ export const sprintRouter = router({
     .input(idInput)
     .query(({ ctx, input }) =>
       withTenantContext(ctx.session, (tx) => computeAdoptionRisk(tx, input.id)),
+    ),
+
+  /** The curated pilot portfolio for a sprint (Ticket A), or null if none yet. */
+  portfolio: tenantProcedure
+    .input(idInput)
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadSprintPortfolio(tx, input.id)),
     ),
 
   activity: tenantProcedure.input(idInput).query(({ ctx, input }) =>

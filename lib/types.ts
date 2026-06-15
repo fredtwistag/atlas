@@ -174,6 +174,26 @@ export type Horizon = "quick_win" | "strategic_bet" | "standard";
  */
 export type DeliveryPath = "build" | "buy" | "configure";
 
+/** One entry in the pilot portfolio (Ticket A), with display metadata. */
+export interface PortfolioEntry {
+  opportunityId: string;
+  title: string;
+  horizon: Horizon;
+  delivery: DeliveryPath;
+  impactLow: number;
+  impactHigh: number;
+  compositeScore: number;
+  sequenceOrder: number;
+  inclusionRationale: string;
+}
+
+/** The curated pilot portfolio for a sprint (Ticket A). */
+export interface SprintPortfolio {
+  status: "draft" | "surfaced";
+  narrative: string;
+  items: PortfolioEntry[];
+}
+
 export interface SowDraft {
   title: string;
   scope: string;

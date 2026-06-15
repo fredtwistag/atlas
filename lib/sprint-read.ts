@@ -21,13 +21,22 @@ import {
   tenants,
   opportunities,
   captures,
+  portfolios,
+  portfolioItems,
 } from "@/db/schema";
 import {
   computeProgress,
   toOpportunity,
   type OpportunityRow,
 } from "./dashboard-map";
-import type { Sprint, Participant, SprintProgress, Opportunity } from "./types";
+import type {
+  Sprint,
+  Participant,
+  SprintProgress,
+  Opportunity,
+  SprintPortfolio,
+  PortfolioEntry,
+} from "./types";
 
 const DAY = 86_400_000;
 
@@ -215,4 +224,56 @@ export async function listSprintOpportunities(
     .where(eq(opportunities.sprintId, sprintId))
     .orderBy(desc(opportunities.compositeScore));
   return rows.map((r) => toOpportunity(r as OpportunityRow, []));
+}
+
+/** The pilot portfolio for a sprint (Ticket A), or null if none generated yet. */
+export async function loadSprintPortfolio(
+  tx: Db,
+  sprintId: string,
+): Promise<SprintPortfolio | null> {
+  const [portfolio] = await tx
+    .select({
+      id: portfolios.id,
+      narrative: portfolios.narrative,
+      status: portfolios.status,
+    })
+    .from(portfolios)
+    .where(eq(portfolios.sprintId, sprintId));
+  if (!portfolio) return null;
+
+  const rows = await tx
+    .select({
+      opportunityId: portfolioItems.opportunityId,
+      sequenceOrder: portfolioItems.sequenceOrder,
+      inclusionRationale: portfolioItems.inclusionRationale,
+      title: opportunities.title,
+      horizon: opportunities.horizon,
+      delivery: opportunities.delivery,
+      impactLow: opportunities.impactLow,
+      impactHigh: opportunities.impactHigh,
+      compositeScore: opportunities.compositeScore,
+    })
+    .from(portfolioItems)
+    .innerJoin(
+      opportunities,
+      eq(portfolioItems.opportunityId, opportunities.id),
+    )
+    .where(eq(portfolioItems.portfolioId, portfolio.id))
+    .orderBy(portfolioItems.sequenceOrder);
+
+  return {
+    status: portfolio.status as SprintPortfolio["status"],
+    narrative: portfolio.narrative,
+    items: rows.map((r) => ({
+      opportunityId: r.opportunityId,
+      title: r.title,
+      horizon: r.horizon as PortfolioEntry["horizon"],
+      delivery: r.delivery as PortfolioEntry["delivery"],
+      impactLow: r.impactLow,
+      impactHigh: r.impactHigh,
+      compositeScore: Number(r.compositeScore),
+      sequenceOrder: r.sequenceOrder,
+      inclusionRationale: r.inclusionRationale,
+    })),
+  };
 }

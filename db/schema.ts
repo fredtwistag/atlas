@@ -340,6 +340,50 @@ export const opportunityEvidence = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.opportunityId, t.captureId] }) }),
 );
 
+/**
+ * Pilot Portfolio (Ticket A): a curated 3-5 opportunity recommendation per
+ * sprint + the LLM narrative framing it. One per sprint; generated `draft` by
+ * recompute, surfaced by Twistag. Writes are service-role only (see 0014 RLS).
+ */
+export const portfolios = pgTable("portfolios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .unique()
+    .references(() => sprints.id),
+  narrative: text("narrative").notNull().default(""),
+  status: text("status").notNull().default("draft"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const portfolioItems = pgTable(
+  "portfolio_items",
+  {
+    portfolioId: uuid("portfolio_id")
+      .notNull()
+      .references(() => portfolios.id, { onDelete: "cascade" }),
+    opportunityId: uuid("opportunity_id")
+      .notNull()
+      .references(() => opportunities.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    sequenceOrder: integer("sequence_order").notNull(),
+    inclusionRationale: text("inclusion_rationale").notNull().default(""),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.portfolioId, t.opportunityId] }),
+  }),
+);
+
 export const sowDrafts = pgTable("sow_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
