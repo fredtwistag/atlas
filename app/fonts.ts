@@ -1,17 +1,14 @@
-import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 
-export const dmSans = DM_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-dm-sans",
-});
-
-export const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-jetbrains",
-});
+/* Vercel's Geist design system fonts — the product UI/display family
+ * (Geist Sans) and the numeric/code family (Geist Mono). Shipped as local
+ * fonts by the `geist` package (no build-time Google Fonts fetch). They expose
+ * the CSS variables `--font-geist-sans` and `--font-geist-mono`, wired into the
+ * design tokens in design/tokens.css. */
+export const geistSans = GeistSans;
+export const geistMono = GeistMono;
 
 /* Twistag's brand face — marketing surface only (applied via .theme-marketing
  * in design/tokens.css). Licensed webfont shared with twistag.com (files from

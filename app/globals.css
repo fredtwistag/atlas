@@ -6,6 +6,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  /* Geist focus ring: a two-layer ring — a 2px gap in the surface color, then a
+     2px blue ring. Applied to every interactive element on :focus-visible. Text
+     inputs match :focus-visible on focus, so this covers them too. */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 4px var(--focus-ring);
+  }
+}
+
 @layer base {
   html,
   body {
@@ -20,8 +34,8 @@
   }
 
   ::selection {
-    background: var(--brand-soft);
-    color: var(--brand-hover);
+    background: var(--accent-blue-soft);
+    color: var(--accent-blue-text);
   }
 
   /* Thin, quiet scrollbars to match the calm surface palette. */

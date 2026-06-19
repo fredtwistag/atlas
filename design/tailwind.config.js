@@ -1,10 +1,22 @@
 /**
- * Atlas Tailwind configuration
+ * Atlas Tailwind configuration — Vercel Geist design system.
  *
- * Bridges the CSS custom properties in tokens.css to Tailwind utility classes
- * so devs can use either approach. Prefer Tailwind classes for components;
- * fall back to vars in CSS modules for layout-level work.
+ * Bridges the CSS custom properties in tokens.css to Tailwind utility classes.
+ * Two layers are exposed:
+ *  - Semantic aliases (bg, surface, text, border, brand, success, …) — prefer
+ *    these in product components so a token change repaints the whole app.
+ *  - Raw Geist scales (gray / blue / red / amber / green / teal / purple /
+ *    pink, steps 100–1000) — for the rare case you need a specific step.
  */
+
+/** A Geist 100–1000 scale wired to CSS variables (theme-aware). */
+const scale = (name) =>
+  Object.fromEntries(
+    [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map((s) => [
+      s,
+      `var(--${name}-${s})`,
+    ]),
+  );
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -16,6 +28,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Semantic aliases
         bg: "var(--bg)",
         surface: "var(--surface)",
         "surface-2": "var(--surface-2)",
@@ -30,12 +43,19 @@ module.exports = {
           hover: "var(--brand-hover)",
           soft: "var(--brand-soft)",
         },
+        "accent-blue": {
+          DEFAULT: "var(--accent-blue)",
+          hover: "var(--accent-blue-hover)",
+          soft: "var(--accent-blue-soft)",
+          text: "var(--accent-blue-text)",
+        },
         accent: {
           DEFAULT: "var(--accent)",
           ink: "var(--accent-ink)",
         },
         success: {
           DEFAULT: "var(--success)",
+          strong: "var(--success-strong)",
           soft: "var(--success-soft)",
         },
         warning: {
@@ -44,8 +64,19 @@ module.exports = {
         },
         danger: {
           DEFAULT: "var(--danger)",
+          strong: "var(--danger-strong)",
           soft: "var(--danger-soft)",
         },
+        focus: "var(--focus-ring)",
+        // Raw Geist scales
+        gray: scale("gray"),
+        blue: scale("blue"),
+        red: scale("red"),
+        amber: scale("amber"),
+        green: scale("green"),
+        teal: scale("teal"),
+        purple: scale("purple"),
+        pink: scale("pink"),
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
@@ -55,6 +86,7 @@ module.exports = {
         sm: "var(--radius-sm)",
         DEFAULT: "var(--radius)",
         lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
         full: "var(--radius-full)",
       },
       boxShadow: {
@@ -62,23 +94,28 @@ module.exports = {
         DEFAULT: "var(--shadow)",
         lg: "var(--shadow-lg)",
       },
+      // Geist type scale: copy/label sizes for body + UI, heading sizes with
+      // tightening tracking as size grows.
       fontSize: {
-        xs: ["11px", { lineHeight: "1.5", letterSpacing: "0.04em" }],
-        sm: ["12.5px", { lineHeight: "1.5" }],
-        base: ["14px", { lineHeight: "1.55" }],
-        md: ["14.5px", { lineHeight: "1.6", letterSpacing: "-0.005em" }],
-        lg: ["16px", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
-        xl: ["18px", { lineHeight: "1.3", letterSpacing: "-0.015em" }],
-        "2xl": ["22px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
-        "3xl": ["28px", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
-        "4xl": ["42px", { lineHeight: "1.08", letterSpacing: "-0.03em" }],
-        "5xl": ["56px", { lineHeight: "1.02", letterSpacing: "-0.035em" }],
-        "6xl": ["72px", { lineHeight: "0.98", letterSpacing: "-0.04em" }],
+        xs: ["12px", { lineHeight: "16px" }],
+        sm: ["13px", { lineHeight: "18px" }],
+        base: ["14px", { lineHeight: "20px" }],
+        md: ["15px", { lineHeight: "22px", letterSpacing: "-0.01em" }],
+        lg: ["16px", { lineHeight: "24px", letterSpacing: "-0.02em" }],
+        xl: ["20px", { lineHeight: "26px", letterSpacing: "-0.02em" }],
+        "2xl": ["24px", { lineHeight: "32px", letterSpacing: "-0.04em" }],
+        "3xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.04em" }],
+        "4xl": ["40px", { lineHeight: "48px", letterSpacing: "-0.06em" }],
+        "5xl": ["56px", { lineHeight: "1", letterSpacing: "-0.06em" }],
+        "6xl": ["72px", { lineHeight: "1", letterSpacing: "-0.06em" }],
+      },
+      transitionTimingFunction: {
+        geist: "cubic-bezier(0.175, 0.885, 0.32, 1.1)",
       },
       transitionDuration: {
-        fast: "120ms",
-        DEFAULT: "150ms",
-        slow: "250ms",
+        fast: "150ms",
+        DEFAULT: "200ms",
+        slow: "300ms",
       },
     },
   },

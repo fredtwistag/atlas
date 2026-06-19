@@ -12,7 +12,7 @@ export function ProgressBar({
 }) {
   const clamped = Math.max(0, Math.min(100, value));
   const fill = {
-    brand: "bg-brand",
+    brand: "bg-accent-blue",
     success: "bg-success",
     warning: "bg-warning",
     text: "bg-text",

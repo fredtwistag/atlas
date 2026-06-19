@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { dmSans, jetbrainsMono, suisse } from "./fonts";
+import { geistSans, geistMono, suisse } from "./fonts";
 import { env } from "@/lib/env";
 import "./globals.css";
 
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${jetbrainsMono.variable} ${suisse.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${suisse.variable}`}
       // Browser extensions (LanguageTool, Grammarly, etc.) inject attributes
       // like data-lt-installed onto <html> before React hydrates; ignore those
       // attribute-only diffs on this element.

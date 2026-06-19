@@ -10,9 +10,9 @@ export function ScoreBadge({
 }) {
   const tone =
     score >= 8
-      ? "bg-brand text-white"
+      ? "bg-accent-blue text-white"
       : score >= 6.5
-        ? "bg-brand-soft text-brand"
+        ? "bg-accent-blue-soft text-accent-blue-text"
         : "bg-surface-2 text-text-2";
 
   return (

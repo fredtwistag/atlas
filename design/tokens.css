@@ -1,63 +1,202 @@
-/* Atlas Design Tokens
+/* Atlas Design Tokens — Vercel Geist (Light theme)
  * Single source of truth. Import once at app root.
+ *
+ * The product app renders the Geist design system: high-contrast, near-neutral
+ * surfaces, hairline borders, blue for links/focus/accent, and the gray scale
+ * to rank information. The full Geist scales (gray / blue / red / amber /
+ * green / teal / purple / pink, steps 100–1000) live below as raw tokens; the
+ * app's semantic aliases (--bg, --surface, --text, --border, …) are mapped onto
+ * them so every existing utility class inherits the Geist look.
+ *
+ * Spec: https://vercel.com/design.md (Geist, Light). Step intent:
+ *   100 bg · 200 hover bg · 300 active bg · 400 border · 500 hover border ·
+ *   600 active border · 700 solid fill · 800 solid hover · 900 secondary text ·
+ *   1000 primary text.
  */
 
 :root {
+  /* ============ GEIST SCALE — GRAY (solid) ============ */
+  --gray-100: #f2f2f2;
+  --gray-200: #ebebeb;
+  --gray-300: #e6e6e6;
+  --gray-400: #eaeaea;
+  --gray-500: #c9c9c9;
+  --gray-600: #a8a8a8;
+  --gray-700: #8f8f8f;
+  --gray-800: #7d7d7d;
+  --gray-900: #4d4d4d;
+  --gray-1000: #171717;
+
+  /* ============ GEIST SCALE — GRAY (alpha; layer over any surface) ============ */
+  --gray-alpha-100: #0000000d;
+  --gray-alpha-200: #00000014;
+  --gray-alpha-300: #0000001a;
+  --gray-alpha-400: #00000014;
+  --gray-alpha-500: #00000036;
+  --gray-alpha-600: #0000003d;
+  --gray-alpha-700: #00000070;
+  --gray-alpha-800: #00000082;
+  --gray-alpha-900: #000000b3;
+  --gray-alpha-1000: #000000e8;
+
+  /* ============ GEIST SCALE — BLUE (links · focus · accent) ============ */
+  --blue-100: #f0f7ff;
+  --blue-200: #e9f4ff;
+  --blue-300: #dfefff;
+  --blue-400: #cae7ff;
+  --blue-500: #94ccff;
+  --blue-600: #48aeff;
+  --blue-700: #006bff;
+  --blue-800: #0059ec;
+  --blue-900: #005ff2;
+  --blue-1000: #002359;
+
+  /* ============ GEIST SCALE — RED (errors) ============ */
+  --red-100: #ffeeef;
+  --red-200: #ffe8ea;
+  --red-300: #ffe3e4;
+  --red-400: #ffd7d6;
+  --red-500: #ffb1b3;
+  --red-600: #ff676d;
+  --red-700: #fc0035;
+  --red-800: #ea001d;
+  --red-900: #d8001b;
+  --red-1000: #47000c;
+
+  /* ============ GEIST SCALE — AMBER (warnings) ============ */
+  --amber-100: #fff6de;
+  --amber-200: #fff4cf;
+  --amber-300: #fff1c1;
+  --amber-400: #ffdc73;
+  --amber-500: #ffc543;
+  --amber-600: #ffa600;
+  --amber-700: #ffae00;
+  --amber-800: #ff9300;
+  --amber-900: #aa4d00;
+  --amber-1000: #561900;
+
+  /* ============ GEIST SCALE — GREEN (success) ============ */
+  --green-100: #ecfdec;
+  --green-200: #e5fce7;
+  --green-300: #d3fad1;
+  --green-400: #b9f5bc;
+  --green-500: #82eb8d;
+  --green-600: #4ce15e;
+  --green-700: #28a948;
+  --green-800: #279141;
+  --green-900: #107d32;
+  --green-1000: #003a00;
+
+  /* ============ GEIST SCALE — TEAL ============ */
+  --teal-100: #defffb;
+  --teal-200: #ddfef6;
+  --teal-300: #ccf9f1;
+  --teal-400: #b1f7ec;
+  --teal-500: #52f0db;
+  --teal-600: #00e3c4;
+  --teal-700: #00ac96;
+  --teal-800: #00927f;
+  --teal-900: #007f70;
+  --teal-1000: #003f34;
+
+  /* ============ GEIST SCALE — PURPLE ============ */
+  --purple-100: #faf0ff;
+  --purple-200: #f9f0ff;
+  --purple-300: #f6e8ff;
+  --purple-400: #f2d9ff;
+  --purple-500: #dfa7ff;
+  --purple-600: #c979ff;
+  --purple-700: #a000f8;
+  --purple-800: #8500d1;
+  --purple-900: #7d00cc;
+  --purple-1000: #2f004e;
+
+  /* ============ GEIST SCALE — PINK ============ */
+  --pink-100: #ffe8f6;
+  --pink-200: #ffe8f3;
+  --pink-300: #ffdfeb;
+  --pink-400: #ffd3e1;
+  --pink-500: #fdb3cc;
+  --pink-600: #f97ea7;
+  --pink-700: #f22782;
+  --pink-800: #e4106e;
+  --pink-900: #c41562;
+  --pink-1000: #460523;
+
   /* ============ SURFACE ============ */
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --surface-2: #f4f4f5;
+  /* background-100 is the primary page/card surface; background-200 is a
+   * secondary surface for subtle separation only (not a general fill). */
+  --bg: #fafafa; /* background-200 — page canvas */
+  --surface: #ffffff; /* background-100 — cards, panels, controls */
+  --surface-2: var(--gray-100); /* subtle separation / hover fill */
 
-  /* ============ FOREGROUND ============ */
-  --text: #09090b;
-  --text-2: #52525b;
-  --text-3: #71717a; /* AA on white (~4.6:1) — for muted text */
-  --text-faint: #a1a1aa; /* decorative only: hairlines, inactive icons */
+  /* ============ FOREGROUND (gray scale ranks information) ============ */
+  --text: var(--gray-1000); /* primary text + icons */
+  --text-2: var(--gray-900); /* secondary text + icons */
+  --text-3: var(--gray-800); /* tertiary / metadata labels */
+  --text-faint: var(--gray-600); /* decorative: hairlines, inactive icons */
 
-  /* ============ BORDERS ============ */
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
+  /* ============ BORDERS (Geist hairlines) ============ */
+  --border: var(--gray-400); /* default border */
+  --border-strong: var(--gray-500); /* hover / emphasized border */
 
-  /* ============ BRAND ============ */
-  --brand: #4f46e5;
-  --brand-hover: #4338ca;
-  --brand-soft: #eef2ff;
+  /* ============ BRAND — primary action (near-black) ============ */
+  /* The single most important action on a view: solid gray-1000 fill. */
+  --brand: var(--gray-1000);
+  --brand-hover: #383838; /* primary button hover (lightened charcoal) */
+  --brand-soft: var(--gray-100);
+
+  /* ============ ACCENT — blue (links · focus · info) ============ */
+  --accent-blue: var(--blue-700);
+  --accent-blue-hover: var(--blue-800);
+  --accent-blue-soft: var(--blue-100);
+  --accent-blue-text: var(--blue-900); /* readable blue on soft/white */
 
   /* ============ SEMANTIC ============ */
-  --success: #16a34a;
-  --success-soft: #f0fdf4;
-  --warning: #d97706;
-  --warning-soft: #fffbeb;
-  --danger: #dc2626;
-  --danger-soft: #fef2f2;
+  --success: var(--green-700);
+  --success-strong: var(--green-900); /* text on soft */
+  --success-soft: var(--green-100);
+  --warning: var(--amber-900); /* readable amber text/solid on white */
+  --warning-soft: var(--amber-100);
+  --danger: var(--red-800);
+  --danger-strong: var(--red-900);
+  --danger-soft: var(--red-100);
 
-  /* ============ RADII ============ */
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-full: 999px;
+  /* ============ FOCUS RING (Geist two-layer) ============ */
+  /* box-shadow: 0 0 0 2px <surface>, 0 0 0 4px var(--focus-ring) */
+  --focus-ring: var(--blue-700);
 
-  /* ============ SHADOWS ============ */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  /* ============ RADII (Geist: tight, one family per view) ============ */
+  --radius-sm: 6px; /* controls: buttons, inputs, badges */
+  --radius: 6px; /* everyday surfaces */
+  --radius-lg: 12px; /* cards, menus, modals */
+  --radius-xl: 16px; /* fullscreen surfaces */
+  --radius-full: 9999px;
+
+  /* ============ SHADOWS (Geist elevation — subtle, tonal first) ============ */
+  --shadow-sm: 0 2px 2px rgba(0, 0, 0, 0.04); /* raised cards */
+  --shadow:
+    0 1px 1px rgba(0, 0, 0, 0.02), 0 4px 8px -4px rgba(0, 0, 0, 0.04),
+    0 16px 24px -8px rgba(0, 0, 0, 0.06); /* popovers, menus */
   --shadow-lg:
-    0 10px 30px -10px rgba(0, 0, 0, 0.18), 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+    0 1px 1px rgba(0, 0, 0, 0.02), 0 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0 24px 32px -8px rgba(0, 0, 0, 0.06); /* modals, dialogs */
 
   /* ============ TYPOGRAPHY ============ */
-  /* Font families are provided by next/font (app/fonts.ts) as CSS variables.
-   * DM Sans is the single UI/display family; JetBrains Mono carries numbers,
-   * scores, and table metrics. No serif. */
+  /* Geist Sans sets UI + prose; Geist Mono sets numbers, code, tabular data.
+   * Variables provided by next/font via the `geist` package (app/fonts.ts). */
   --font-sans:
-    var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
 
   --font-features: normal;
 
-  /* ============ TRANSITIONS ============ */
-  --t-fast: 0.12s ease;
-  --t-base: 0.15s ease;
-  --t-slow: 0.25s ease;
+  /* ============ TRANSITIONS (Geist motion: short, physical) ============ */
+  --ease: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  --t-fast: 0.15s var(--ease); /* state changes */
+  --t-base: 0.2s var(--ease); /* popovers, tooltips */
+  --t-slow: 0.3s var(--ease); /* overlays, modals */
 
   /* ============ Z-INDEX SCALE ============ */
   --z-base: 1;
@@ -66,9 +205,9 @@
   --z-modal: 100;
   --z-toast: 200;
 
-  /* ============ TWISTAG ACCENT ============ */
-  /* Twistag brand lime. Background-only on light surfaces (pair with
-   * --accent-ink text); usable as text/accent on black sections. */
+  /* ============ TWISTAG ACCENT (marketing brand only) ============ */
+  /* Twistag brand lime — used by the .theme-marketing surface, not the Geist
+   * product app. Background-only on light surfaces (pair with --accent-ink). */
   --accent: #e0ff03;
   --accent-ink: #09090b;
 }
@@ -76,8 +215,8 @@
 /* Marketing surface (atlas.twistag.com public pages) — "Field Report"
  * direction, built from twistag.com's actual DNA: Suisse Intl, square
  * geometry, hairlines instead of shadows, dirty-white paper, lime as the
- * action color with a pressed darker edge. The product app keeps the
- * indigo :root values, DM Sans, radii, and shadows. */
+ * action color with a pressed darker edge. This is Twistag's own brand and is
+ * intentionally NOT Geist — the Geist product app keeps the :root values. */
 .theme-marketing {
   --bg: #ffffff;
   --surface: #f4f1ec;
@@ -88,7 +227,7 @@
   --brand-hover: #27272a;
   --brand-soft: #f6ffc4;
 
-  /* Suisse Intl replaces DM Sans on marketing pages only */
+  /* Suisse Intl replaces Geist Sans on marketing pages only */
   --font-sans:
     var(--font-suisse), -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -97,6 +236,7 @@
   --radius-sm: 0px;
   --radius: 0px;
   --radius-lg: 0px;
+  --radius-xl: 0px;
   --shadow-sm: none;
   --shadow: none;
   --shadow-lg: none;
@@ -109,16 +249,40 @@
   --cell-hover: #222222;
 }
 
-/* Optional dark theme — Atlas does not use this in v1, but keep tokens reserved */
+/* Geist Dark theme — reserved (Atlas product is light in v1). Same token names,
+ * dark values. Enable with [data-theme="dark"]. Source: /design.dark.md. */
 [data-theme="dark"] {
-  --bg: #0a0a0a;
-  --surface: #18181b;
-  --surface-2: #27272a;
-  --text: #fafafa;
-  --text-2: #d4d4d8;
-  --text-3: #71717a;
-  --border: #27272a;
-  --border-strong: #3f3f46;
+  --bg: #0a0a0a; /* background-200 */
+  --surface: #0a0a0a; /* background-100 */
+  --surface-2: #1a1a1a;
+
+  --gray-100: #1a1a1a;
+  --gray-200: #1f1f1f;
+  --gray-300: #292929;
+  --gray-400: #2e2e2e;
+  --gray-500: #454545;
+  --gray-600: #878787;
+  --gray-700: #8f8f8f;
+  --gray-800: #a1a1a1;
+  --gray-900: #ededed;
+  --gray-1000: #ffffff;
+
+  --text: #ededed;
+  --text-2: #a1a1a1;
+  --text-3: #8f8f8f;
+  --text-faint: #545454;
+  --border: #2e2e2e;
+  --border-strong: #454545;
+
+  --brand: #ffffff;
+  --brand-hover: #ededed;
+  --brand-soft: #1f1f1f;
+
+  --accent-blue: #52a8ff;
+  --accent-blue-soft: #0f1b2d;
+  --accent-blue-text: #52a8ff;
+
+  --focus-ring: #006bff;
 }
 
 /* Base typography setup */
@@ -128,7 +292,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: var(--font-features);

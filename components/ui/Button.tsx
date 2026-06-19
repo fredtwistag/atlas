@@ -6,21 +6,28 @@ type Variant = "primary" | "secondary" | "ghost" | "brand" | "danger";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const base =
-  "inline-flex items-center justify-center gap-1.5 rounded font-medium leading-none transition-all border border-transparent disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1";
+  "focus-ring inline-flex items-center justify-center gap-1.5 rounded-sm font-medium leading-none whitespace-nowrap transition-colors duration-fast ease-geist border disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-text-faint disabled:border-transparent";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-text text-surface hover:bg-[#1f1f23]",
+  // Primary action: solid near-black (gray-1000) fill, surface-colored label.
+  primary: "bg-brand text-surface border-transparent hover:bg-brand-hover",
+  // Secondary: surface fill with a hairline border that darkens on hover.
   secondary:
     "bg-surface text-text border-border hover:bg-surface-2 hover:border-border-strong",
-  ghost: "text-text-2 hover:text-text hover:bg-surface-2",
-  brand: "bg-brand text-white hover:bg-brand-hover",
-  danger: "bg-danger text-white hover:opacity-90",
+  // Ghost / tertiary: transparent, tints with a gray wash on hover.
+  ghost:
+    "bg-transparent text-text-2 border-transparent hover:bg-surface-2 hover:text-text",
+  // Brand: the blue accent CTA (links, info-forward actions).
+  brand:
+    "bg-accent-blue text-white border-transparent hover:bg-accent-blue-hover",
+  // Destructive: solid red-800.
+  danger: "bg-danger text-white border-transparent hover:bg-danger-strong",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-[13px]",
-  md: "h-9 px-4 text-[13.5px]",
-  lg: "h-11 px-5 text-[14.5px]",
+  sm: "h-8 px-2.5 text-[14px]",
+  md: "h-10 px-3 text-[14px]",
+  lg: "h-12 px-3.5 text-[16px]",
   // ≥44px square hit area for icon-only buttons (WCAG 2.5.5). Pixel-based, not
   // h-11 — the app's root font is 14px, so rem units would render only ~38px.
   icon: "h-[44px] w-[44px] p-0",

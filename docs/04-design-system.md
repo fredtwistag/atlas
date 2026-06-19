@@ -2,6 +2,15 @@
 
 > Linear-sharp UI · Vanta/Thoropass task structure · light theme · Inter + Fraunces.
 
+> **Branch note (`claude/vercel-design-system-2myz48`):** this experimental
+> branch swaps the product app onto **Vercel's Geist design system** — Geist
+> Sans/Mono, the Geist gray + accent color scales (steps 100–1000), hairline
+> borders, near-black primary + blue accent, tight radii (6/12/16px), Geist
+> elevation, and a two-layer blue focus ring. The values below (Inter/Fraunces,
+> indigo) describe `main`; the live tokens are in `design/tokens.css`
+> (source: https://vercel.com/design.md). The Twistag marketing surface
+> (`.theme-marketing`) is intentionally left on its own brand (Suisse + lime).
+
 ---
 
 ## 1. Design language

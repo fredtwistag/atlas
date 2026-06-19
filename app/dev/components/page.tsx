@@ -30,11 +30,12 @@ export default function ComponentsShowcase() {
           <div>
             <Logo />
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-              Tier-1 components
+              Geist design system
             </h1>
             <p className="mt-1 text-md text-text-2">
-              The starter design-system set (ATL-018), wired to the Atlas
-              tokens.
+              Vercel&rsquo;s Geist applied to the Atlas component set — Geist
+              Sans/Mono, the gray + accent scales, hairline borders, and the
+              blue focus ring.
             </p>
           </div>
           <ButtonLink href="/" variant="secondary">
@@ -42,7 +43,7 @@ export default function ComponentsShowcase() {
           </ButtonLink>
         </header>
 
-        <Group title="Typography — DM Sans">
+        <Group title="Typography — Geist Sans">
           <div className="space-y-2">
             <div className="text-5xl font-semibold tracking-tight">
               Display 5xl
@@ -63,9 +64,58 @@ export default function ComponentsShowcase() {
               1,284.50 · 98% · 7.1
             </div>
             <p className="text-sm text-text-3">
-              One sans family (weights carry hierarchy) + JetBrains Mono for
-              numbers, scores, and metrics. No serif.
+              Geist Sans carries UI and prose; Geist Mono carries numbers,
+              scores, and table metrics. Weights carry hierarchy. No serif.
             </p>
+          </div>
+        </Group>
+
+        <Group title="Color — Geist scales">
+          <div className="space-y-3">
+            {(
+              [
+                ["Gray", "gray"],
+                ["Blue", "blue"],
+                ["Red", "red"],
+                ["Amber", "amber"],
+                ["Green", "green"],
+                ["Teal", "teal"],
+                ["Purple", "purple"],
+                ["Pink", "pink"],
+              ] as const
+            ).map(([label, key]) => (
+              <div key={key} className="flex items-center gap-3">
+                <div className="w-14 shrink-0 text-xs font-medium text-text-3">
+                  {label}
+                </div>
+                <div className="flex flex-1 overflow-hidden rounded border border-border">
+                  {[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(
+                    (step) => (
+                      <div
+                        key={step}
+                        className="h-8 flex-1"
+                        style={{ background: `var(--${key}-${step})` }}
+                        title={`${label} ${step}`}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Group>
+
+        <Group title="Elevation">
+          <div className="flex flex-wrap gap-5">
+            <div className="grid h-20 w-40 place-items-center rounded-lg border border-border bg-surface text-sm text-text-2 shadow-sm">
+              Card · shadow-sm
+            </div>
+            <div className="grid h-20 w-40 place-items-center rounded-lg border border-border bg-surface text-sm text-text-2 shadow">
+              Popover · shadow
+            </div>
+            <div className="grid h-20 w-40 place-items-center rounded-lg border border-border bg-surface text-sm text-text-2 shadow-lg">
+              Modal · shadow-lg
+            </div>
           </div>
         </Group>
 
