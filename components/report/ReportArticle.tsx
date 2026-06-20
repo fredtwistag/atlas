@@ -100,9 +100,14 @@ export function ReportArticle({
           <strong>
             {moneyShort(totalLow)}–{moneyShort(totalHigh)}
           </strong>
-          . The single most-cited friction — a manual credit-hold release that
-          stalls roughly 140 orders a month — was corroborated independently by
-          five contributors across Finance, Order Ops, and Warehouse.
+          .{" "}
+          {topFive[0] ? (
+            <>
+              The highest-ranked opportunity — <strong>{topFive[0].title}</strong>{" "}
+              — is estimated at {moneyShort(topFive[0].impactLow)}–
+              {moneyShort(topFive[0].impactHigh)}/yr.
+            </>
+          ) : null}
         </p>
         <div className="my-6 grid grid-cols-3 gap-3">
           {[
@@ -134,8 +139,9 @@ export function ReportArticle({
         <p>
           Captures were clustered by similarity and scored across five
           dimensions: financial impact, implementation feasibility, time to
-          value, strategic alignment, and evidence confidence. Only
-          opportunities corroborated by multiple contributors are shown here.
+          value, strategic alignment, and evidence confidence. Each opportunity
+          links back to the verbatim captures that drove its score, attributed
+          by role.
         </p>
       </Section>
 
