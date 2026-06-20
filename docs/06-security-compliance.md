@@ -28,7 +28,7 @@
 - No comm channel listening (Slack/Teams content)
 
 ### Principle 2 — Privacy by design at code level
-- IC quotes are **never** displayed with the IC's name in the manager UI
+- IC quotes are displayed with the contributor's **name and role** in the manager/sponsor UI (changed 2026-06-20); names are never sent to the LLM, and email/userId are never exposed on evidence
 - Quote → contributor link exists internally only for the IC's own edit window + Twistag debugging
 - Conversation transcripts are NOT in general application logs
 - LLM call logs may contain extracted captures but never PII like emails / phone numbers / IDs
@@ -69,7 +69,7 @@
 - Works council notification required in DE / FR — pilot playbook includes this step
 - Disclosure that data is for operational analysis, not performance review
 - Right to skip questions without penalty
-- Aggregation: manager UI never shows individual quotes with names
+- Attribution: manager/sponsor UI shows individual quotes with the contributor's name and role; the LLM scoring boundary still receives role/department only
 
 ### Sub-processors (transparency requirement)
 | Sub-processor | What they process | DPA in place |

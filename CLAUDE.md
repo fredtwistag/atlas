@@ -74,8 +74,10 @@ Atlas is an **operational discovery sprint product** built by Twistag. Client te
 - **No bypass via service role** in tRPC procedures — go through user JWT.
 
 ### Privacy by design
-- IC quotes are **never** displayed with the IC's name in the manager UI. Only role.
-- Internal records DO link quote → contributor, but only used for the IC's own edit window + Twistag debugging.
+- IC quotes ARE displayed with the contributor's **name and role** in the manager/sponsor UI, so sponsors can follow up directly. (Changed 2026-06-20 — see `docs/superpowers/plans/2026-06-20-deanonymize-contributors.md`. Earlier builds were role-only.)
+- **Names are NEVER sent to the LLM.** The scoring/extraction/synthesis boundary (`services/opportunity/score.ts`, `services/opportunity/recompute.ts`, `services/synthesis/stakeholders.ts`) receives **role + department only** — keep it that way.
+- Evidence items expose **name + role only** — never the contributor's email or internal `userId`.
+- ICs can still edit or remove anything they said for 7 days after each session (`/me`).
 - Do not log full conversation transcripts to general application logs.
 
 ## How to pick up work
