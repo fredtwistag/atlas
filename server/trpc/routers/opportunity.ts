@@ -1,20 +1,16 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { router, tenantProcedure, managerProcedure } from "../trpc";
 import { withTenantContext } from "@/db/client";
-import {
-  opportunities,
-  opportunityEvidence,
-  captures,
-  users,
-  tenants,
-  sowDrafts,
-} from "@/db/schema";
+import { opportunities, tenants, sowDrafts } from "@/db/schema";
 import { toOpportunity, type OpportunityRow } from "@/lib/dashboard-map";
-import { listSprintOpportunities } from "@/lib/sprint-read";
+import {
+  listSprintOpportunities,
+  loadOpportunityDetail,
+} from "@/lib/sprint-read";
 import { buildSowDraft } from "@/lib/sow";
-import type { Opportunity, Capture, SowDraft } from "@/lib/types";
+import type { SowDraft } from "@/lib/types";
 
 export const opportunityRouter = router({
   listForSprint: tenantProcedure
@@ -28,57 +24,9 @@ export const opportunityRouter = router({
   get: tenantProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(({ ctx, input }) =>
-      withTenantContext(ctx.session, async (tx): Promise<Opportunity> => {
-        const [row] = await tx
-          .select()
-          .from(opportunities)
-          .where(eq(opportunities.id, input.id));
-        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
-
-        const evRows = await tx
-          .select({
-            id: captures.id,
-            kind: captures.kind,
-            summary: captures.summary,
-            sourceQuote: captures.sourceQuote,
-            tags: captures.tags,
-            isEdited: captures.isEdited,
-            isRemoved: captures.isRemoved,
-            role: users.title,
-          })
-          .from(opportunityEvidence)
-          .innerJoin(captures, eq(opportunityEvidence.captureId, captures.id))
-          .innerJoin(users, eq(captures.userId, users.id))
-          // Removed captures (IC exercised the 7-day edit window) must never
-          // render as evidence — plan 017.
-          .where(
-            and(
-              eq(opportunityEvidence.opportunityId, input.id),
-              eq(captures.isRemoved, false),
-            ),
-          );
-
-        const evidence: Capture[] = evRows.map((e) => ({
-          id: e.id,
-          kind: e.kind as Capture["kind"],
-          summary: e.summary,
-          sourceQuote: e.sourceQuote,
-          contributorRole: e.role ?? "Contributor",
-          tags: e.tags,
-          isEdited: e.isEdited,
-          isRemoved: e.isRemoved,
-        }));
-
-        const seenQuotes = new Set<string>();
-        const dedupedEvidence = evidence.filter((e) => {
-          const key = e.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim();
-          if (seenQuotes.has(key)) return false;
-          seenQuotes.add(key);
-          return true;
-        });
-
-        return toOpportunity(row as OpportunityRow, dedupedEvidence);
-      }),
+      withTenantContext(ctx.session, (tx) =>
+        loadOpportunityDetail(tx, input.id),
+      ),
     ),
 
   approve: managerProcedure

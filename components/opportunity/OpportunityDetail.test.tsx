@@ -30,6 +30,36 @@ describe("OpportunityDetail approve flow", () => {
   });
 });
 
+describe("OpportunityDetail read-only (Twistag admin view)", () => {
+  it("hides the approve action and links back to the admin report", async () => {
+    const { opp } = await getFixtures();
+    render(
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        readOnly
+        backHref="/admin/clients/t1/sprint/spr-northwind-q2/report"
+        backLabel="Back to report"
+      />,
+    );
+
+    // No approve affordance for Twistag staff — approval stays with the client.
+    expect(
+      screen.queryByRole("button", { name: /approve/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/read-only view/i)).toBeInTheDocument();
+
+    const back = screen.getByRole("link", { name: /back to report/i });
+    expect(back).toHaveAttribute(
+      "href",
+      "/admin/clients/t1/sprint/spr-northwind-q2/report",
+    );
+
+    // Evidence is still fully rendered — the point of the drill-down.
+    expect(screen.getByRole("tab", { name: /evidence/i })).toBeInTheDocument();
+  });
+});
+
 describe("OpportunityDetail tabs (a11y)", () => {
   it("exposes a tablist with the active tab selected", async () => {
     const { opp, sow } = await getFixtures();

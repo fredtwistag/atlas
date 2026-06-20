@@ -248,6 +248,10 @@ describe("/admin/clients/[tenantId]/sprint/[sprintId]/report contract — twista
     expect(typeof data.progress.completionPct).toBe("number");
     expect(data.progress.participantCount).toBeGreaterThanOrEqual(1);
     expect(Array.isArray(data.opportunities)).toBe(true);
+    // The admin report renders the sponsor's synthesis memo too (null until one
+    // is generated — the field must always be present).
+    expect(data).toHaveProperty("memo");
+    expect(data.memo).toBeNull();
   });
 });
 
@@ -370,5 +374,25 @@ describe("/admin/clients/[tenantId] contract — twistag.clientDetail", () => {
     expect(o.compositeScore).toBe(8.4);
     expect(o.status).toBe("approved");
     expect(o.sowStatus).toBe("draft");
+  });
+
+  it("twistag.opportunityView returns the drill-down contract with tenant + sprint", async () => {
+    const data = await asTwistag().twistag.opportunityView({
+      opportunityId: OC,
+    });
+    // The admin opportunity route verifies these against the URL.
+    expect(data.tenantId).toBe(TC);
+    expect(data.sprintId).toBe(SC);
+    expect(data.opp.id).toBe(OC);
+    expect(data.opp.title).toBe("Automate credit-hold release");
+    expect(Array.isArray(data.opp.evidence)).toBe(true);
+  });
+
+  it("twistag.opportunityView is NOT_FOUND for an unknown opportunity", async () => {
+    await expect(
+      asTwistag().twistag.opportunityView({
+        opportunityId: "abababab-abab-4bab-8bab-abababab9999",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

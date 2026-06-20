@@ -595,6 +595,8 @@ describe("twistag.clientList", () => {
     const a = clients.find((c) => c.name === "Tenant A")!;
     expect(a.opportunities).toBeGreaterThanOrEqual(1);
     expect(["healthy", "watch", "at_risk"]).toContain(a.health);
+    // The active sprint is deep-linkable from the cockpit (open-the-sprint).
+    expect(a.sprintId).toBe(SPRINT_A);
     // engagementLead was render-dead and is gone (Phase 0).
     expect(a).not.toHaveProperty("engagementLead");
     // Shape holds even for a tenant with no active sprint: zero-safe fields.

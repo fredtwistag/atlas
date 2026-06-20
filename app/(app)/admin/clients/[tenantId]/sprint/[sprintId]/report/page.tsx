@@ -45,6 +45,10 @@ export default async function TwistagReport({
         sprint={data.sprint}
         progress={data.progress}
         opps={data.opportunities}
+        memo={data.memo}
+        opportunityHref={(oid) =>
+          `/admin/clients/${tenantId}/sprint/${sprintId}/opportunity/${oid}`
+        }
       />
     </div>
   );

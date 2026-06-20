@@ -196,9 +196,12 @@ export default async function ClientDetailPage({
                   {sprints.map((s) => (
                     <Tr key={s.id}>
                       <Td>
-                        <div className="font-medium leading-tight">
+                        <Link
+                          href={`/admin/clients/${tenantId}/sprint/${s.id}/report`}
+                          className="font-medium leading-tight hover:text-brand hover:underline"
+                        >
                           {s.name}
-                        </div>
+                        </Link>
                         <div className="text-xs text-text-3">
                           {fmtDate(s.startDate)} – {fmtDate(s.endDate)}
                         </div>
@@ -267,7 +270,12 @@ export default async function ClientDetailPage({
                 <Card key={s.id} className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="font-medium leading-tight">{s.name}</div>
+                      <Link
+                        href={`/admin/clients/${tenantId}/sprint/${s.id}/report`}
+                        className="font-medium leading-tight hover:text-brand hover:underline"
+                      >
+                        {s.name}
+                      </Link>
                       <div className="text-xs text-text-3">
                         {fmtDate(s.startDate)} – {fmtDate(s.endDate)}
                       </div>

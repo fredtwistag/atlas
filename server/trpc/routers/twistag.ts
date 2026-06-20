@@ -18,6 +18,8 @@ import {
   loadSprint,
   loadSprintProgress,
   listSprintOpportunities,
+  loadSynthesisMemo,
+  loadOpportunityDetail,
 } from "@/lib/sprint-read";
 import {
   updateOpportunity,
@@ -88,6 +90,7 @@ export const twistagRouter = router({
             name: t.name,
             segment: t.segment,
             sprintName: sprint?.name ?? "No active sprint",
+            sprintId: sprint?.id ?? null,
             health,
             completionPct,
             opportunities: opps.length,
@@ -254,8 +257,10 @@ export const twistagRouter = router({
     ),
 
   /**
-   * Read-only sprint view powering the Twistag report. Returns the sprint's
-   * `tenantId` so the admin report route can verify it matches the URL tenant.
+   * Read-only sprint view powering the Twistag report. Mirrors the sponsor's
+   * report contract (sprint + progress + opportunities + synthesis memo) so the
+   * admin sees the same page. Returns the sprint's `tenantId` so the route can
+   * verify it matches the URL tenant.
    */
   sprintView: twistagProcedure
     .input(z.object({ sprintId: z.string().uuid() }))
@@ -272,12 +277,49 @@ export const twistagRouter = router({
             .from(sprints)
             .where(eq(sprints.id, input.sprintId));
           if (!row) throw new TRPCError({ code: "NOT_FOUND" });
-          const [sprint, progress, opportunities] = await Promise.all([
+          const [sprint, progress, opportunities, memo] = await Promise.all([
             loadSprint(tx, input.sprintId),
             loadSprintProgress(tx, input.sprintId),
             listSprintOpportunities(tx, input.sprintId),
+            loadSynthesisMemo(tx, input.sprintId),
           ]);
-          return { tenantId: row.tenantId, sprint, progress, opportunities };
+          return {
+            tenantId: row.tenantId,
+            sprint,
+            progress,
+            opportunities,
+            memo,
+          };
+        },
+      ),
+    ),
+
+  /**
+   * Read-only opportunity drill-down powering the Twistag admin's evidence view
+   * — the same `OpportunityDetail` the sponsor/manager sees, minus the approve
+   * action (approval stays with the client). Returns the opportunity's
+   * `tenantId`/`sprintId` so the route can verify them against the URL.
+   */
+  opportunityView: twistagProcedure
+    .input(z.object({ opportunityId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTwistagContext(
+        {
+          twistagRole: ctx.session.twistagRole,
+          actor: ctx.session.userId,
+          targetId: input.opportunityId,
+        },
+        async (tx) => {
+          const [meta] = await tx
+            .select({
+              tenantId: opportunities.tenantId,
+              sprintId: opportunities.sprintId,
+            })
+            .from(opportunities)
+            .where(eq(opportunities.id, input.opportunityId));
+          if (!meta) throw new TRPCError({ code: "NOT_FOUND" });
+          const opp = await loadOpportunityDetail(tx, input.opportunityId);
+          return { tenantId: meta.tenantId, sprintId: meta.sprintId, opp };
         },
       ),
     ),

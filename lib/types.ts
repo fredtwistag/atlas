@@ -299,6 +299,9 @@ export interface ClientSummary {
   name: string;
   segment: string;
   sprintName: string;
+  /** The active sprint this summary reflects, for deep-linking into its report.
+   * Null when the tenant has no active sprint. */
+  sprintId: string | null;
   health: "healthy" | "watch" | "at_risk";
   completionPct: number;
   opportunities: number;

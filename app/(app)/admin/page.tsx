@@ -151,7 +151,18 @@ export default async function AdminCockpit() {
                       </Link>
                       <div className="text-xs text-text-3">{c.segment}</div>
                     </Td>
-                    <Td className="text-text-2">{c.sprintName}</Td>
+                    <Td className="text-text-2">
+                      {c.sprintId ? (
+                        <Link
+                          href={`/admin/clients/${c.tenantId}/sprint/${c.sprintId}/report`}
+                          className="hover:text-brand hover:underline"
+                        >
+                          {c.sprintName}
+                        </Link>
+                      ) : (
+                        c.sprintName
+                      )}
+                    </Td>
                     <Td>
                       <Badge tone={meta.tone}>{meta.label}</Badge>
                     </Td>

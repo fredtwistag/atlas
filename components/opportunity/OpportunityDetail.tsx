@@ -32,12 +32,21 @@ export function OpportunityDetail({
   sow,
   approverRole,
   onApprove,
+  readOnly = false,
+  backHref,
+  backLabel,
 }: {
   sprintId: string;
   opp: Opportunity;
-  sow: SowDraft;
+  /** Required for the approve flow; omit for a read-only view. */
+  sow?: SowDraft;
   approverRole?: string;
   onApprove?: (sprintId: string, oppId: string) => Promise<void>;
+  /** Hides the approve action — e.g. the Twistag admin drill-down, where
+   * approval stays with the client's sponsor and manager. */
+  readOnly?: boolean;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -80,7 +89,9 @@ export function OpportunityDetail({
   return (
     <PageContainer>
       <div className="mb-5">
-        <BackLink href={`/sprint/${sprintId}`}>Back to sprint</BackLink>
+        <BackLink href={backHref ?? `/sprint/${sprintId}`}>
+          {backLabel ?? "Back to sprint"}
+        </BackLink>
       </div>
 
       {/* Hero */}
@@ -318,6 +329,13 @@ export function OpportunityDetail({
                 align scope within 48 hours.
               </p>
             </Card>
+          ) : readOnly ? (
+            <Card className="p-4 text-center">
+              <p className="text-sm text-text-3">
+                Read-only view. Approving an opportunity stays with the
+                client&apos;s sponsor and manager.
+              </p>
+            </Card>
           ) : (
             <Button
               variant="brand"
@@ -332,72 +350,74 @@ export function OpportunityDetail({
       </div>
 
       {/* Approve sheet */}
-      <Sheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        eyebrow="Auto-drafted SOW"
-        title={approveLabel}
-        footer={
-          <>
-            <span className="text-xs text-text-3">
-              Editable before send. Generated in ~30s from the evidence.
-            </span>
-            <Button
-              variant="brand"
-              disabled={approving}
-              onClick={async () => {
-                setApproving(true);
-                try {
-                  await onApprove?.(sprintId, opp.id);
-                  setApproved(true);
-                  setSheetOpen(false);
-                } finally {
-                  setApproving(false);
-                }
-              }}
-            >
-              {approving ? "Sending…" : "Send to Twistag"}
-            </Button>
-          </>
-        }
-      >
-        <Field label="Engagement title" value={sow.title} />
-        <Field label="Scope" value={sow.scope} multiline />
-
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
-          <Field
-            label="Indicative price (draft)"
-            value={moneyShort(sow.priceUsd).replace("K", ",000")}
-          />
-        </div>
-
-        <ListField label="Inclusions" items={sow.inclusions} tone="success" />
-        <ListField label="Exclusions" items={sow.exclusions} tone="neutral" />
-
-        <div>
-          <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-            Team
-          </div>
-          <div className="space-y-1.5">
-            {sow.team.map((t) => (
-              <div
-                key={t.role}
-                className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm"
+      {!readOnly && sow ? (
+        <Sheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          eyebrow="Auto-drafted SOW"
+          title={approveLabel}
+          footer={
+            <>
+              <span className="text-xs text-text-3">
+                Editable before send. Generated in ~30s from the evidence.
+              </span>
+              <Button
+                variant="brand"
+                disabled={approving}
+                onClick={async () => {
+                  setApproving(true);
+                  try {
+                    await onApprove?.(sprintId, opp.id);
+                    setApproved(true);
+                    setSheetOpen(false);
+                  } finally {
+                    setApproving(false);
+                  }
+                }}
               >
-                <span className="font-medium">{t.role}</span>
-                <span className="text-text-3">{t.allocation}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+                {approving ? "Sending…" : "Send to Twistag"}
+              </Button>
+            </>
+          }
+        >
+          <Field label="Engagement title" value={sow.title} />
+          <Field label="Scope" value={sow.scope} multiline />
 
-        <ListField
-          label="Success metrics"
-          items={sow.successMetrics}
-          tone="brand"
-        />
-      </Sheet>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
+            <Field
+              label="Indicative price (draft)"
+              value={moneyShort(sow.priceUsd).replace("K", ",000")}
+            />
+          </div>
+
+          <ListField label="Inclusions" items={sow.inclusions} tone="success" />
+          <ListField label="Exclusions" items={sow.exclusions} tone="neutral" />
+
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
+              Team
+            </div>
+            <div className="space-y-1.5">
+              {sow.team.map((t) => (
+                <div
+                  key={t.role}
+                  className="flex items-center justify-between rounded border border-border bg-bg px-3 py-2 text-sm"
+                >
+                  <span className="font-medium">{t.role}</span>
+                  <span className="text-text-3">{t.allocation}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <ListField
+            label="Success metrics"
+            items={sow.successMetrics}
+            tone="brand"
+          />
+        </Sheet>
+      ) : null}
     </PageContainer>
   );
 }
