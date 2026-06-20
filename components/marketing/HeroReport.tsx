@@ -191,7 +191,7 @@ export function HeroReport() {
         style={beat(3300)}
         className="border-t border-border-strong pt-3 font-mono text-[11px] uppercase tracking-[0.06em] text-text-3"
       >
-        Demo data. Real reports attribute quotes by role only — never by name.
+        Demo data. Real reports attribute every quote to its contributor — by name and role.
       </figcaption>
     </figure>
   );

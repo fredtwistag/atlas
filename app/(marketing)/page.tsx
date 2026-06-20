@@ -94,7 +94,7 @@ const deliverables = [
   ],
   [
     "Evidence behind every number.",
-    "Click any score and see the quotes and signals that support it. Quotes are attributed by role, never by name — people talk because it's safe to.",
+    "Click any score and see the quotes and signals that support it. Every quote is attributed to the person who raised it — by name and role — so you know exactly who to follow up with.",
   ],
   [
     "A pre-drafted SOW for every approved build.",
