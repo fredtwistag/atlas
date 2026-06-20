@@ -160,7 +160,7 @@ function companyProfileLine(
   return bits.length ? `BUSINESS PROFILE: ${bits.join(", ")}` : "";
 }
 
-/** A short note telling the scorer how dollar figures were grounded (EXT-2). */
+/** A short note telling the scorer how EUR figures were grounded (EXT-2). */
 function costBasisNote(costBasis: CostBasis | null | undefined): string {
   const hasRates = costBasis && Object.keys(costBasis).length > 0;
   const rates = hasRates
@@ -170,10 +170,10 @@ function costBasisNote(costBasis: CostBasis | null | undefined): string {
     : `none provided — assume €${DEFAULT_LOADED_HOURLY_EUR}/hr loaded`;
   return [
     "COST BASIS (loaded hourly rates, EUR): " + rates + ".",
-    "Where a capture shows `quantified` with an `implied annual ≈ $X`, that",
+    "Where a capture shows `quantified` with an `implied annual ≈ €X`, that",
     "figure was computed deterministically from the contributor's own numbers —",
     "anchor impactLow/impactHigh and the financial dimension to it, do not invent",
-    "a different basis. Captures with no quantified line carry no measured dollars.",
+    "a different basis. Captures with no quantified line carry no measured figure.",
   ].join("\n");
 }
 
@@ -217,7 +217,7 @@ export type ScoreClusterOpts = {
   theme: string;
   captures: ScoreCapture[];
   tenantName: string;
-  /** Per-role loaded hourly rates (USD). Null → benchmark default (EXT-2). */
+  /** Per-role loaded hourly rates (EUR). Null → benchmark default (EXT-2). */
   costBasis?: CostBasis | null;
   /** Company profile to ground financial baselines (CTX-4). Null when unknown. */
   companyProfile?: { industry: string | null; sizeBand: string | null } | null;
@@ -260,7 +260,7 @@ export async function scoreCluster(
         if (q.frequencyPerYear != null)
           parts.push(`~${q.frequencyPerYear}×/yr`);
         if (q.unitMinutes != null) parts.push(`${q.unitMinutes} min each`);
-        if (q.unitCostUsd != null) parts.push(`$${q.unitCostUsd}/occurrence`);
+        if (q.unitCostUsd != null) parts.push(`€${q.unitCostUsd}/occurrence`);
         if (q.basis) parts.push(`basis: "${q.basis}"`);
         const annual = impliedAnnualUsd(q, rate);
         if (annual != null)
