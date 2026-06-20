@@ -41,8 +41,8 @@ describe("InviteEmail", () => {
     expect(html).toContain("Open Atlas");
     // Time estimate.
     expect(html).toContain("about 5 minutes");
-    // Privacy promise, verbatim from /me.
-    expect(html).toContain("attributed by role, never by name");
+    // Privacy promise, verbatim from /me (name+role attribution, 2026-06-20).
+    expect(html).toContain("attributed to you by name and role");
     expect(html).toContain("7 days");
     // Topic preview.
     expect(html).toContain("How work flows");

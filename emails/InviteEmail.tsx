@@ -77,9 +77,9 @@ export function InviteEmail(props: InviteEmailProps) {
           schedule — about 5 minutes each.
         </EmailText>
         <EmailText muted>
-          What you say is attributed by role, never by name, in anything your
-          manager or sponsor sees. You can edit or remove anything you said for
-          7 days after each session.
+          What you say is attributed to you by name and role in anything your
+          manager or sponsor sees, so they can follow up with you directly. You
+          can edit or remove anything you said for 7 days after each session.
         </EmailText>
         {topics && topics.length > 0 && (
           <Section style={{ margin: "0 0 16px" }}>
