@@ -17,7 +17,7 @@ import {
   computeHorizon,
   rateForRole,
   impliedAnnualUsd,
-  DEFAULT_LOADED_HOURLY_USD,
+  DEFAULT_LOADED_HOURLY_EUR,
 } from "./score";
 import type { DimensionKey } from "@/services/llm/schemas";
 
@@ -147,9 +147,9 @@ describe("rateForRole (EXT-2)", () => {
     expect(rateForRole("Account Executive", basis)).toBe(65);
     expect(rateForRole("Ops Lead", basis)).toBe(90); // default key
     expect(rateForRole("Ops Lead", { "Account Executive": 65 })).toBe(
-      DEFAULT_LOADED_HOURLY_USD,
+      DEFAULT_LOADED_HOURLY_EUR,
     );
-    expect(rateForRole("anyone", null)).toBe(DEFAULT_LOADED_HOURLY_USD);
+    expect(rateForRole("anyone", null)).toBe(DEFAULT_LOADED_HOURLY_EUR);
   });
 });
 
@@ -230,9 +230,9 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
 
     const content = completeStructured.mock.calls[0][0].messages[0]
       .content as string;
-    // 104 × 0.5h × $80 = $4,160 — computed in TS, embedded in the prompt.
-    expect(content).toContain("implied annual ≈ $4,160");
-    expect(content).toContain("Account Executive $80/hr");
+    // 104 × 0.5h × €80 = €4,160 — computed in TS, embedded in the prompt.
+    expect(content).toContain("implied annual ≈ €4,160");
+    expect(content).toContain("Account Executive €80/hr");
   });
 
   it("includes the company profile in the prompt when provided (CTX-4)", async () => {
@@ -262,7 +262,7 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
     });
     const content = completeStructured.mock.calls[0][0].messages[0]
       .content as string;
-    expect(content).toContain(`$${DEFAULT_LOADED_HOURLY_USD}/hr`);
+    expect(content).toContain(`€${DEFAULT_LOADED_HOURLY_EUR}/hr`);
   });
 });
 

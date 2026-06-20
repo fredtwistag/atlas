@@ -147,7 +147,7 @@ export async function writePortfolioNarrative(
   const lines = opts.items
     .map(
       (it) =>
-        `- ${it.title} (${it.horizon}, $${it.impactLow.toLocaleString("en-US")}–$${it.impactHigh.toLocaleString("en-US")}/yr)`,
+        `- ${it.title} (${it.horizon}, €${it.impactLow.toLocaleString("en-US")}–€${it.impactHigh.toLocaleString("en-US")}/yr)`,
     )
     .join("\n");
 

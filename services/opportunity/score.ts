@@ -59,15 +59,15 @@ export type ScoreCapture = {
   quantifiedImpact?: QuantifiedImpact | null;
 };
 
-/** Per-role loaded hourly rate (USD), keyed by role label; `default` is the catch-all. */
+/** Per-role loaded hourly rate (EUR), keyed by role label; `default` is the catch-all. */
 export type CostBasis = Record<string, number>;
 
 /**
- * Fallback loaded hourly rate (USD) when a sprint has no cost basis and the
+ * Fallback loaded hourly rate (EUR) when a sprint has no cost basis and the
  * role isn't listed (EXT-2). A deliberately conservative mid-market blended
  * rate — the manager can override per role at sprint setup (EXT-2b).
  */
-export const DEFAULT_LOADED_HOURLY_USD = 75;
+export const DEFAULT_LOADED_HOURLY_EUR = 75;
 
 /** Resolve the loaded hourly rate for a role from the cost basis, else the default. */
 export function rateForRole(
@@ -75,7 +75,7 @@ export function rateForRole(
   costBasis: CostBasis | null | undefined,
 ): number {
   return (
-    costBasis?.[role] ?? costBasis?.["default"] ?? DEFAULT_LOADED_HOURLY_USD
+    costBasis?.[role] ?? costBasis?.["default"] ?? DEFAULT_LOADED_HOURLY_EUR
   );
 }
 
@@ -165,11 +165,11 @@ function costBasisNote(costBasis: CostBasis | null | undefined): string {
   const hasRates = costBasis && Object.keys(costBasis).length > 0;
   const rates = hasRates
     ? Object.entries(costBasis)
-        .map(([role, rate]) => `${role} $${rate}/hr`)
+        .map(([role, rate]) => `${role} €${rate}/hr`)
         .join(", ")
-    : `none provided — assume $${DEFAULT_LOADED_HOURLY_USD}/hr loaded`;
+    : `none provided — assume €${DEFAULT_LOADED_HOURLY_EUR}/hr loaded`;
   return [
-    "COST BASIS (loaded hourly rates, USD): " + rates + ".",
+    "COST BASIS (loaded hourly rates, EUR): " + rates + ".",
     "Where a capture shows `quantified` with an `implied annual ≈ $X`, that",
     "figure was computed deterministically from the contributor's own numbers —",
     "anchor impactLow/impactHigh and the financial dimension to it, do not invent",
@@ -189,7 +189,7 @@ function scoringSystem(): string {
     "- description: 1-3 sentences on the opportunity.",
     "- category: a short operational category (e.g. 'Pricing ops', 'Quote-to-cash').",
     "- departments: the affected departments (0-6).",
-    "- impactLow / impactHigh: estimated annual USD impact range (integers,",
+    "- impactLow / impactHigh: estimated annual EUR impact range (integers,",
     "  impactLow <= impactHigh). Anchor to the Financial-impact table.",
     "- timeToShipWeeksLow / timeToShipWeeksHigh: FDE v1 build weeks (low <= high).",
     "- confidenceScore: 1-5 evidence depth from the Confidence table.",
@@ -264,7 +264,7 @@ export async function scoreCluster(
         if (q.basis) parts.push(`basis: "${q.basis}"`);
         const annual = impliedAnnualUsd(q, rate);
         if (annual != null)
-          parts.push(`implied annual ≈ $${annual.toLocaleString("en-US")}`);
+          parts.push(`implied annual ≈ €${annual.toLocaleString("en-US")}`);
         if (parts.length) lines.push(`  quantified: ${parts.join(", ")}`);
       }
       return lines.join("\n");
