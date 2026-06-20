@@ -21,6 +21,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
 import { moneyRange, moneyShort } from "@/lib/format";
+import { pluralize } from "@/lib/text";
 import type { Opportunity, SowDraft } from "@/lib/types";
 
 type Tab = "evidence" | "patterns" | "discussion";
@@ -121,7 +122,7 @@ export function OpportunityDetail({
           {
             icon: Users,
             label: "Corroborating voices",
-            value: `${opp.contributorCount} contributors`,
+            value: pluralize(opp.contributorCount, "contributor"),
           },
           {
             icon: Sparkles,
@@ -366,7 +367,7 @@ export function OpportunityDetail({
         <div className="grid grid-cols-2 gap-4">
           <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
           <Field
-            label="Fixed price"
+            label="Indicative price (draft)"
             value={moneyShort(sow.priceUsd).replace("K", ",000")}
           />
         </div>

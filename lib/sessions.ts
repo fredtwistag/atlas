@@ -133,7 +133,11 @@ export async function completeSessionForUser(
 
     await tx
       .update(sprintParticipants)
-      .set({ sessionsCompleted: count, status })
+      .set({
+        sessionsCompleted: count,
+        status,
+        lastActiveLabel: status === "completed" ? "Completed" : "Active recently",
+      })
       .where(
         and(
           eq(sprintParticipants.sprintId, sprintId),
