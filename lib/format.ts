@@ -1,15 +1,24 @@
 /**
- * Compact USD formatters for impact figures. Pure and server-safe — no mock
- * data dependency. Use these in shipped routes instead of importing from
- * lib/data (demo fixtures).
+ * Compact money formatters for impact figures. Pure and server-safe — no mock
+ * data dependency. Defaults to EUR (Wave-1 pilots are EUR); pass `currency` to
+ * override. Per-tenant currency is a post-demo follow-up.
  */
-export function usdShort(n: number): string {
+type Currency = "EUR" | "USD";
+
+const SYMBOL: Record<Currency, string> = { EUR: "€", USD: "$" };
+
+export function moneyShort(n: number, currency: Currency = "EUR"): string {
+  const s = SYMBOL[currency];
   if (n >= 1_000_000)
-    return `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
-  return `$${n}`;
+    return `${s}${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${s}${Math.round(n / 1_000)}K`;
+  return `${s}${n}`;
 }
 
-export function usdRange(low: number, high: number): string {
-  return `${usdShort(low)}–${usdShort(high)}`;
+export function moneyRange(
+  low: number,
+  high: number,
+  currency: Currency = "EUR",
+): string {
+  return `${moneyShort(low, currency)}–${moneyShort(high, currency)}`;
 }
