@@ -35,6 +35,9 @@ export function ReportArticle({
   // old ad-hoc ≤3-weeks / ≥7.5-composite split.
   const quickWins = opps.filter((o) => o.horizon === "quick_win");
   const strategicBets = opps.filter((o) => o.horizon === "strategic_bet");
+  const solidBets = opps.filter(
+    (o) => o.horizon !== "quick_win" && o.horizon !== "strategic_bet",
+  );
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-12">
@@ -160,12 +163,18 @@ export function ReportArticle({
 
       {/* Roadmap */}
       <Section title="Suggested roadmap">
-        <div className="not-prose grid gap-4 sm:grid-cols-2">
+        <div className="not-prose grid gap-4 sm:grid-cols-3">
           <RoadmapColumn
             title="Quick wins"
             caption="Fast, standalone, low-disruption"
             items={quickWins.map((o) => o.title)}
             empty="No quick wins yet — short-cycle fixes land here as they surface."
+          />
+          <RoadmapColumn
+            title="Solid bets"
+            caption="Clear value, standard delivery"
+            items={solidBets.map((o) => o.title)}
+            empty="Ranked opportunities land here as they surface."
           />
           <RoadmapColumn
             title="Strategic bets"
