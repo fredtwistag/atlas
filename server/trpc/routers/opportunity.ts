@@ -69,7 +69,15 @@ export const opportunityRouter = router({
           isRemoved: e.isRemoved,
         }));
 
-        return toOpportunity(row as OpportunityRow, evidence);
+        const seenQuotes = new Set<string>();
+        const dedupedEvidence = evidence.filter((e) => {
+          const key = e.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim();
+          if (seenQuotes.has(key)) return false;
+          seenQuotes.add(key);
+          return true;
+        });
+
+        return toOpportunity(row as OpportunityRow, dedupedEvidence);
       }),
     ),
 

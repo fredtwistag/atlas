@@ -208,12 +208,16 @@ async function finalExtraction(
   if (items.length === 0) return;
 
   const existing = await tx
-    .select({ summary: captures.summary })
+    .select({ summary: captures.summary, sourceQuote: captures.sourceQuote })
     .from(captures)
     .where(eq(captures.sessionId, opts.sessionId));
-  const seen = new Set(existing.map((c) => c.summary.toLowerCase().trim()));
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const seen = new Set(existing.map((c) => norm(c.summary)));
+  const seenQuotes = new Set(existing.map((c) => norm(c.sourceQuote)));
 
-  const fresh = items.filter((c) => !seen.has(c.summary.toLowerCase().trim()));
+  const fresh = items.filter(
+    (c) => !seen.has(norm(c.summary)) && !seenQuotes.has(norm(c.sourceQuote)),
+  );
   if (fresh.length === 0) return;
 
   await tx.insert(captures).values(
