@@ -5,8 +5,9 @@
  * context (admin read-only report). Lifted verbatim from the sprint/opportunity
  * routers; those routers now call these, and their suites are the regression net.
  *
- * Privacy: these expose aggregates and opportunity metadata only — never capture
- * quotes or contributor names.
+ * Privacy: these expose aggregates and opportunity metadata. Evidence quotes
+ * carry the contributor's NAME + ROLE (de-anonymized 2026-06-20); email and
+ * internal userId are never exposed. Names are never sent to the LLM.
  */
 import { cache } from "react";
 import { eq, desc, and } from "drizzle-orm";
@@ -235,13 +236,15 @@ export async function listSprintOpportunities(
 }
 
 /**
- * One opportunity with its full, render-ready detail: role-attributed evidence
- * quotes (removed captures excluded, deduped by quote), scores, and rationale.
+ * One opportunity with its full, render-ready detail: name+role-attributed
+ * evidence quotes (removed captures excluded, deduped by quote), scores, and
+ * rationale.
  * Shared so the tenant detail page (sponsor/manager) and the Twistag admin
  * read-only drill-down return the identical contract.
  *
- * Privacy: evidence is attributed by ROLE only — contributor names never leave
- * this layer (plan 017).
+ * Privacy: evidence is attributed by NAME + ROLE so sponsors can follow up with
+ * the contributor directly (de-anonymized 2026-06-20). Email and internal userId
+ * never leave this layer; removed captures are still excluded.
  */
 export async function loadOpportunityDetail(
   tx: Db,
@@ -262,6 +265,7 @@ export async function loadOpportunityDetail(
       tags: captures.tags,
       isEdited: captures.isEdited,
       isRemoved: captures.isRemoved,
+      name: users.name,
       role: users.title,
     })
     .from(opportunityEvidence)
@@ -281,6 +285,7 @@ export async function loadOpportunityDetail(
     kind: e.kind as Capture["kind"],
     summary: e.summary,
     sourceQuote: e.sourceQuote,
+    contributorName: e.name,
     contributorRole: e.role ?? "Contributor",
     tags: e.tags,
     isEdited: e.isEdited,

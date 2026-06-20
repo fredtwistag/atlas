@@ -374,6 +374,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-1",
         kind: "bottleneck",
+        contributorName: "Dana Whitfield",
         contributorRole: "AR Specialist",
         summary:
           "Credit-hold queue is worked once daily, so most holds wait overnight before release.",
@@ -384,6 +385,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-2",
         kind: "handoff",
+        contributorName: "Marcus Reyes",
         contributorRole: "Fulfillment Coordinator",
         summary:
           "Warehouse can't start picking until Finance releases the hold, idling staff.",
@@ -394,6 +396,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-3",
         kind: "frustration",
+        contributorName: "Priya Nandakumar",
         contributorRole: "Order Operations Lead",
         summary:
           "Customers call asking why a paid order hasn't shipped while it sits on credit hold.",
@@ -469,6 +472,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-4",
         kind: "workaround",
+        contributorName: "Tom Becker",
         contributorRole: "Sales Operations Manager",
         summary:
           "Negotiated rates live in a personal spreadsheet, not the system.",
@@ -479,6 +483,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-5",
         kind: "tooling",
+        contributorName: "Aisha Karim",
         contributorRole: "Billing Analyst",
         summary: "Margin leaks when quotes use outdated lane pricing.",
         sourceQuote:
@@ -547,6 +552,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-6",
         kind: "workaround",
+        contributorName: "Jordan Liu",
         contributorRole: "CS Team Lead",
         summary: "Rush requests come via Slack DM and get buried.",
         sourceQuote:
@@ -556,6 +562,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-7",
         kind: "bottleneck",
+        contributorName: "Sam Okafor",
         contributorRole: "Order Coordinator",
         summary:
           "No consistent way to know which rush order is actually most urgent.",
@@ -625,6 +632,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-8",
         kind: "frustration",
+        contributorName: "Elena Vasquez",
         contributorRole: "AR Specialist",
         summary:
           "Invoice checking is sampled because full review is impossible manually.",
@@ -692,6 +700,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-9",
         kind: "handoff",
+        contributorName: "Jordan Liu",
         contributorRole: "CS Team Lead",
         summary:
           "CS interrupts Order Ops repeatedly for status they can't see themselves.",
@@ -759,6 +768,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-10",
         kind: "sop",
+        contributorName: "Priya Nandakumar",
         contributorRole: "Order Operations Lead",
         summary:
           "Exception routing depends on tribal knowledge of who handles what.",
@@ -826,6 +836,7 @@ const opportunities: Opportunity[] = [
       {
         id: "c-11",
         kind: "workaround",
+        contributorName: "Sam Okafor",
         contributorRole: "Order Coordinator",
         summary:
           "Returns paperwork is re-typed from the original order by hand.",

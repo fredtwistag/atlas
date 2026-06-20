@@ -93,7 +93,10 @@ export interface Capture {
   kind: CaptureKind;
   summary: string;
   sourceQuote: string;
-  /** Role only — never the individual's name in manager-facing views (privacy by design). */
+  /** Contributor's full name — shown in manager/sponsor-facing views so
+   * sponsors know who to follow up with (de-anonymized 2026-06-20). */
+  contributorName: string;
+  /** Contributor's role/title, shown alongside the name. */
   contributorRole: string;
   tags: string[];
   isEdited?: boolean;

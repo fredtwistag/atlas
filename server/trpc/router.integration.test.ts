@@ -1005,28 +1005,25 @@ describe("opportunity.get evidence (isRemoved filter)", () => {
     expect(opp.evidence).toHaveLength(1);
   });
 
-  // PRIVACY REGRESSION NET (CLAUDE.md "Privacy by design", plan 027 Step 3).
-  // IC quotes/evidence are shown with the contributor's ROLE only — NEVER their
-  // name or email — in any manager-facing view. The seeded IC above is
-  // name="Evidence IC", email="evidence-ic@a.example", title="Ops Analyst".
-  // These assertions serialize the WHOLE response and prove the name/email
-  // appear nowhere, while the role still does. If anyone re-adds users.name to
-  // the evidence select (try it — the test goes red), this catches it.
-  it("opportunity.get evidence carries the contributor ROLE, never the name/email", async () => {
+  // ATTRIBUTION (de-anonymized, plan 2026-06-20-deanonymize-contributors).
+  // IC quotes/evidence are shown with the contributor's NAME and ROLE in
+  // manager/sponsor-facing views, so sponsors know exactly who to follow up
+  // with. The contributor's email and internal userId are still NEVER exposed
+  // on evidence items. The seeded IC is name="Evidence IC",
+  // email="evidence-ic@a.example", title="Ops Analyst".
+  it("opportunity.get evidence carries the contributor NAME and ROLE (not email/userId)", async () => {
     const opp = await asManager(TENANT_A, MGR_A).opportunity.get({
       id: OPP_ID,
     });
 
-    // The role survives (so the manager knows who-shaped the evidence is)…
+    // Name and role both surface so the manager knows exactly who said it…
+    expect(opp.evidence[0]?.contributorName).toBe("Evidence IC");
     expect(opp.evidence[0]?.contributorRole).toBe("Ops Analyst");
 
-    // …but the individual's name and email appear NOWHERE in the payload.
+    // …but the email and internal userId never leak onto evidence items.
     const serialized = JSON.stringify(opp);
-    expect(serialized).not.toContain("Evidence IC");
     expect(serialized).not.toContain("evidence-ic@a.example");
-    // And no key named like an identity field leaked onto the evidence items.
     for (const e of opp.evidence) {
-      expect(e).not.toHaveProperty("name");
       expect(e).not.toHaveProperty("email");
       expect(e).not.toHaveProperty("userId");
     }
