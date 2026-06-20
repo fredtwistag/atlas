@@ -5,10 +5,10 @@ import { ackPrivacy } from "@/app/(app)/me/actions";
 
 // The four promises, drawn from the /me privacy box (PRD F1.5).
 const PROMISES = [
-  "Attributed by role, never by name — in anything your manager or sponsor sees.",
+  "Attributed to you by name and role in what your manager and sponsor see — so they can follow up with you directly.",
   "Edit or remove anything you said for 7 days after each session.",
   "Skip any question you'd rather not answer.",
-  "Only aggregated themes leave these sessions — never your quotes with your name.",
+  "Only the themes and quotes from your sessions are shared — never your full transcript.",
 ];
 
 /**

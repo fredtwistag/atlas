@@ -212,9 +212,10 @@ export default async function IcHomePage() {
       <div className="flex items-start gap-2.5 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-2">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
         <p>
-          What you say is attributed by <strong>role, never by name</strong>, in
-          anything your manager or sponsor sees. You can edit or remove anything
-          you said for 7 days after each session.
+          What you say is attributed to you by{" "}
+          <strong>name and role</strong> in anything your manager or sponsor
+          sees, so they can follow up with you directly. You can edit or remove
+          anything you said for 7 days after each session.
         </p>
       </div>
     </main>

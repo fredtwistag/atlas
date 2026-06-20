@@ -290,7 +290,7 @@ export function ConversationView({
           <div className="mt-2">
             <ProgressBar value={progress} />
             <div className="mt-1.5 text-xs text-text-3">
-              {captures.length} captured so far · attributed by role only
+              {captures.length} captured so far · attributed by name and role
             </div>
           </div>
         </div>
