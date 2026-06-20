@@ -24,13 +24,15 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
     orgName: formData.get("orgName"),
     orgSlug: formData.get("orgSlug"),
     segment: formData.get("segment"),
+    orgDomain: formData.get("orgDomain") ?? undefined,
     managerName: formData.get("managerName"),
     managerEmail: formData.get("managerEmail"),
   });
   if (!parsed.success) {
     redirect("/admin/clients/new?error=invalid");
   }
-  const { orgName, orgSlug, segment, managerName, managerEmail } = parsed.data;
+  const { orgName, orgSlug, segment, orgDomain, managerName, managerEmail } =
+    parsed.data;
 
   await withServiceRole(
     { action: "org.invite", actor: session.userId },
@@ -41,6 +43,7 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
           slug: orgSlug,
           name: orgName,
           segment,
+          domain: orgDomain || null,
           status: "onboarding",
         })
         .returning();

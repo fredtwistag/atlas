@@ -7,9 +7,18 @@ import {
   removeMemberFromTenant,
   cancelInvitationInTenant,
   getPendingInvitationInTenant,
+  discardCompanyContext,
+  ingestDocument,
   type TwistagActor,
 } from "./twistag-admin";
-import { tenants, users, invitations, auditLog } from "@/db/schema";
+import {
+  tenants,
+  users,
+  invitations,
+  auditLog,
+  companyContext,
+  documents,
+} from "@/db/schema";
 import {
   seedRow,
   resetDb,
@@ -105,6 +114,18 @@ describe("updateTenant", () => {
     expect(audit?.metadata).toMatchObject({ twistag_role: "twistag_admin" });
   });
 
+  it("sets the company domain and leaves tenant B untouched", async () => {
+    await updateTenant(actor, TENANT_A, { domain: "vizta-fund.com" });
+    expect((await readTenant(TENANT_A))?.domain).toBe("vizta-fund.com");
+    expect((await readTenant(TENANT_B))?.domain).toBeNull();
+  });
+
+  it("clears the domain when set to an empty string", async () => {
+    await updateTenant(actor, TENANT_A, { domain: "x.com" });
+    await updateTenant(actor, TENANT_A, { domain: "" });
+    expect((await readTenant(TENANT_A))?.domain).toBeNull();
+  });
+
   it("rejects an invalid status", async () => {
     await expect(
       updateTenant(actor, TENANT_A, { status: "bogus" }),
@@ -117,6 +138,70 @@ describe("updateTenant", () => {
         name: "X",
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe("discardCompanyContext", () => {
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(companyContext).values([
+        { tenantId: TENANT_A, summary: "A draft", status: "draft" },
+        { tenantId: TENANT_B, summary: "B draft", status: "draft" },
+      ]),
+    );
+  });
+
+  it("deletes tenant A's context, leaves B's, and audits the discard", async () => {
+    await discardCompanyContext(actor, TENANT_A);
+
+    const a = await seedRow((tx) =>
+      tx
+        .select()
+        .from(companyContext)
+        .where(eq(companyContext.tenantId, TENANT_A)),
+    );
+    expect(a).toHaveLength(0);
+    const b = await seedRow((tx) =>
+      tx
+        .select()
+        .from(companyContext)
+        .where(eq(companyContext.tenantId, TENANT_B)),
+    );
+    expect(b).toHaveLength(1);
+
+    const audit = await lastAudit("company_context.discard");
+    expect(audit?.tenantId).toBe(TENANT_A);
+    expect(audit?.metadata).toMatchObject({ twistag_role: "twistag_admin" });
+  });
+
+  it("throws when there is no context to discard", async () => {
+    await discardCompanyContext(actor, TENANT_A);
+    await expect(discardCompanyContext(actor, TENANT_A)).rejects.toThrow();
+  });
+});
+
+describe("ingestDocument", () => {
+  it("records a Twistag-uploaded doc with a null uploader (staff are not tenant users)", async () => {
+    // A binary mime skips text extraction + the LLM summarize, isolating the
+    // documents insert — which used to FK-violate by writing the staff id into
+    // uploaded_by (a reference to tenant users).
+    await ingestDocument(actor, {
+      tenantId: TENANT_A,
+      filename: "brief.pdf",
+      mimeType: "application/pdf",
+      text: "binary placeholder",
+    });
+
+    const docs = await seedRow((tx) =>
+      tx.select().from(documents).where(eq(documents.tenantId, TENANT_A)),
+    );
+    expect(docs).toHaveLength(1);
+    expect(docs[0].uploadedBy).toBeNull();
+    expect(docs[0].status).toBe("uploaded");
+
+    const audit = await lastAudit("document.ingest");
+    expect(audit?.tenantId).toBe(TENANT_A);
+    expect(audit?.metadata).toMatchObject({ actor: TW });
   });
 });
 

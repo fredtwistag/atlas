@@ -11,16 +11,18 @@ export function CompanyEditForm({
   initial,
   action,
 }: {
-  initial: { name: string; segment: string; status: string };
+  initial: { name: string; segment: string; status: string; domain: string };
   action: (input: {
     name: string;
     segment: string;
     status: string;
+    domain: string;
   }) => Promise<void>;
 }) {
   const [name, setName] = useState(initial.name);
   const [segment, setSegment] = useState(initial.segment);
   const [status, setStatus] = useState(initial.status);
+  const [domain, setDomain] = useState(initial.domain);
   const [pending, start] = useTransition();
   const [feedback, setFeedback] = useState<{
     kind: "ok" | "error";
@@ -31,14 +33,15 @@ export function CompanyEditForm({
   const dirty =
     name !== initial.name ||
     segment !== initial.segment ||
-    status !== initial.status;
+    status !== initial.status ||
+    domain !== initial.domain;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFeedback(null);
     start(async () => {
       try {
-        await action({ name, segment, status });
+        await action({ name, segment, status, domain });
         setFeedback({ kind: "ok", msg: "Company updated." });
       } catch {
         setFeedback({ kind: "error", msg: "Couldn't save those changes." });
@@ -65,6 +68,19 @@ export function CompanyEditForm({
           onChange={(e) => setSegment(e.target.value)}
           required
         />
+      </div>
+      <div>
+        <Label htmlFor="company-domain">Website</Label>
+        <Input
+          id="company-domain"
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder="vizta.com"
+        />
+        <p className="mt-1 text-sm text-text-3">
+          Targets context enrichment at the right company. Leave blank to search
+          by name.
+        </p>
       </div>
       <div>
         <Label htmlFor="company-status">Status</Label>

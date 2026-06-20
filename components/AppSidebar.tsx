@@ -246,23 +246,23 @@ export function AppSidebar({
   const nextIcIdx = icSessions.findIndex((s) => s.status !== "completed");
 
   const rowBase =
-    "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-medium transition-colors";
+    "flex items-center gap-3 rounded-md px-3 py-2 text-[14px] font-medium transition-colors";
 
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col">
       <div className="px-4 pb-3 pt-4">
         <Logo />
       </div>
 
       {/* Grouped nav */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-3">
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
         {showIcSessions ? (
           <>
             <div>
-              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
                 Your sprint
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 <Link
                   href="/me"
                   onClick={onNavigate}
@@ -274,16 +274,16 @@ export function AppSidebar({
                       : "text-text-2 hover:bg-surface-2 hover:text-text",
                   )}
                 >
-                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                  <LayoutDashboard className="h-[18px] w-[18px] shrink-0" />
                   <span className="flex-1 truncate">Overview</span>
                 </Link>
               </div>
             </div>
-            <div>
-              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+            <div className="border-t border-border pt-6">
+              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
                 Sessions
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {icSessions.map((s, i) => {
                   const completed = s.status === "completed";
                   const isCurrent = !completed && i === nextIcIdx;
@@ -356,18 +356,21 @@ export function AppSidebar({
             </div>
           </>
         ) : (
-          persona.groups.map((group) => (
-            <div key={group.label}>
-              <div className="mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-text-3">
+          persona.groups.map((group, idx) => (
+            <div
+              key={group.label}
+              className={cn(idx > 0 && "border-t border-border pt-6")}
+            >
+              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
                 {group.label}
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = item === active;
                   const content = (
                     <>
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <Icon className="h-[18px] w-[18px] shrink-0" />
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.count != null ? (
                         <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-text-3">
@@ -429,7 +432,7 @@ export function AppSidebar({
       <div className="mt-auto flex items-center gap-2.5 border-t border-border px-4 py-3">
         <Avatar name={user.name} size="sm" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-medium leading-tight">
+          <div className="truncate text-[14px] font-medium leading-tight">
             {user.name}
           </div>
           <div className="truncate text-xs text-text-3">{user.title}</div>

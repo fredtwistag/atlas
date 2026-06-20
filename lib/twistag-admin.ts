@@ -47,7 +47,7 @@ export async function enrichCompany(
     { action: "company_context.enrich.read", actor: actor.userId, tenantId },
     async (tx) => {
       const [t] = await tx
-        .select({ name: tenants.name, slug: tenants.slug })
+        .select({ name: tenants.name, domain: tenants.domain })
         .from(tenants)
         .where(eq(tenants.id, tenantId));
       return t;
@@ -55,10 +55,12 @@ export async function enrichCompany(
   );
   if (!tenant) throw new Error("tenant not found");
 
-  // External web-search enrichment — outside any DB transaction.
+  // External web-search enrichment — outside any DB transaction. Use the saved
+  // domain to target the right company; with none, search by name only — we do
+  // NOT guess `<slug>.com`, which found the wrong "Vizta".
   const profile = await enrichCompanyContext({
     companyName: tenant.name,
-    domain: tenant.slug ? `${tenant.slug}.com` : null,
+    domain: tenant.domain ?? null,
   });
 
   await withServiceRole(
@@ -131,7 +133,10 @@ export async function ingestDocument(
         tenantId: input.tenantId,
         filename: input.filename,
         mimeType: input.mimeType,
-        uploadedBy: actor.userId,
+        // `uploaded_by` references tenant users; Twistag staff (the only
+        // ingest actor today) aren't tenant users, so it stays null — who
+        // ingested is attributed in the audit log above, not this FK.
+        uploadedBy: null,
         sprintId: input.sprintId ?? null,
         status: extracted ? "ingested" : "uploaded",
         extractedText: extracted,
@@ -191,17 +196,56 @@ export async function approveCompanyContext(
   );
 }
 
+/**
+ * Discard a tenant's company context (CTX-2): delete the row so the panel
+ * returns to "No context yet". Used when enrichment surfaced the wrong company.
+ * The single-row model keeps no prior version, so this is a full delete, not a
+ * revert. Service-role write, audited as `company_context.discard`.
+ */
+export async function discardCompanyContext(
+  actor: TwistagActor,
+  tenantId: string,
+): Promise<void> {
+  await withServiceRole(
+    {
+      action: "company_context.discard",
+      actor: actor.userId,
+      tenantId,
+      metadata: { twistag_role: actor.twistagRole },
+    },
+    async (tx) => {
+      const deleted = await tx
+        .delete(companyContext)
+        .where(eq(companyContext.tenantId, tenantId))
+        .returning({ id: companyContext.id });
+      if (deleted.length === 0) {
+        throw new Error("no company context to discard");
+      }
+    },
+  );
+}
+
 const TENANT_STATUSES = ["active", "onboarding", "paused", "churned"] as const;
 
-/** Edit ops-level company fields (name/segment/status). No client decisions. */
+/**
+ * Edit ops-level company fields (name/segment/status/domain). No client
+ * decisions. `domain` is the CTX-2 enrichment hint; an empty string clears it
+ * (stored as null) so an operator can remove a wrong value.
+ */
 export async function updateTenant(
   actor: TwistagActor,
   tenantId: string,
-  patch: { name?: string; segment?: string; status?: string },
+  patch: { name?: string; segment?: string; status?: string; domain?: string },
 ): Promise<void> {
-  const set: Partial<{ name: string; segment: string; status: string }> = {};
+  const set: Partial<{
+    name: string;
+    segment: string;
+    status: string;
+    domain: string | null;
+  }> = {};
   if (patch.name !== undefined) set.name = patch.name;
   if (patch.segment !== undefined) set.segment = patch.segment;
+  if (patch.domain !== undefined) set.domain = patch.domain.trim() || null;
   if (patch.status !== undefined) {
     if (!(TENANT_STATUSES as readonly string[]).includes(patch.status)) {
       throw new Error("invalid status");

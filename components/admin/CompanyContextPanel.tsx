@@ -22,6 +22,15 @@ export type AdminCompanyContext = {
 
 type Feedback = { kind: "ok" | "error"; msg: string } | null;
 
+/**
+ * Result of the enrich action. Returned (not thrown) so the client can tell a
+ * missing key apart from a failed search — Next.js redacts thrown server-action
+ * messages in production. `reason` mirrors `LlmErrorReason` in services/llm.
+ */
+export type EnrichResult =
+  | { ok: true }
+  | { ok: false; reason: "not_configured" | "failed" };
+
 const MIME_OPTIONS = [
   { value: "text/markdown", label: "Markdown (.md)" },
   { value: "text/plain", label: "Plain text (.txt)" },
@@ -39,18 +48,24 @@ export function CompanyContextPanel({
   onEnrich,
   onIngest,
   onApprove,
+  onDiscard,
 }: {
   context: AdminCompanyContext;
-  onEnrich: () => Promise<void>;
+  onEnrich: () => Promise<EnrichResult>;
   onIngest: (input: {
     filename: string;
     mimeType: string;
     text: string;
   }) => Promise<void>;
   onApprove: () => Promise<void>;
+  onDiscard: () => Promise<void>;
 }) {
   const [pending, start] = useTransition();
+  // Two feedback slots so each action's result renders next to its controls:
+  // `feedback` for the enrich/approve/discard buttons, `ingestFeedback` for the
+  // ingest form at the bottom.
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [ingestFeedback, setIngestFeedback] = useState<Feedback>(null);
   const [filename, setFilename] = useState("");
   const [mimeType, setMimeType] = useState(MIME_OPTIONS[0].value);
   const [text, setText] = useState("");
@@ -69,16 +84,48 @@ export function CompanyContextPanel({
         ? "Draft — pending review"
         : "No context yet";
 
-  function run(fn: () => Promise<void>, ok: string) {
-    setFeedback(null);
+  function run(
+    fn: () => Promise<void>,
+    ok: string,
+    setTo: (f: Feedback) => void = setFeedback,
+  ) {
+    setTo(null);
     start(async () => {
       try {
         await fn();
-        setFeedback({ kind: "ok", msg: ok });
+        setTo({ kind: "ok", msg: ok });
       } catch {
+        setTo({
+          kind: "error",
+          msg: "That didn't go through. Try again.",
+        });
+      }
+    });
+  }
+
+  // Enrichment is the one action that can fail for a reason the operator can fix
+  // (no API key) vs. a transient search failure — so it reads the returned
+  // result and gives copy that points at the actual cause, not a guess.
+  function runEnrich() {
+    setFeedback(null);
+    start(async () => {
+      const res = await onEnrich().catch(
+        () => ({ ok: false, reason: "failed" }) as EnrichResult,
+      );
+      if (res.ok) {
+        setFeedback({
+          kind: "ok",
+          msg: "Enriched from the web — review the draft above.",
+        });
+      } else if (res.reason === "not_configured") {
         setFeedback({
           kind: "error",
-          msg: "That didn't go through. Check the Anthropic key / try again.",
+          msg: "Enrichment needs an Anthropic API key. Set ANTHROPIC_API_KEY and try again.",
+        });
+      } else {
+        setFeedback({
+          kind: "error",
+          msg: "The web search didn't return usable data. Try again in a moment.",
         });
       }
     });
@@ -100,18 +147,7 @@ export function CompanyContextPanel({
         ) : null}
       </div>
 
-      {feedback ? (
-        <p
-          className={
-            feedback.kind === "ok"
-              ? "text-sm text-success"
-              : "text-sm text-danger"
-          }
-          role="status"
-        >
-          {feedback.msg}
-        </p>
-      ) : null}
+      <FeedbackLine feedback={feedback} />
 
       {/* Current profile */}
       {context ? (
@@ -142,22 +178,30 @@ export function CompanyContextPanel({
           type="button"
           variant="secondary"
           disabled={pending}
-          onClick={() =>
-            run(onEnrich, "Enriched from the web — review the draft above.")
-          }
+          onClick={runEnrich}
         >
           {pending ? "Working…" : "Enrich from web"}
         </Button>
         {status === "draft" ? (
-          <Button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              run(onApprove, "Approved — it now steers IC prompts.")
-            }
-          >
-            Approve draft
-          </Button>
+          <>
+            <Button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                run(onApprove, "Approved — it now steers IC prompts.")
+              }
+            >
+              Approve draft
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={pending}
+              onClick={() => run(onDiscard, "Draft discarded.")}
+            >
+              Discard draft
+            </Button>
+          </>
         ) : null}
       </div>
 
@@ -167,7 +211,7 @@ export function CompanyContextPanel({
         onSubmit={(e) => {
           e.preventDefault();
           if (!filename.trim() || !text.trim()) {
-            setFeedback({
+            setIngestFeedback({
               kind: "error",
               msg: "Add a filename and paste some text first.",
             });
@@ -176,6 +220,7 @@ export function CompanyContextPanel({
           run(
             () => onIngest({ filename: filename.trim(), mimeType, text }),
             "Document ingested into the draft context.",
+            setIngestFeedback,
           );
           setText("");
         }}
@@ -221,8 +266,24 @@ export function CompanyContextPanel({
         <Button type="submit" variant="secondary" disabled={pending}>
           {pending ? "Working…" : "Ingest document"}
         </Button>
+        <FeedbackLine feedback={ingestFeedback} />
       </form>
     </div>
+  );
+}
+
+/** A single inline status line — green for success, red for errors. */
+function FeedbackLine({ feedback }: { feedback: Feedback }) {
+  if (!feedback) return null;
+  return (
+    <p
+      className={
+        feedback.kind === "ok" ? "text-sm text-success" : "text-sm text-danger"
+      }
+      role="status"
+    >
+      {feedback.msg}
+    </p>
   );
 }
 

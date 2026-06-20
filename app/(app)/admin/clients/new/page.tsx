@@ -82,6 +82,13 @@ export default async function NewClientPage({
               placeholder="PE portco · 100-day"
             />
           </div>
+          <div>
+            <Label htmlFor="orgDomain">Website (optional)</Label>
+            <Input id="orgDomain" name="orgDomain" placeholder="vizta.com" />
+            <p className="mt-1 text-sm text-text-3">
+              Used to point context enrichment at the right company.
+            </p>
+          </div>
           <div className="border-t border-border pt-3">
             <Label htmlFor="managerName">Manager name</Label>
             <Input

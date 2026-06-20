@@ -150,6 +150,22 @@ const dimensionScore = z.object({
 });
 
 /**
+ * The scorer prompt lists the five dimensions by name, so the model sometimes
+ * emits `dimensionScores` as an OBJECT keyed by dimension
+ * (`{ financial: { score, reasoning }, … }`) instead of the array the schema
+ * wants — a shape quirk that hard-failed the whole recompute. Normalize the
+ * object form into the `[{ key, score, reasoning }]` array before validation;
+ * pass arrays (and anything else) through untouched so Zod still reports real
+ * problems. A numeric value (`{ financial: 8 }`) becomes `{ key, score }`.
+ */
+function normalizeDimensionScores(val: unknown): unknown {
+  if (!val || typeof val !== "object" || Array.isArray(val)) return val;
+  return Object.entries(val as Record<string, unknown>).map(([key, v]) =>
+    v && typeof v === "object" ? { key, ...(v as object) } : { key, score: v },
+  );
+}
+
+/**
  * One scored opportunity. Mirrors the `opportunities` columns the engine writes,
  * EXCEPT `compositeScore` — that is computed in TS from `dimensionScores` (the
  * model is bad at weighted arithmetic, and the plan forbids letting it try).
@@ -167,16 +183,21 @@ export const opportunityScoring = z
     timeToShipWeeksLow: z.number().int().min(1).max(52),
     timeToShipWeeksHigh: z.number().int().min(1).max(52),
     confidenceScore: z.number().int().min(1).max(5),
-    dimensionScores: z
-      .array(dimensionScore)
-      .length(DIMENSION_KEYS.length)
-      // exactly one entry per dimension key, no dupes, no omissions
-      .refine(
-        (arr) => new Set(arr.map((d) => d.key)).size === DIMENSION_KEYS.length,
-        {
-          message: "dimensionScores must cover each of the 5 keys exactly once",
-        },
-      ),
+    dimensionScores: z.preprocess(
+      normalizeDimensionScores,
+      z
+        .array(dimensionScore)
+        .length(DIMENSION_KEYS.length)
+        // exactly one entry per dimension key, no dupes, no omissions
+        .refine(
+          (arr) =>
+            new Set(arr.map((d) => d.key)).size === DIMENSION_KEYS.length,
+          {
+            message:
+              "dimensionScores must cover each of the 5 keys exactly once",
+          },
+        ),
+    ),
     rationale: z.string().min(40).max(1600),
     // Capability-gap / delivery path (Ticket C): honestly say build vs buy vs
     // configure so the report doesn't manufacture build work.
@@ -263,24 +284,59 @@ export const synthesisMemo = z.object({
 export type SynthesisMemo = z.infer<typeof synthesisMemo>;
 
 /**
+ * Web-search enrichment (CTX-2) is advisory data a human reviews before it goes
+ * `active`, and Claude's web-search replies are shape-variable: it sometimes
+ * returns an object (e.g. `{name: "SAP"}`) where we store plain text, or a
+ * string longer than expected. Coerce each value to a trimmed string and clamp
+ * its length, so a shape/length quirk seeds a slightly-off draft instead of
+ * hard-failing the whole enrichment. The DB columns are unbounded `text` /
+ * `text[]` (migration 0011), so the caps here are sanity guards, not storage
+ * limits.
+ */
+function looseText(maxLen: number) {
+  return z.preprocess((v) => {
+    if (v == null) return v;
+    let s: string;
+    if (typeof v === "string") s = v;
+    else if (typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      const pick = o.name ?? o.system ?? o.label ?? o.title ?? o.value;
+      s = typeof pick === "string" ? pick : JSON.stringify(v);
+    } else {
+      s = String(v);
+    }
+    s = s.trim();
+    return s.length > maxLen ? s.slice(0, maxLen) : s;
+  }, z.string());
+}
+
+/** A string array that tolerates object entries and nullish input (→ []). */
+function looseStringArray(maxLen: number, maxItems: number) {
+  return z.preprocess(
+    (v) => (Array.isArray(v) ? v.filter((x) => x != null) : (v ?? [])),
+    z.array(looseText(maxLen)).max(maxItems),
+  );
+}
+
+/**
  * Company enrichment output (CTX-2): the structured public profile produced by
  * the web-search enrichment, shaped to the company_context columns. `sources`
  * cites where each fact came from. Public info only — no individuals.
  */
 export const companyEnrichment = z.object({
-  summary: z.string().max(600).nullable().default(null),
-  industry: z.string().max(120).nullable().default(null),
-  businessModel: z.string().max(160).nullable().default(null),
-  sizeBand: z.string().max(60).nullable().default(null),
-  revenueBand: z.string().max(60).nullable().default(null),
-  maturity: z.string().max(60).nullable().default(null),
-  keySystems: z.array(z.string().max(80)).max(20).default([]),
-  knownPains: z.array(z.string().max(120)).max(20).default([]),
+  summary: looseText(600).nullable().default(null),
+  industry: looseText(120).nullable().default(null),
+  businessModel: looseText(160).nullable().default(null),
+  sizeBand: looseText(120).nullable().default(null),
+  revenueBand: looseText(120).nullable().default(null),
+  maturity: looseText(120).nullable().default(null),
+  keySystems: looseStringArray(120, 20).default([]),
+  knownPains: looseStringArray(200, 20).default([]),
   sources: z
     .array(
       z.object({
-        label: z.string().max(160),
-        ref: z.string().max(400).nullable().default(null),
+        label: looseText(160),
+        ref: looseText(400).nullable().default(null),
       }),
     )
     .max(20)

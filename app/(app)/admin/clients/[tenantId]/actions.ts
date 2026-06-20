@@ -2,6 +2,8 @@
 
 import { createElement } from "react";
 import { revalidatePath } from "next/cache";
+import { llmErrorReason } from "@/services/llm/client";
+import type { EnrichResult } from "@/components/admin/CompanyContextPanel";
 import { eq, and, ne, desc } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 import { getApi } from "@/server/trpc/caller";
@@ -25,6 +27,7 @@ import {
   refreshInvitationInTenant,
   enrichCompany,
   approveCompanyContext,
+  discardCompanyContext,
   ingestDocument,
   type TwistagActor,
 } from "@/lib/twistag-admin";
@@ -100,21 +103,33 @@ async function deliverTwistagInvite(
   }
 }
 
-/** Edit a company's name/segment/status. */
+/** Edit a company's name/segment/status/domain. */
 export async function updateTenantAction(
   tenantId: string,
-  input: { name: string; segment: string; status: string },
+  input: { name: string; segment: string; status: string; domain?: string },
 ): Promise<void> {
   const actor = await requireTwistagActor();
   await updateTenant(actor, tenantId, input);
   revalidatePath(`/admin/clients/${tenantId}`);
 }
 
-/** CTX-2: enrich the company context from the public web (→ draft). */
-export async function enrichCompanyAction(tenantId: string): Promise<void> {
+/**
+ * CTX-2: enrich the company context from the public web (→ draft). Returns a
+ * discriminated result instead of throwing so the client can distinguish a
+ * missing API key from a failed search — Next.js redacts thrown server-action
+ * messages in production. Auth failures still throw (framework-handled).
+ */
+export async function enrichCompanyAction(
+  tenantId: string,
+): Promise<EnrichResult> {
   const actor = await requireTwistagActor();
-  await enrichCompany(actor, tenantId);
+  try {
+    await enrichCompany(actor, tenantId);
+  } catch (e) {
+    return { ok: false, reason: llmErrorReason(e) };
+  }
   revalidatePath(`/admin/clients/${tenantId}`);
+  return { ok: true };
 }
 
 /** CTX-2: approve a draft company context so it starts steering IC prompts. */
@@ -123,6 +138,15 @@ export async function approveCompanyContextAction(
 ): Promise<void> {
   const actor = await requireTwistagActor();
   await approveCompanyContext(actor, tenantId);
+  revalidatePath(`/admin/clients/${tenantId}`);
+}
+
+/** CTX-2: discard a company context draft (delete it → "No context yet"). */
+export async function discardCompanyContextAction(
+  tenantId: string,
+): Promise<void> {
+  const actor = await requireTwistagActor();
+  await discardCompanyContext(actor, tenantId);
   revalidatePath(`/admin/clients/${tenantId}`);
 }
 

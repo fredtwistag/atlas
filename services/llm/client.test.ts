@@ -15,6 +15,8 @@ vi.mock("@anthropic-ai/sdk", () => ({
 import {
   complete,
   completeStructured,
+  completeWithWebSearch,
+  llmErrorReason,
   LlmNotConfiguredError,
   LlmOutputError,
 } from "./client";
@@ -127,6 +129,73 @@ describe("completeStructured", () => {
     delete process.env.ANTHROPIC_API_KEY;
     await expect(
       completeStructured({
+        system: "s",
+        messages: [{ role: "user", content: "x" }],
+        schema: Shape,
+      }),
+    ).rejects.toBeInstanceOf(LlmNotConfiguredError);
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe("llmErrorReason", () => {
+  it("maps a missing-key error to 'not_configured'", () => {
+    expect(llmErrorReason(new LlmNotConfiguredError())).toBe("not_configured");
+  });
+
+  it("maps an output/validation error to 'failed'", () => {
+    expect(llmErrorReason(new LlmOutputError("bad shape"))).toBe("failed");
+  });
+
+  it("maps any other error to 'failed'", () => {
+    expect(llmErrorReason(new Error("network"))).toBe("failed");
+    expect(llmErrorReason("not even an error")).toBe("failed");
+  });
+});
+
+describe("completeWithWebSearch", () => {
+  it("parses valid JSON output in one attempt", async () => {
+    create.mockResolvedValueOnce(textMessage('{"ok":true,"n":2}'));
+    const out = await completeWithWebSearch({
+      system: "s",
+      messages: [{ role: "user", content: "x" }],
+      schema: Shape,
+    });
+    expect(out).toEqual({ ok: true, n: 2 });
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries ONCE on a schema-rejection then succeeds", async () => {
+    create
+      .mockResolvedValueOnce(textMessage('{"ok":true,"n":"nope"}'))
+      .mockResolvedValueOnce(textMessage('{"ok":true,"n":9}'));
+    const out = await completeWithWebSearch({
+      system: "s",
+      messages: [{ role: "user", content: "x" }],
+      schema: Shape,
+    });
+    expect(out).toEqual({ ok: true, n: 9 });
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws LlmOutputError after the retry also fails validation", async () => {
+    create
+      .mockResolvedValueOnce(textMessage('{"ok":"x","n":"y"}'))
+      .mockResolvedValueOnce(textMessage('{"ok":"still","n":"bad"}'));
+    await expect(
+      completeWithWebSearch({
+        system: "s",
+        messages: [{ role: "user", content: "x" }],
+        schema: Shape,
+      }),
+    ).rejects.toBeInstanceOf(LlmOutputError);
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws LlmNotConfiguredError with no API key", async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    await expect(
+      completeWithWebSearch({
         system: "s",
         messages: [{ role: "user", content: "x" }],
         schema: Shape,

@@ -42,6 +42,20 @@ export class LlmOutputError extends Error {
   }
 }
 
+/**
+ * Why an LLM-backed action failed, in terms a UI can act on: the key is missing
+ * (`not_configured` → an operator must set ANTHROPIC_API_KEY) vs. anything else
+ * (`failed` → the call ran but didn't produce usable output; retrying may help).
+ * Server actions map their caught error through this and RETURN the reason —
+ * Next.js redacts thrown server-action messages in production, so a returned
+ * discriminated result is the only way the client sees what actually happened.
+ */
+export type LlmErrorReason = "not_configured" | "failed";
+
+export function llmErrorReason(e: unknown): LlmErrorReason {
+  return e instanceof LlmNotConfiguredError ? "not_configured" : "failed";
+}
+
 export type LlmMessage = { role: "user" | "assistant"; content: string };
 
 export type CompleteOpts = {
@@ -185,35 +199,61 @@ const WEB_SEARCH_TOOL = {
  * A structured completion that may use Claude's web search tool (ADR-004,
  * CTX-2). The search runs server-side on Anthropic's servers over the same
  * connection — no new app egress, no manual tool-use loop. Output is parsed +
- * Zod-validated like completeStructured (single attempt; the tool call already
- * costs latency). Throws LlmOutputError if the model returns unparseable JSON.
+ * Zod-validated like completeStructured, including the same one retry-with-
+ * feedback: web-search replies are shape-variable, and the retry re-uses the
+ * search results already in context, so it reshapes the JSON cheaply rather
+ * than searching again. Throws LlmOutputError if the retry still fails.
  */
 export async function completeWithWebSearch<T>(
   opts: CompleteOpts & { schema: z.ZodType<T> },
 ): Promise<T> {
   const anthropic = client();
-  const message = await createMessage(anthropic, {
-    model: modelId(),
-    max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
-    system: `${opts.system}\n\nAfter searching, respond with valid JSON only. No prose, no markdown fences.`,
-    messages: opts.messages,
-    tools: [WEB_SEARCH_TOOL],
-  });
-  const raw = textOf(message);
+  const jsonSystem = `${opts.system}\n\nAfter searching, respond with valid JSON only. No prose, no markdown fences.`;
+  const messages: LlmMessage[] = [...opts.messages];
 
-  let parsedJson: unknown;
-  try {
-    parsedJson = JSON.parse(extractJson(raw));
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : "invalid JSON";
-    throw new LlmOutputError(`Web-search output was not valid JSON: ${reason}`);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const message = await createMessage(anthropic, {
+      model: modelId(),
+      max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+      system: jsonSystem,
+      messages,
+      tools: [WEB_SEARCH_TOOL],
+    });
+    const raw = textOf(message);
+
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(extractJson(raw));
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "invalid JSON";
+      if (attempt === 1) {
+        throw new LlmOutputError(
+          `Web-search output was not valid JSON: ${reason}`,
+        );
+      }
+      messages.push({ role: "assistant", content: raw });
+      messages.push({
+        role: "user",
+        content: `That was not valid JSON (${reason}). Reply with valid JSON only.`,
+      });
+      continue;
+    }
+
+    const result = opts.schema.safeParse(parsedJson);
+    if (result.success) return result.data;
+
+    if (attempt === 1) {
+      throw new LlmOutputError(
+        `Web-search output failed schema validation: ${result.error.message}`,
+      );
+    }
+    messages.push({ role: "assistant", content: raw });
+    messages.push({
+      role: "user",
+      content: `That JSON failed validation: ${result.error.message}. Fix it and reply with valid JSON only.`,
+    });
   }
 
-  const result = opts.schema.safeParse(parsedJson);
-  if (!result.success) {
-    throw new LlmOutputError(
-      `Web-search output failed schema validation: ${result.error.message}`,
-    );
-  }
-  return result.data;
+  // Unreachable: the loop either returns or throws on attempt 1.
+  throw new LlmOutputError("Web-search completion exhausted its retry.");
 }

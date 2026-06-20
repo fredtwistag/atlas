@@ -43,7 +43,7 @@ export function AppShell({
   }, [drawerOpen]);
 
   return (
-    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[220px_1fr]">
+    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[248px_1fr]">
       {/* Desktop rail */}
       <aside
         data-app-chrome
@@ -85,7 +85,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
-            className="relative z-10 flex h-full w-[260px] flex-col border-r border-border shadow-lg"
+            className="relative z-10 flex h-full w-[260px] flex-col border-r border-border bg-bg shadow-lg"
           >
             <button
               onClick={() => setDrawerOpen(false)}

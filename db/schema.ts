@@ -20,6 +20,8 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   segment: text("segment").notNull(),
   status: text("status").notNull(),
+  // Optional company website/domain — a targeting hint for CTX-2 enrichment.
+  domain: text("domain"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

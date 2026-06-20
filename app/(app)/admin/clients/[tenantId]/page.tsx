@@ -34,6 +34,7 @@ import {
   setOpportunityStatusAction,
   enrichCompanyAction,
   approveCompanyContextAction,
+  discardCompanyContextAction,
   ingestDocumentAction,
 } from "./actions";
 
@@ -92,6 +93,7 @@ export default async function ClientDetailPage({
   const onSetOppStatus = setOpportunityStatusAction.bind(null, tenantId);
   const onEnrich = enrichCompanyAction.bind(null, tenantId);
   const onApproveContext = approveCompanyContextAction.bind(null, tenantId);
+  const onDiscardContext = discardCompanyContextAction.bind(null, tenantId);
   const onIngestDoc = ingestDocumentAction.bind(null, tenantId);
 
   const tabs = [
@@ -121,6 +123,7 @@ export default async function ClientDetailPage({
                 name: tenant.name,
                 segment: tenant.segment,
                 status: tenant.status,
+                domain: tenant.domain ?? "",
               }}
               action={onUpdateTenant}
             />
@@ -160,6 +163,7 @@ export default async function ClientDetailPage({
             onEnrich={onEnrich}
             onIngest={onIngestDoc}
             onApprove={onApproveContext}
+            onDiscard={onDiscardContext}
           />
         </Card>
       ),
