@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
-import { usdShort } from "@/lib/format";
+import { moneyShort } from "@/lib/format";
 import type {
   Sprint,
   SprintProgress,
@@ -95,7 +95,7 @@ export function ReportArticle({
         <p>
           The combined estimated annual impact of the top five is{" "}
           <strong>
-            {usdShort(totalLow)}–{usdShort(totalHigh)}
+            {moneyShort(totalLow)}–{moneyShort(totalHigh)}
           </strong>
           . The single most-cited friction — a manual credit-hold release that
           stalls roughly 140 orders a month — was corroborated independently by
@@ -105,7 +105,7 @@ export function ReportArticle({
           {[
             [`${p.completionPct}%`, "Participation"],
             [`${p.opportunitiesCount}`, "Opportunities"],
-            [`${usdShort(totalLow)}+`, "Est. impact, top 5"],
+            [`${moneyShort(totalLow)}+`, "Est. impact, top 5"],
           ].map(([v, l]) => (
             <div
               key={l}

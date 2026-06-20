@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ScoreBadge";
-import { usdRange } from "@/lib/format";
+import { moneyRange } from "@/lib/format";
 import { horizonMeta, deliveryMeta } from "@/lib/ui-maps";
 import { cn } from "@/lib/cn";
 import type { Opportunity } from "@/lib/types";
@@ -50,7 +50,7 @@ export function OpportunityCard({
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge tone="success">
-              {usdRange(opp.impactLow, opp.impactHigh)}/yr
+              {moneyRange(opp.impactLow, opp.impactHigh)}/yr
             </Badge>
             <Badge tone="outline">
               {opp.timeToShipWeeksLow}–{opp.timeToShipWeeksHigh} wks

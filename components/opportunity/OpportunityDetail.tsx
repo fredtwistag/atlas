@@ -20,7 +20,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
-import { usdRange, usdShort } from "@/lib/format";
+import { moneyRange, moneyShort } from "@/lib/format";
 import type { Opportunity, SowDraft } from "@/lib/types";
 
 type Tab = "evidence" | "patterns" | "discussion";
@@ -111,7 +111,7 @@ export function OpportunityDetail({
           {
             icon: TrendingUp,
             label: "Est. annual impact",
-            value: `${usdRange(opp.impactLow, opp.impactHigh)}`,
+            value: `${moneyRange(opp.impactLow, opp.impactHigh)}`,
           },
           {
             icon: Clock,
@@ -367,7 +367,7 @@ export function OpportunityDetail({
           <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
           <Field
             label="Fixed price"
-            value={usdShort(sow.priceUsd).replace("K", ",000")}
+            value={moneyShort(sow.priceUsd).replace("K", ",000")}
           />
         </div>
 

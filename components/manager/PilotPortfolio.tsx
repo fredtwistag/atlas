@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { horizonMeta } from "@/lib/ui-maps";
-import { usdRange } from "@/lib/format";
+import { moneyRange } from "@/lib/format";
 import type { SprintPortfolio } from "@/lib/types";
 
 /**
@@ -50,7 +50,7 @@ export function PilotPortfolio({
                   <span className="font-medium leading-tight">{it.title}</span>
                   {hz ? <Badge tone={hz.tone}>{hz.label}</Badge> : null}
                   <Badge tone="success">
-                    {usdRange(it.impactLow, it.impactHigh)}/yr
+                    {moneyRange(it.impactLow, it.impactHigh)}/yr
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-text-3">
