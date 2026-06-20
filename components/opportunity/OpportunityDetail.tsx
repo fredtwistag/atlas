@@ -215,10 +215,14 @@ export function OpportunityDetail({
             >
               {opp.evidence.map((c) => (
                 <Card key={c.id} className="p-4">
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <Badge tone="neutral">{c.kind}</Badge>
-                    <span className="text-xs font-medium text-text-3">
-                      {c.contributorRole}
+                    <span
+                      className="min-w-0 truncate text-xs font-medium text-text-2"
+                      title={`${c.contributorName} · ${c.contributorRole}`}
+                    >
+                      {c.contributorName}
+                      <span className="text-text-3"> · {c.contributorRole}</span>
                     </span>
                   </div>
                   <p className="mb-2.5 text-md font-medium leading-snug">
@@ -233,9 +237,9 @@ export function OpportunityDetail({
                 </Card>
               ))}
               <p className="px-1 text-xs leading-relaxed text-text-3">
-                Quotes are attributed by role only. Internal records link each
-                quote to its contributor for that person&apos;s own edit window
-                — never shown here.
+                Quotes are attributed to each contributor by name and role so you
+                know who to follow up with. Contributors can still edit or remove
+                anything they said for 7 days after their session.
               </p>
             </div>
           )}

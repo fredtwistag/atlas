@@ -112,3 +112,23 @@ describe("OpportunityDetail tabs (a11y)", () => {
     expect(discussion).toHaveFocus();
   });
 });
+
+describe("OpportunityDetail evidence attribution", () => {
+  it("shows the contributor's name and role on each evidence quote", async () => {
+    const { opp, sow } = await getFixtures();
+    render(
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+    );
+
+    // The Evidence tab is selected by default. Every capture's name + role
+    // share one attribution span ("Dana Whitfield · AR Specialist"). Match on
+    // the (unique) name — getByText reads only direct text-node children, so it
+    // resolves the outer span — then assert the role lives in that same span.
+    // This also avoids colliding with the "AR Specialist" mention in the
+    // rationale copy above (a different element).
+    for (const c of opp.evidence) {
+      const attribution = screen.getByText(c.contributorName);
+      expect(attribution).toHaveTextContent(c.contributorRole);
+    }
+  });
+});
