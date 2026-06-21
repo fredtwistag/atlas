@@ -15,7 +15,13 @@ import {
   systemInventoryEvidence,
   stakeholders,
   stakeholderOpportunity,
+  workflowMaps,
 } from "@/db/schema";
+import { synthesizeWorkflows } from "@/services/synthesis/workflows/synthesize";
+import type {
+  OpportunityPoint,
+  WorkflowCapture,
+} from "@/services/synthesis/workflows/types";
 import {
   selectPortfolio,
   writePortfolioNarrative,
@@ -462,6 +468,36 @@ async function runRecompute(
     })),
   });
 
+  // --- workflow diagram graphs (Plan 1) ------------------------------------
+  await buildWorkflowMaps(tx, {
+    tenantId,
+    sprintId,
+    captures: captureRows.map((c) => ({
+      id: c.id,
+      kind: c.kind,
+      summary: c.summary,
+      role: c.role ?? "",
+      department: c.department ?? null,
+      contributorId: c.userId,
+    })),
+    opportunities: finalCandidates
+      .filter((c) => idByKey.has(c.key))
+      .map((c) => ({
+        id: idByKey.get(c.key)!,
+        title: c.title,
+        impactHigh: c.impactHigh,
+        timeToShipWeeksHigh: c.timeToShipWeeksHigh,
+        horizon: c.horizon,
+      })),
+    roleLabels: [
+      ...new Set(
+        captureRows
+          .map((c) => c.role)
+          .filter((r): r is string => Boolean(r)),
+      ),
+    ],
+  });
+
   // --- sprint themes cache (EXT-1) -----------------------------------------
   // Privacy-safe theme labels (no names/quotes) injected into later sessions so
   // contributors corroborate/extend rather than restate. Capped + deduped.
@@ -596,6 +632,56 @@ async function buildSystemsInventory(
         })),
       );
     }
+  }
+}
+
+/**
+ * Synthesize workflow-diagram graphs and persist them (Plan 1). Idempotent for
+ * PROVISIONAL rows only — curated (surfaced/hidden) maps are preserved across
+ * recomputes. Best-effort: a synthesis failure leaves prior maps in place and
+ * never fails recompute.
+ */
+async function buildWorkflowMaps(
+  tx: Db,
+  opts: {
+    tenantId: string;
+    sprintId: string;
+    captures: WorkflowCapture[];
+    opportunities: OpportunityPoint[];
+    roleLabels: string[];
+  },
+): Promise<void> {
+  let graphs;
+  try {
+    graphs = await synthesizeWorkflows({
+      captures: opts.captures,
+      opportunities: opts.opportunities,
+      roleLabels: opts.roleLabels,
+      modelVersion: `${process.env.ATLAS_LLM_MODEL ?? "claude-sonnet-4-6"}:wf-v1`,
+    });
+  } catch {
+    return; // best-effort
+  }
+
+  // Replace provisional maps only; never clobber curated/surfaced rows.
+  await tx
+    .delete(workflowMaps)
+    .where(
+      and(
+        eq(workflowMaps.sprintId, opts.sprintId),
+        eq(workflowMaps.status, "provisional"),
+      ),
+    );
+
+  for (const graph of graphs) {
+    await tx.insert(workflowMaps).values({
+      tenantId: opts.tenantId,
+      sprintId: opts.sprintId,
+      kind: graph.kind,
+      graph,
+      status: "provisional",
+      opportunityId: null,
+    });
   }
 }
 

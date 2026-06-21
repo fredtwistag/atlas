@@ -140,3 +140,33 @@ describe("workflow_maps — tenant isolation", () => {
     expect(adminRows.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("workflow_maps — jsonb roundtrip", () => {
+  it("stores and reads back a full graph payload", async () => {
+    await seedRow((tx) =>
+      tx.insert(workflowMaps).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        kind: "impact_effort",
+        graph: {
+          kind: "impact_effort",
+          title: "Impact vs. effort",
+          lanes: [],
+          steps: [
+            { id: "opp-0", label: "Auto-sync", laneId: null, stepKind: "step", inferred: false, captureIds: [], metric: { x: 3, y: 120000 } },
+          ],
+          edges: [],
+          confidence: { score: 1, coverage: 1, corroboratedCount: 1, disputedStepIds: [] },
+          modelVersion: "pure-ts",
+        },
+        status: "surfaced",
+      }),
+    );
+    const rows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(workflowMaps),
+    );
+    expect(rows).toHaveLength(1);
+    const graph = rows[0].graph as { steps: { metric: { x: number; y: number } }[] };
+    expect(graph.steps[0].metric).toEqual({ x: 3, y: 120000 });
+  });
+});
