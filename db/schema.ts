@@ -22,6 +22,8 @@ export const tenants = pgTable("tenants", {
   status: text("status").notNull(),
   // Optional company website/domain — a targeting hint for CTX-2 enrichment.
   domain: text("domain"),
+  // Org display + scoring currency (EUR/USD/GBP). Default EUR (Wave-1 pilots).
+  currency: text("currency").notNull().default("EUR"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
