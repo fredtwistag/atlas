@@ -25,13 +25,14 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
     orgSlug: formData.get("orgSlug"),
     segment: formData.get("segment"),
     orgDomain: formData.get("orgDomain") ?? undefined,
+    currency: formData.get("currency") ?? undefined,
     managerName: formData.get("managerName"),
     managerEmail: formData.get("managerEmail"),
   });
   if (!parsed.success) {
     redirect("/admin/clients/new?error=invalid");
   }
-  const { orgName, orgSlug, segment, orgDomain, managerName, managerEmail } =
+  const { orgName, orgSlug, segment, orgDomain, currency, managerName, managerEmail } =
     parsed.data;
 
   await withServiceRole(
@@ -44,6 +45,7 @@ export async function inviteOrganization(formData: FormData): Promise<void> {
           name: orgName,
           segment,
           domain: orgDomain || null,
+          currency,
           status: "onboarding",
         })
         .returning();

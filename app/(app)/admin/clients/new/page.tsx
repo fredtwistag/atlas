@@ -89,6 +89,19 @@ export default async function NewClientPage({
               Used to point context enrichment at the right company.
             </p>
           </div>
+          <div>
+            <Label htmlFor="currency">Currency</Label>
+            <select
+              id="currency"
+              name="currency"
+              defaultValue="EUR"
+              className="h-9 w-full rounded-md border border-border bg-surface px-3 text-md"
+            >
+              <option value="EUR">EUR (€)</option>
+              <option value="USD">USD ($)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+          </div>
           <div className="border-t border-border pt-3">
             <Label htmlFor="managerName">Manager name</Label>
             <Input

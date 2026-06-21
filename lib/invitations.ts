@@ -9,6 +9,7 @@ export const InviteOrgSchema = z.object({
   segment: z.string().min(2),
   // Optional company website/domain — the CTX-2 enrichment targeting hint.
   orgDomain: z.string().trim().optional(),
+  currency: z.enum(["EUR", "USD", "GBP"]).default("EUR"),
   managerName: z.string().min(2),
   managerEmail: z.string().email(),
 });
