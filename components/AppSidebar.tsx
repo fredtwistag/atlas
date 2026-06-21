@@ -17,15 +17,12 @@ import {
   LogOut,
   Check,
   Lock,
-  ChevronLeft,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Avatar } from "./ui/Avatar";
 import { cn } from "@/lib/cn";
 import { signOut } from "@/app/sign-in/actions";
-import { useSidebarDrill } from "./SidebarDrillContext";
-import { useScrollSpy } from "@/lib/use-scroll-spy";
 
 /**
  * Persona switcher — not part of the real product (auth + JWT role decide the
@@ -240,8 +237,6 @@ export function AppSidebar({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const { config: drill } = useSidebarDrill();
-  const activeSection = useScrollSpy(drill ? drill.sections.map((s) => s.id) : []);
   const personas = buildPersonas(sprintId);
   const persona = activePersona(personas, pathname, userKind);
   const active = activeItem(persona, pathname);
@@ -252,88 +247,6 @@ export function AppSidebar({
 
   const rowBase =
     "flex items-center gap-3 rounded-md px-3 py-2 text-[14px] font-medium transition-colors";
-
-  if (drill) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="px-4 pb-3 pt-4">
-          <Logo />
-        </div>
-        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
-          <Link
-            href={drill.backHref}
-            onClick={onNavigate}
-            className="flex items-center gap-1.5 px-2 py-1 text-sm font-medium text-text-2 hover:text-text"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {drill.backLabel}
-          </Link>
-
-          {drill.decision ? (
-            <Link
-              href={drill.decision.href}
-              onClick={onNavigate}
-              className="block rounded-md bg-accent-blue-soft p-3 hover:bg-accent-blue-soft"
-            >
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-accent-blue-text">
-                {drill.decision.moneyLabel}
-              </div>
-              <div className="mt-0.5 truncate text-[13px] font-medium text-text">
-                {drill.decision.oppTitle}
-              </div>
-              <div className="mt-1.5 text-xs font-medium text-accent-blue-text">
-                {drill.decision.ctaLabel}
-              </div>
-            </Link>
-          ) : null}
-
-          <div className="space-y-1">
-            <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-text-3">
-              {drill.title}
-            </div>
-            {drill.sections.map((s) => {
-              const isActive = s.id === activeSection;
-              return (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  onClick={onNavigate}
-                  aria-current={isActive ? "true" : undefined}
-                  className={cn(
-                    rowBase,
-                    isActive
-                      ? "bg-surface-2 text-text"
-                      : "text-text-2 hover:bg-surface-2 hover:text-text",
-                  )}
-                >
-                  <span className="flex-1 truncate">{s.label}</span>
-                </a>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="mt-auto flex items-center gap-2.5 border-t border-border px-4 py-3">
-          <Avatar name={user.name} size="sm" />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[14px] font-medium leading-tight">{user.name}</div>
-            <div className="truncate text-xs text-text-3">{user.title}</div>
-          </div>
-          <form action={signOut}>
-            <button
-              type="submit"
-              onClick={onNavigate}
-              aria-label="Sign out"
-              title="Sign out"
-              className="rounded-sm p-1.5 text-text-3 transition-colors hover:bg-surface-2 hover:text-text"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full flex-col">

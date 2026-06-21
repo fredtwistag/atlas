@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { AppSidebar, type SidebarSession, type UserKind } from "./AppSidebar";
 import { Logo } from "./Logo";
-import { SidebarDrillProvider } from "./SidebarDrillContext";
 
 /**
  * Authenticated app chrome: a fixed left navigation rail on desktop, collapsing
@@ -45,7 +44,6 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[248px_1fr]">
-      <SidebarDrillProvider>
       {/* Desktop rail */}
       <aside
         data-app-chrome
@@ -109,7 +107,6 @@ export function AppShell({
 
       {/* Content column */}
       <div className="min-w-0">{children}</div>
-      </SidebarDrillProvider>
     </div>
   );
 }

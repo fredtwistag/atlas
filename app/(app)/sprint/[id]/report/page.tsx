@@ -3,9 +3,6 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/ui/BackLink";
 import { PrintButton } from "@/components/report/PrintButton";
 import { ReportArticle } from "@/components/report/ReportArticle";
-import { ReportSidebarRegistrar } from "@/components/report/ReportSidebarRegistrar";
-import { REPORT_SECTIONS } from "@/lib/report-sections";
-import { moneyShort } from "@/lib/format";
 import { getApi } from "@/server/trpc/caller";
 import { requireManagerOrSponsor } from "@/lib/auth-guards";
 
@@ -30,26 +27,8 @@ export default async function FinalReport({
     api.sprint.workflowMaps({ id }),
   ]);
 
-  const top = opps[0];
-  const totalLow = opps.slice(0, 5).reduce((s, o) => s + o.impactLow, 0);
-  const drillConfig = {
-    backLabel: "Overview",
-    backHref: "/sprint",
-    title: "Report",
-    sections: REPORT_SECTIONS,
-    decision: top
-      ? {
-          moneyLabel: `${moneyShort(totalLow, sprint.tenantCurrency)}+/yr`,
-          oppTitle: top.title,
-          href: `/sprint/${id}/opportunity/${top.id}`,
-          ctaLabel: isSponsor ? "Approve →" : "Review →",
-        }
-      : null,
-  };
-
   return (
     <div className="bg-bg">
-      <ReportSidebarRegistrar config={drillConfig} />
       {/* Toolbar */}
       <div
         data-print-hide
@@ -77,7 +56,6 @@ export default async function FinalReport({
         memo={memo}
         workflowMaps={workflowMaps}
         opportunityHref={(oid) => `/sprint/${id}/opportunity/${oid}`}
-        isSponsor={isSponsor}
       />
     </div>
   );
