@@ -10,6 +10,7 @@ import {
   TENANT_B,
 } from "./test/helpers";
 import { sprints, workflowMaps } from "./schema";
+import { withTwistagContext } from "./client";
 
 const SPRINT_A = "00000000-0000-0000-0000-0000000005a1";
 
@@ -97,5 +98,45 @@ describe("workflow_maps — tenant isolation", () => {
     const rows = await withServiceRoleRaw((tx) => tx.select().from(workflowMaps));
     expect(rows).toHaveLength(1);
     expect(rows[0].status).toBe("surfaced");
+  });
+
+  it("a tenant user cannot insert a workflow map (service-role writes only)", async () => {
+    await expect(
+      asUser({ tenantId: TENANT_A }, (tx) =>
+        tx.insert(workflowMaps).values({
+          tenantId: TENANT_A,
+          sprintId: SPRINT_A,
+          kind: "swimlane",
+          graph: sampleGraph,
+          status: "provisional",
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("a Twistag admin reads a provisional map the tenant cannot", async () => {
+    await seedRow((tx) =>
+      tx.insert(workflowMaps).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        kind: "swimlane",
+        graph: sampleGraph,
+        status: "provisional",
+      }),
+    );
+
+    const tenantRows = await asUser({ tenantId: TENANT_A }, (tx) =>
+      tx.select().from(workflowMaps),
+    );
+    expect(tenantRows).toHaveLength(0);
+
+    const adminRows = await withTwistagContext(
+      {
+        twistagRole: "twistag_admin",
+        actor: "00000000-0000-4000-8000-0000000000ff",
+      },
+      (tx) => tx.select().from(workflowMaps),
+    );
+    expect(adminRows.length).toBeGreaterThanOrEqual(1);
   });
 });
