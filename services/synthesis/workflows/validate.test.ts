@@ -71,4 +71,27 @@ describe("validateGraph", () => {
     expect(out.steps.map((s) => s.id)).toEqual(["s1"]);
     expect(out.edges).toEqual([]);
   });
+
+  it("drops an inferred edge whose both endpoints were dropped", () => {
+    const g = graph({
+      steps: [
+        { id: "s1", label: "ghost-a", laneId: null, stepKind: "step", inferred: false, captureIds: [FAKE], metric: null },
+        { id: "s2", label: "ghost-b", laneId: null, stepKind: "step", inferred: false, captureIds: [FAKE], metric: null },
+      ],
+      edges: [
+        { id: "e1", from: "s1", to: "s2", edgeKind: "handoff", label: null, inferred: true, captureIds: [C1] },
+      ],
+    });
+    const out = validateGraph(g, known);
+    expect(out.steps).toEqual([]);
+    expect(out.edges).toEqual([]);
+  });
+
+  it("returns structurally empty output for an empty graph without throwing", () => {
+    const g = graph({ lanes: [], steps: [], edges: [] });
+    const out = validateGraph(g, known);
+    expect(out.steps).toEqual([]);
+    expect(out.edges).toEqual([]);
+    expect(out.lanes).toEqual([]);
+  });
 });
