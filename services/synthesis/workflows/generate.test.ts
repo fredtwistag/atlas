@@ -62,4 +62,22 @@ describe("critiqueGraph", () => {
     );
     expect(out.unsupportedStepIds).toEqual(["s2"]);
   });
+
+  it("never sends contributorId to the model, but does send capture summary as evidence", async () => {
+    completeStructured.mockResolvedValue({ unsupportedStepIds: [], unsupportedEdgeIds: [] });
+    const captureSummary = "Sales emails the deal to ops";
+    await critiqueGraph(
+      {
+        kind: "swimlane",
+        title: "t",
+        lanes: [],
+        steps: [{ id: "s1", label: "x", laneId: null, stepKind: "step", inferred: false, captureIds: [C1], metric: null }],
+        edges: [],
+      },
+      [cap({ summary: captureSummary })],
+    );
+    const content = completeStructured.mock.calls[0][0].messages[0].content as string;
+    expect(content).toContain(captureSummary);
+    expect(content).not.toContain("SECRET-USER-ID");
+  });
 });
