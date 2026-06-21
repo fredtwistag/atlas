@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Building2, CircleDot, FileText, Users } from "lucide-react";
+import { CircleDot, FileText, Users } from "lucide-react";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { BackLink } from "@/components/ui/BackLink";
 import { Badge } from "@/components/ui/Badge";
@@ -466,7 +467,7 @@ export default async function ClientDetailPage({
         <BackLink href="/admin">All clients</BackLink>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2.5">
-            <Building2 className="h-6 w-6 text-text-3" />
+            <CompanyLogo domain={tenant.domain} name={tenant.name} size="md" />
             <h1 className="text-3xl font-semibold tracking-tight">
               {tenant.name}
             </h1>

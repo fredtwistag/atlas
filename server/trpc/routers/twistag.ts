@@ -89,6 +89,7 @@ export const twistagRouter = router({
             tenantId: t.id,
             name: t.name,
             segment: t.segment,
+            domain: t.domain ?? null,
             sprintName: sprint?.name ?? "No active sprint",
             sprintId: sprint?.id ?? null,
             health,

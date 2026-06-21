@@ -60,7 +60,7 @@ export const sessionRouter = router({
         .from(sprints)
         .where(eq(sprints.id, part.sprintId));
       const [tenant] = await tx
-        .select({ name: tenants.name })
+        .select({ name: tenants.name, domain: tenants.domain })
         .from(tenants)
         .where(eq(tenants.id, s.tenantId));
 
@@ -91,6 +91,7 @@ export const sessionRouter = router({
         sprintId: part.sprintId,
         sprintName: s.name,
         tenantName: tenant?.name ?? "",
+        tenantDomain: tenant?.domain ?? null,
         sessions: rows.map((r) => ({
           id: r.id,
           topicId: r.topicId ?? "",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, Building2, CircleDot, TrendingUp } from "lucide-react";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
@@ -143,13 +144,18 @@ export default async function AdminCockpit() {
                 return (
                   <Tr key={c.tenantId}>
                     <Td>
-                      <Link
-                        href={`/admin/clients/${c.tenantId}`}
-                        className="font-medium leading-tight hover:text-brand hover:underline"
-                      >
-                        {c.name}
-                      </Link>
-                      <div className="text-xs text-text-3">{c.segment}</div>
+                      <div className="flex items-center gap-2">
+                        <CompanyLogo domain={c.domain} name={c.name} size="sm" />
+                        <div>
+                          <Link
+                            href={`/admin/clients/${c.tenantId}`}
+                            className="font-medium leading-tight hover:text-brand hover:underline"
+                          >
+                            {c.name}
+                          </Link>
+                          <div className="text-xs text-text-3">{c.segment}</div>
+                        </div>
+                      </div>
                     </Td>
                     <Td className="text-text-2">
                       {c.sprintId ? (

@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { moneyShort } from "@/lib/format";
@@ -50,6 +51,12 @@ export function ReportArticle({
         <div className="mb-3 text-sm font-semibold uppercase tracking-[0.1em] text-brand">
           Atlas discovery report
         </div>
+        <CompanyLogo
+          domain={sprint.tenantDomain}
+          name={sprint.tenantName}
+          size="lg"
+          className="mb-4"
+        />
         <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight">
           {sprint.tenantName}
         </h1>

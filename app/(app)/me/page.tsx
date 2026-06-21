@@ -19,6 +19,7 @@ import { hasAckedPrivacy } from "@/lib/privacy";
 import { getAllowNudges } from "@/lib/nudge-prefs";
 import { PrivacyGate } from "@/components/me/PrivacyGate";
 import { NudgePreferenceToggle } from "@/components/me/NudgePreferenceToggle";
+import { CompanyLogo } from "@/components/CompanyLogo";
 
 export const metadata: Metadata = { title: "My sprint · Atlas" };
 export const dynamic = "force-dynamic";
@@ -60,7 +61,10 @@ export default async function IcHomePage() {
       {/* Greeting */}
       <div className="mb-8">
         <div className="mb-1 text-sm font-medium text-text-3">
-          {data.tenantName} · {data.sprintName}
+          <span className="inline-flex items-center gap-2">
+            <CompanyLogo domain={data.tenantDomain} name={data.tenantName} size="sm" />
+            {data.tenantName} · {data.sprintName}
+          </span>
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">
           Welcome back, {me.name.split(" ")[0]}.

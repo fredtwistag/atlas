@@ -298,6 +298,7 @@ export interface MyDashboard {
   sprintId: string;
   sprintName: string;
   tenantName: string;
+  tenantDomain: string | null;
   sessions: MySessionView[];
 }
 
@@ -305,6 +306,7 @@ export interface ClientSummary {
   tenantId: string;
   name: string;
   segment: string;
+  domain: string | null;
   sprintName: string;
   /** The active sprint this summary reflects, for deep-linking into its report.
    * Null when the tenant has no active sprint. */

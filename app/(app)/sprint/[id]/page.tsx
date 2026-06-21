@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -100,6 +101,7 @@ export default async function ManagerDashboard({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-sm text-text-3">
+            <CompanyLogo domain={sprint.tenantDomain} name={sprint.tenantName} size="md" />
             {sprint.tenantName} · {sprint.tenantSegment}
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">
