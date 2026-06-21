@@ -376,6 +376,7 @@ export const workflowStep = z.object({
   laneId: z.string().max(40).nullable().default(null),
   stepKind: z.enum([
     "step",
+    "bottleneck",
     "decision",
     "system",
     "shadow_tool",
@@ -1107,7 +1108,7 @@ const swimlaneSystem = (roleLabels: string[]): string =>
     "swimlane. Lanes are roles; a step sits in the lane of whoever does it; an",
     "edge from a step in one lane to a step in another lane is a handoff",
     "(edgeKind='handoff'). Same-lane progression is edgeKind='flow'. Mark a",
-    "step that is a known pain point with stepKind='step' and cite the",
+    "step that is a known pain point with stepKind='bottleneck' and cite the",
     "bottleneck/workaround capture as its evidence.",
     "",
     rulesBlock(roleLabels),
