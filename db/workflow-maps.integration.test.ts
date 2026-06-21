@@ -9,7 +9,8 @@ import {
   TENANT_A,
   TENANT_B,
 } from "./test/helpers";
-import { sprints, workflowMaps } from "./schema";
+import { sprints, workflowMaps, users, captures } from "./schema";
+import { loadWorkflowMaps } from "@/lib/sprint-read";
 import { withTwistagContext } from "./client";
 
 const SPRINT_A = "00000000-0000-0000-0000-0000000005a1";
@@ -168,5 +169,59 @@ describe("workflow_maps — jsonb roundtrip", () => {
     expect(rows).toHaveLength(1);
     const graph = rows[0].graph as { steps: { metric: { x: number; y: number } }[] };
     expect(graph.steps[0].metric).toEqual({ x: 3, y: 120000 });
+  });
+});
+
+const USER_A1 = "00000000-0000-0000-0000-0000000000a1";
+const CAP_1 = "00000000-0000-0000-0000-0000000000c1";
+
+describe("loadWorkflowMaps", () => {
+  it("returns surfaced maps with name+role-attributed evidence", async () => {
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: USER_A1,
+        tenantId: TENANT_A,
+        email: "rep@a.test",
+        name: "Dana Rep",
+        role: "ic",
+        title: "Sales rep",
+        department: "Sales",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(captures).values({
+        id: CAP_1,
+        tenantId: TENANT_A,
+        userId: USER_A1,
+        kind: "handoff",
+        summary: "Sales emails the deal to ops",
+        sourceQuote: "I just email it over",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(workflowMaps).values({
+        tenantId: TENANT_A,
+        sprintId: SPRINT_A,
+        kind: "swimlane",
+        status: "surfaced",
+        graph: {
+          kind: "swimlane",
+          title: "Deal to order",
+          lanes: [],
+          steps: [{ id: "s1", label: "Log deal", laneId: null, stepKind: "step", inferred: false, captureIds: [CAP_1], metric: null }],
+          edges: [],
+          confidence: { score: 0.9, coverage: 1, corroboratedCount: 1, disputedStepIds: [] },
+          modelVersion: "m",
+        },
+      }),
+    );
+
+    const maps = await asUser({ tenantId: TENANT_A, userId: USER_A1 }, (tx) =>
+      loadWorkflowMaps(tx, SPRINT_A),
+    );
+    expect(maps).toHaveLength(1);
+    expect(maps[0].evidence).toHaveLength(1);
+    expect(maps[0].evidence[0].contributorName).toBe("Dana Rep");
+    expect(maps[0].evidence[0].contributorRole).toBe("Sales rep");
   });
 });

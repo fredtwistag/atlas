@@ -1,4 +1,5 @@
-import type { WorkflowGraphDraft } from "@/services/llm/schemas";
+import type { WorkflowGraphDraft, WorkflowKind } from "@/services/llm/schemas";
+import type { Capture } from "@/lib/types";
 
 /**
  * A capture as the workflow engine sees it. `role` + `department` are sent to
@@ -34,4 +35,15 @@ export interface WorkflowConfidence {
 export interface WorkflowGraph extends WorkflowGraphDraft {
   confidence: WorkflowConfidence;
   modelVersion: string;
+}
+
+/** A workflow map resolved for rendering: graph + name/role-attributed evidence. */
+export interface WorkflowMapView {
+  id: string;
+  kind: WorkflowKind;
+  title: string;
+  graph: WorkflowGraph;
+  confidence: WorkflowConfidence;
+  basedOnSessions: number;
+  evidence: Capture[];
 }

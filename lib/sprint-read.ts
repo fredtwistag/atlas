@@ -10,7 +10,7 @@
  * internal userId are never exposed. Names are never sent to the LLM.
  */
 import { cache } from "react";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import type { Db } from "@/db/client";
 import {
@@ -28,6 +28,7 @@ import {
   systemInventoryItems,
   stakeholders,
   stakeholderOpportunity,
+  workflowMaps,
 } from "@/db/schema";
 import {
   computeProgress,
@@ -47,6 +48,10 @@ import type {
   StakeholderEntry,
   SynthesisMemo,
 } from "./types";
+import type {
+  WorkflowGraph,
+  WorkflowMapView,
+} from "@/services/synthesis/workflows/types";
 
 const DAY = 86_400_000;
 
@@ -437,4 +442,95 @@ export async function loadStakeholders(
     summary: r.summary,
     gatedOpportunityIds: gatedBy.get(r.id) ?? [],
   }));
+}
+
+/**
+ * Workflow diagram maps for a sprint, render-ready. Under a tenant context RLS
+ * returns only `surfaced` maps; under a Twistag context it returns all. Evidence
+ * captureIds are resolved to NAME + ROLE (de-anonymized 2026-06-20); removed
+ * captures and email/userId never appear. Quotes deduped per map.
+ */
+export async function loadWorkflowMaps(
+  tx: Db,
+  sprintId: string,
+): Promise<WorkflowMapView[]> {
+  const rows = await tx
+    .select({
+      id: workflowMaps.id,
+      graph: workflowMaps.graph,
+    })
+    .from(workflowMaps)
+    // Sprint-level maps only; opportunity-scoped before/after rows (Plan 3,
+    // opportunityId set) are read separately on the opportunity page.
+    .where(and(eq(workflowMaps.sprintId, sprintId), isNull(workflowMaps.opportunityId)))
+    .orderBy(workflowMaps.kind);
+  if (rows.length === 0) return [];
+
+  const graphs = rows.map((r) => r.graph as WorkflowGraph);
+  const allIds = new Set<string>();
+  for (const g of graphs) {
+    for (const s of g.steps) for (const id of s.captureIds) allIds.add(id);
+    for (const e of g.edges) for (const id of e.captureIds) allIds.add(id);
+  }
+
+  const evRows =
+    allIds.size > 0
+      ? await tx
+          .select({
+            id: captures.id,
+            kind: captures.kind,
+            summary: captures.summary,
+            sourceQuote: captures.sourceQuote,
+            sessionId: captures.sessionId,
+            tags: captures.tags,
+            isEdited: captures.isEdited,
+            isRemoved: captures.isRemoved,
+            name: users.name,
+            role: users.title,
+          })
+          .from(captures)
+          .innerJoin(users, eq(captures.userId, users.id))
+          .where(and(inArray(captures.id, [...allIds]), eq(captures.isRemoved, false)))
+      : [];
+  const capById = new Map(evRows.map((e) => [e.id, e]));
+
+  return graphs.map((g, i) => {
+    const ids = new Set<string>();
+    for (const s of g.steps) for (const id of s.captureIds) ids.add(id);
+    for (const e of g.edges) for (const id of e.captureIds) ids.add(id);
+
+    const evidence: Capture[] = [];
+    const seenQuotes = new Set<string>();
+    const sessionsSet = new Set<string>();
+    for (const id of ids) {
+      const e = capById.get(id);
+      if (!e) continue;
+      if (e.sessionId) sessionsSet.add(e.sessionId);
+      const key = e.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim();
+      if (seenQuotes.has(key)) continue;
+      seenQuotes.add(key);
+      evidence.push({
+        id: e.id,
+        kind: e.kind as Capture["kind"],
+        summary: e.summary,
+        sourceQuote: e.sourceQuote,
+        contributorName: e.name,
+        contributorRole: e.role ?? "Contributor",
+        sessionId: e.sessionId,
+        tags: e.tags,
+        isEdited: e.isEdited,
+        isRemoved: e.isRemoved,
+      });
+    }
+
+    return {
+      id: rows[i].id,
+      kind: g.kind,
+      title: g.title,
+      graph: g,
+      confidence: g.confidence,
+      basedOnSessions: sessionsSet.size,
+      evidence,
+    };
+  });
 }
