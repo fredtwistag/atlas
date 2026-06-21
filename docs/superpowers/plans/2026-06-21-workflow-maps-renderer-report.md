@@ -963,7 +963,7 @@ Expected: FAIL (`loadWorkflowMaps` is not exported).
 
 - [ ] **Step 4: Add `loadWorkflowMaps` to `lib/sprint-read.ts`**
 
-Add `workflowMaps` to the `@/db/schema` import, `inArray` to the `drizzle-orm` import, and these type imports:
+Add `workflowMaps` to the `@/db/schema` import, `inArray` + `isNull` to the `drizzle-orm` import, and these type imports:
 
 ```typescript
 import type {
@@ -991,7 +991,9 @@ export async function loadWorkflowMaps(
       graph: workflowMaps.graph,
     })
     .from(workflowMaps)
-    .where(eq(workflowMaps.sprintId, sprintId))
+    // Sprint-level maps only; opportunity-scoped before/after rows (Plan 3,
+    // opportunityId set) are read separately on the opportunity page.
+    .where(and(eq(workflowMaps.sprintId, sprintId), isNull(workflowMaps.opportunityId)))
     .orderBy(workflowMaps.kind);
   if (rows.length === 0) return [];
 
