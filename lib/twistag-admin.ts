@@ -235,13 +235,14 @@ const TENANT_STATUSES = ["active", "onboarding", "paused", "churned"] as const;
 export async function updateTenant(
   actor: TwistagActor,
   tenantId: string,
-  patch: { name?: string; segment?: string; status?: string; domain?: string },
+  patch: { name?: string; segment?: string; status?: string; domain?: string; currency?: string },
 ): Promise<void> {
   const set: Partial<{
     name: string;
     segment: string;
     status: string;
     domain: string | null;
+    currency: string;
   }> = {};
   if (patch.name !== undefined) set.name = patch.name;
   if (patch.segment !== undefined) set.segment = patch.segment;
@@ -251,6 +252,12 @@ export async function updateTenant(
       throw new Error("invalid status");
     }
     set.status = patch.status;
+  }
+  if (patch.currency !== undefined) {
+    if (!["EUR", "USD", "GBP"].includes(patch.currency)) {
+      throw new Error("invalid currency");
+    }
+    set.currency = patch.currency;
   }
   if (Object.keys(set).length === 0) throw new Error("nothing to update");
 

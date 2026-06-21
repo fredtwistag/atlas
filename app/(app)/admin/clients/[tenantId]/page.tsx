@@ -124,6 +124,7 @@ export default async function ClientDetailPage({
                 segment: tenant.segment,
                 status: tenant.status,
                 domain: tenant.domain ?? "",
+                currency: tenant.currency,
               }}
               action={onUpdateTenant}
             />

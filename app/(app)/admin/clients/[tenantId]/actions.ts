@@ -103,10 +103,10 @@ async function deliverTwistagInvite(
   }
 }
 
-/** Edit a company's name/segment/status/domain. */
+/** Edit a company's name/segment/status/domain/currency. */
 export async function updateTenantAction(
   tenantId: string,
-  input: { name: string; segment: string; status: string; domain?: string },
+  input: { name: string; segment: string; status: string; domain?: string; currency?: string },
 ): Promise<void> {
   const actor = await requireTwistagActor();
   await updateTenant(actor, tenantId, input);

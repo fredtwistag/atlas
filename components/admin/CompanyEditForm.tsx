@@ -11,18 +11,20 @@ export function CompanyEditForm({
   initial,
   action,
 }: {
-  initial: { name: string; segment: string; status: string; domain: string };
+  initial: { name: string; segment: string; status: string; domain: string; currency: string };
   action: (input: {
     name: string;
     segment: string;
     status: string;
     domain: string;
+    currency: string;
   }) => Promise<void>;
 }) {
   const [name, setName] = useState(initial.name);
   const [segment, setSegment] = useState(initial.segment);
   const [status, setStatus] = useState(initial.status);
   const [domain, setDomain] = useState(initial.domain);
+  const [currency, setCurrency] = useState(initial.currency);
   const [pending, start] = useTransition();
   const [feedback, setFeedback] = useState<{
     kind: "ok" | "error";
@@ -34,14 +36,15 @@ export function CompanyEditForm({
     name !== initial.name ||
     segment !== initial.segment ||
     status !== initial.status ||
-    domain !== initial.domain;
+    domain !== initial.domain ||
+    currency !== initial.currency;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFeedback(null);
     start(async () => {
       try {
-        await action({ name, segment, status, domain });
+        await action({ name, segment, status, domain, currency });
         setFeedback({ kind: "ok", msg: "Company updated." });
       } catch {
         setFeedback({ kind: "error", msg: "Couldn't save those changes." });
@@ -95,6 +98,19 @@ export function CompanyEditForm({
               {s}
             </option>
           ))}
+        </select>
+      </div>
+      <div>
+        <Label htmlFor="company-currency">Currency</Label>
+        <select
+          id="company-currency"
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value)}
+          className="h-9 w-full rounded-md border border-border bg-surface px-3 text-md"
+        >
+          <option value="EUR">EUR (€)</option>
+          <option value="USD">USD ($)</option>
+          <option value="GBP">GBP (£)</option>
         </select>
       </div>
       <div className="flex items-center gap-3">

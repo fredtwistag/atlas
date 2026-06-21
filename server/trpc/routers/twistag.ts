@@ -125,6 +125,7 @@ export const twistagRouter = router({
               segment: tenants.segment,
               status: tenants.status,
               domain: tenants.domain,
+              currency: tenants.currency,
               createdAt: tenants.createdAt,
             })
             .from(tenants)
