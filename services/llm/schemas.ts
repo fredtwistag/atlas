@@ -344,3 +344,82 @@ export const companyEnrichment = z.object({
 });
 
 export type CompanyEnrichment = z.infer<typeof companyEnrichment>;
+
+/**
+ * Workflow diagram graph (Plan 1). The LLM emits SEMANTIC STRUCTURE ONLY —
+ * lanes/steps/edges, each citing captureIds (uuids). Internal graph ids
+ * (step/lane/edge `id`, `from`, `to`) are short strings the model chooses, NOT
+ * uuids. `confidence` and `modelVersion` are added server-side, not by the LLM.
+ * NEVER contains names or contributor ids.
+ */
+export const workflowKind = z.enum([
+  "swimlane",
+  "before_after",
+  "systems_topology",
+  "impact_effort",
+  "decision_flow",
+  "handoff_network",
+  "rework_loop",
+  "journey_map",
+  "raci_grid",
+  "sipoc_strip",
+]);
+
+export const workflowLane = z.object({
+  id: z.string().min(1).max(40),
+  roleLabel: z.string().min(1).max(80),
+  department: z.string().max(80).nullable().default(null),
+});
+
+export const workflowStep = z.object({
+  id: z.string().min(1).max(40),
+  label: z.string().min(1).max(120),
+  laneId: z.string().max(40).nullable().default(null),
+  stepKind: z.enum([
+    "step",
+    "bottleneck",
+    "decision",
+    "system",
+    "shadow_tool",
+    "gap",
+    "start",
+    "end",
+  ]),
+  inferred: z.boolean().default(false),
+  captureIds: z.array(z.string().uuid()).default([]),
+  // Set only for kind = 'impact_effort' (effort=x, impact=y). LLM leaves null.
+  metric: z
+    .object({ x: z.number(), y: z.number() })
+    .nullable()
+    .default(null),
+});
+
+export const workflowEdge = z.object({
+  id: z.string().min(1).max(40),
+  from: z.string().min(1).max(40),
+  to: z.string().min(1).max(40),
+  edgeKind: z.enum(["flow", "handoff", "gap"]),
+  label: z.string().max(40).nullable().default(null),
+  inferred: z.boolean().default(false),
+  captureIds: z.array(z.string().uuid()).default([]),
+});
+
+export const workflowGraphDraft = z.object({
+  kind: workflowKind,
+  title: z.string().min(2).max(120),
+  lanes: z.array(workflowLane).default([]),
+  steps: z.array(workflowStep).min(1),
+  edges: z.array(workflowEdge).default([]),
+});
+
+export const workflowCritique = z.object({
+  unsupportedStepIds: z.array(z.string().max(40)).default([]),
+  unsupportedEdgeIds: z.array(z.string().max(40)).default([]),
+});
+
+export type WorkflowKind = z.infer<typeof workflowKind>;
+export type WorkflowLane = z.infer<typeof workflowLane>;
+export type WorkflowStep = z.infer<typeof workflowStep>;
+export type WorkflowEdge = z.infer<typeof workflowEdge>;
+export type WorkflowGraphDraft = z.infer<typeof workflowGraphDraft>;
+export type WorkflowCritique = z.infer<typeof workflowCritique>;
