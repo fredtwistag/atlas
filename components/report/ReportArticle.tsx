@@ -3,7 +3,6 @@ import { ReportHero } from "@/components/report/ReportHero";
 import { FindingsSection } from "@/components/report/FindingsSection";
 import { OpportunitiesSection } from "@/components/report/OpportunitiesSection";
 import { RoadmapSection } from "@/components/report/RoadmapSection";
-import { StickyDecisionBar } from "@/components/report/StickyDecisionBar";
 import type { Sprint, SprintProgress, Opportunity, SynthesisMemo } from "@/lib/types";
 import type { WorkflowMapView } from "@/services/synthesis/workflows/types";
 
@@ -33,16 +32,16 @@ export function ReportArticle({
   const currency = sprint.tenantCurrency;
   return (
     <article className="mx-auto max-w-3xl px-6 py-10">
-      <StickyDecisionBar opps={opps} currency={currency} opportunityHref={opportunityHref} isSponsor={isSponsor} />
-
-      <ReportHero
-        sprint={sprint}
-        progress={progress}
-        opps={opps}
-        currency={currency}
-        opportunityHref={opportunityHref}
-        isSponsor={isSponsor}
-      />
+      <div id="summary" className="scroll-mt-20">
+        <ReportHero
+          sprint={sprint}
+          progress={progress}
+          opps={opps}
+          currency={currency}
+          opportunityHref={opportunityHref}
+          isSponsor={isSponsor}
+        />
+      </div>
 
       {memo && memo.openingNarrative ? (
         <Section title="In short">
@@ -53,11 +52,17 @@ export function ReportArticle({
         </Section>
       ) : null}
 
-      <FindingsSection maps={workflowMaps} />
+      <div id="findings" className="scroll-mt-20">
+        <FindingsSection maps={workflowMaps} />
+      </div>
 
-      <OpportunitiesSection opps={opps} maps={workflowMaps} currency={currency} href={opportunityHref} />
+      <div id="opportunities" className="scroll-mt-20">
+        <OpportunitiesSection opps={opps} maps={workflowMaps} currency={currency} href={opportunityHref} />
+      </div>
 
-      <RoadmapSection opps={opps} />
+      <div id="roadmap" className="scroll-mt-20">
+        <RoadmapSection opps={opps} />
+      </div>
 
       <Section title="How we got here">
         <p>
