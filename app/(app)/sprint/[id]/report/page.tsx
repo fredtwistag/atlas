@@ -56,6 +56,7 @@ export default async function FinalReport({
         memo={memo}
         workflowMaps={workflowMaps}
         opportunityHref={(oid) => `/sprint/${id}/opportunity/${oid}`}
+        isSponsor={isSponsor}
       />
     </div>
   );
