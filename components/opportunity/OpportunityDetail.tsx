@@ -20,7 +20,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Sheet } from "@/components/ui/Sheet";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
-import { moneyRange, moneyShort } from "@/lib/format";
+import { moneyRange, moneyShort, type Currency } from "@/lib/format";
 import { pluralize } from "@/lib/text";
 import type { Opportunity, SowDraft } from "@/lib/types";
 
@@ -35,6 +35,7 @@ export function OpportunityDetail({
   readOnly = false,
   backHref,
   backLabel,
+  currency,
 }: {
   sprintId: string;
   opp: Opportunity;
@@ -47,6 +48,7 @@ export function OpportunityDetail({
   readOnly?: boolean;
   backHref?: string;
   backLabel?: string;
+  currency: Currency;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -123,7 +125,7 @@ export function OpportunityDetail({
           {
             icon: TrendingUp,
             label: "Est. annual impact",
-            value: `${moneyRange(opp.impactLow, opp.impactHigh)}`,
+            value: `${moneyRange(opp.impactLow, opp.impactHigh, currency)}`,
           },
           {
             icon: Clock,
@@ -391,7 +393,7 @@ export function OpportunityDetail({
             <Field label="Duration" value={`${sow.durationWeeks} weeks`} />
             <Field
               label="Indicative price (draft)"
-              value={moneyShort(sow.priceUsd).replace("K", ",000")}
+              value={moneyShort(sow.priceUsd, currency).replace("K", ",000")}
             />
           </div>
 

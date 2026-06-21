@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { horizonMeta } from "@/lib/ui-maps";
-import { moneyRange } from "@/lib/format";
+import { moneyRange, type Currency } from "@/lib/format";
 import type { SprintPortfolio } from "@/lib/types";
 
 /**
@@ -11,8 +11,10 @@ import type { SprintPortfolio } from "@/lib/types";
  */
 export function PilotPortfolio({
   portfolio,
+  currency = "EUR",
 }: {
   portfolio: SprintPortfolio | null;
+  currency?: Currency;
 }) {
   if (!portfolio || portfolio.items.length === 0) {
     return (
@@ -50,7 +52,7 @@ export function PilotPortfolio({
                   <span className="font-medium leading-tight">{it.title}</span>
                   {hz ? <Badge tone={hz.tone}>{hz.label}</Badge> : null}
                   <Badge tone="success">
-                    {moneyRange(it.impactLow, it.impactHigh)}/yr
+                    {moneyRange(it.impactLow, it.impactHigh, currency)}/yr
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-text-3">

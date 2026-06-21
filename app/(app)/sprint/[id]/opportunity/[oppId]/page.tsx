@@ -42,6 +42,7 @@ export default async function OpportunityPage({
       sow={buildSowDraft(opp, sprint?.tenantName ?? "your organization")}
       approverRole={session.role}
       onApprove={approveOpportunity}
+      currency={sprint?.tenantCurrency ?? "EUR"}
     />
   );
 }

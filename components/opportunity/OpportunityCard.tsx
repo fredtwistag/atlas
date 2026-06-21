@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScoreBadge } from "@/components/ScoreBadge";
-import { moneyRange } from "@/lib/format";
+import { moneyRange, type Currency } from "@/lib/format";
 import { horizonMeta, deliveryMeta } from "@/lib/ui-maps";
 import { cn } from "@/lib/cn";
 import type { Opportunity } from "@/lib/types";
@@ -19,11 +19,13 @@ export function OpportunityCard({
   rank,
   /** Third badge: corroborating voices (dashboard) or the category (report). */
   meta = "voices",
+  currency = "EUR",
 }: {
   opp: Opportunity;
   href?: string;
   rank?: number;
   meta?: "voices" | "category";
+  currency?: Currency;
 }) {
   const body = (
     <Card
@@ -50,7 +52,7 @@ export function OpportunityCard({
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge tone="success">
-              {moneyRange(opp.impactLow, opp.impactHigh)}/yr
+              {moneyRange(opp.impactLow, opp.impactHigh, currency)}/yr
             </Badge>
             <Badge tone="outline">
               {opp.timeToShipWeeksLow}–{opp.timeToShipWeeksHigh} wks

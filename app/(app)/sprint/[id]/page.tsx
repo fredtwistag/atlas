@@ -209,7 +209,7 @@ export default async function ManagerDashboard({
           <h2 className="mb-3 px-1 text-sm font-semibold text-text-2">
             Pilot portfolio
           </h2>
-          <PilotPortfolio portfolio={portfolio} />
+          <PilotPortfolio portfolio={portfolio} currency={sprint.tenantCurrency} />
 
           <div className="mb-3 mt-6 flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold text-text-2">
@@ -237,6 +237,7 @@ export default async function ManagerDashboard({
                   key={o.id}
                   opp={o}
                   href={`/sprint/${id}/opportunity/${o.id}`}
+                  currency={sprint.tenantCurrency}
                 />
               ))
             )}

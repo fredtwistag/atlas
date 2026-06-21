@@ -14,7 +14,7 @@ describe("OpportunityDetail approve flow", () => {
   it("opens the SOW sheet and confirms approval", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
     );
 
     await userEvent.click(
@@ -40,6 +40,7 @@ describe("OpportunityDetail read-only (Twistag admin view)", () => {
         readOnly
         backHref="/admin/clients/t1/sprint/spr-northwind-q2/report"
         backLabel="Back to report"
+        currency="EUR"
       />,
     );
 
@@ -64,7 +65,7 @@ describe("OpportunityDetail tabs (a11y)", () => {
   it("exposes a tablist with the active tab selected", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
     );
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
@@ -82,7 +83,7 @@ describe("OpportunityDetail tabs (a11y)", () => {
   it("moves selection with the right arrow key (roving focus)", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
     );
 
     const evidence = screen.getByRole("tab", { name: /evidence/i });
@@ -101,7 +102,7 @@ describe("OpportunityDetail tabs (a11y)", () => {
   it("wraps from the first tab to the last with the left arrow key", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
     );
 
     const evidence = screen.getByRole("tab", { name: /evidence/i });
@@ -117,7 +118,7 @@ describe("OpportunityDetail evidence attribution", () => {
   it("shows the contributor's name and role on each evidence quote", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} />,
+      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
     );
 
     // The Evidence tab is selected by default. Every capture's name + role

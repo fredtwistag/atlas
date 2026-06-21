@@ -29,6 +29,7 @@ export function ReportArticle({
   opportunityHref?: (id: string) => string;
 }) {
   const topFive = opps.slice(0, 5);
+  const currency = sprint.tenantCurrency;
   const totalLow = topFive.reduce((s, o) => s + o.impactLow, 0);
   const totalHigh = topFive.reduce((s, o) => s + o.impactHigh, 0);
   // Barbell by funding horizon (Ticket D), derived at scoring time — not the
@@ -98,14 +99,14 @@ export function ReportArticle({
         <p>
           The combined estimated annual impact of the top five is{" "}
           <strong>
-            {moneyShort(totalLow)}–{moneyShort(totalHigh)}
+            {moneyShort(totalLow, currency)}–{moneyShort(totalHigh, currency)}
           </strong>
           .{" "}
           {topFive[0] ? (
             <>
               The highest-ranked opportunity — <strong>{topFive[0].title}</strong>{" "}
-              — is estimated at {moneyShort(topFive[0].impactLow)}–
-              {moneyShort(topFive[0].impactHigh)}/yr.
+              — is estimated at {moneyShort(topFive[0].impactLow, currency)}–
+              {moneyShort(topFive[0].impactHigh, currency)}/yr.
             </>
           ) : null}
         </p>
@@ -113,7 +114,7 @@ export function ReportArticle({
           {[
             [`${p.completionPct}%`, "Participation"],
             [`${p.opportunitiesCount}`, "Opportunities"],
-            [`${moneyShort(totalLow)}+`, "Est. impact, top 5"],
+            [`${moneyShort(totalLow, currency)}+`, "Est. impact, top 5"],
           ].map(([v, l]) => (
             <div
               key={l}
@@ -161,6 +162,7 @@ export function ReportArticle({
                 href={opportunityHref?.(o.id)}
                 rank={i + 1}
                 meta="category"
+                currency={currency}
               />
             ))}
           </div>
