@@ -3,9 +3,9 @@
  * data dependency. Defaults to EUR (Wave-1 pilots are EUR); pass `currency` to
  * override. Per-tenant currency is a post-demo follow-up.
  */
-type Currency = "EUR" | "USD";
+export type Currency = "EUR" | "USD" | "GBP";
 
-const SYMBOL: Record<Currency, string> = { EUR: "€", USD: "$" };
+const SYMBOL: Record<Currency, string> = { EUR: "€", USD: "$", GBP: "£" };
 
 export function moneyShort(n: number, currency: Currency = "EUR"): string {
   const s = SYMBOL[currency];

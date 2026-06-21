@@ -17,3 +17,10 @@ describe("moneyRange", () => {
     expect(moneyRange(28_000, 65_000)).toBe("€28K–€65K");
   });
 });
+
+describe("moneyShort GBP", () => {
+  it("formats GBP", () => {
+    expect(moneyShort(28_000, "GBP")).toBe("£28K");
+    expect(moneyRange(28_000, 65_000, "GBP")).toBe("£28K–£65K");
+  });
+});
