@@ -7,6 +7,8 @@
  * close so the swap is mechanical.
  */
 
+import type { Currency } from "@/lib/format";
+
 export type Role = "ic" | "manager" | "sponsor";
 
 /** A single source backing the company context (CTX-1): a doc, a URL, or manual note. */
@@ -250,6 +252,8 @@ export interface Sprint {
   id: string;
   tenantName: string;
   tenantSegment: string;
+  tenantCurrency: Currency;
+  tenantDomain: string | null;
   name: string;
   primaryFocus: string;
   scopeDepartment: string;

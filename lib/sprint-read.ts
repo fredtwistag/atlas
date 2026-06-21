@@ -34,6 +34,7 @@ import {
   toOpportunity,
   type OpportunityRow,
 } from "./dashboard-map";
+import type { Currency } from "@/lib/format";
 import type {
   Sprint,
   Participant,
@@ -164,6 +165,8 @@ export const loadSprint = cache(async function loadSprint(
     id: s.id,
     tenantName: tenant?.name ?? "",
     tenantSegment: tenant?.segment ?? "",
+    tenantCurrency: (tenant?.currency as Currency) ?? "EUR",
+    tenantDomain: tenant?.domain ?? null,
     name: s.name,
     primaryFocus: s.primaryFocus,
     scopeDepartment: s.scopeDepartment ?? "",

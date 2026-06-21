@@ -121,6 +121,8 @@ const sprint: Sprint = {
   id: "spr-northwind-q2",
   tenantName: "Northwind Logistics",
   tenantSegment: "Mid-market operator · 3PL",
+  tenantCurrency: "EUR",
+  tenantDomain: null,
   name: "Operations Discovery — Spring '26",
   primaryFocus: "Quote-to-cash & exception handling",
   scopeDepartment: "Operations, Finance, Sales Ops",
