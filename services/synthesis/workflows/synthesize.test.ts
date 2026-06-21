@@ -14,10 +14,6 @@ import type { WorkflowCapture, OpportunityPoint } from "./types";
 const C1 = "11111111-1111-4111-8111-111111111111";
 const C2 = "22222222-2222-4222-8222-222222222222";
 
-function cap(id: string, contributorId: string): WorkflowCapture {
-  return { id, kind: "handoff", summary: "x", role: "Ops", department: null, contributorId };
-}
-
 const swimlaneCaps: WorkflowCapture[] = [
   { id: C1, kind: "handoff", summary: "sales hands to ops", role: "Sales rep", department: "Sales", contributorId: "u1" },
   { id: C2, kind: "sop", summary: "ops re-keys", role: "Ops", department: "Ops", contributorId: "u2" },
@@ -80,5 +76,42 @@ describe("synthesizeWorkflows", () => {
     generateGraph.mockRejectedValue(new Error("LLM down"));
     const out = await synthesizeWorkflows({ captures: swimlaneCaps, opportunities: opps, roleLabels: [], modelVersion: "m" });
     expect(out.map((g) => g.kind)).toEqual(["impact_effort"]);
+  });
+
+  it("critic throw still emits the validated graph (best-effort)", async () => {
+    generateGraph.mockResolvedValue({
+      kind: "swimlane",
+      title: "Deal to order",
+      lanes: [{ id: "l1", roleLabel: "Sales", department: "Sales" }],
+      steps: [
+        { id: "s1", label: "Log deal", laneId: "l1", stepKind: "step", inferred: false, captureIds: [C1], metric: null },
+        { id: "s2", label: "Re-key", laneId: "l1", stepKind: "step", inferred: false, captureIds: [C2], metric: null },
+      ],
+      edges: [
+        { id: "e1", from: "s1", to: "s2", edgeKind: "handoff", label: null, inferred: false, captureIds: [C1, C2] },
+      ],
+    });
+    critiqueGraph.mockRejectedValue(new Error("critic down"));
+    const out = await synthesizeWorkflows({ captures: swimlaneCaps, opportunities: [], roleLabels: ["Sales"], modelVersion: "m" });
+    const sw = out.find((g) => g.kind === "swimlane");
+    expect(sw).toBeDefined();
+    expect(sw!.confidence.score).toBeGreaterThanOrEqual(0.3);
+  });
+
+  it("confidence gate omits a low-confidence map (both steps cite only C1)", async () => {
+    // coverage = 1/3 ≈ 0.333; corroboration = 0/2 = 0 → score ≈ 0.167 < MIN_CONFIDENCE
+    generateGraph.mockResolvedValue({
+      kind: "swimlane",
+      title: "Low signal",
+      lanes: [{ id: "l1", roleLabel: "Sales", department: "Sales" }],
+      steps: [
+        { id: "s1", label: "Step one", laneId: "l1", stepKind: "step", inferred: false, captureIds: [C1], metric: null },
+        { id: "s2", label: "Step two", laneId: "l1", stepKind: "step", inferred: false, captureIds: [C1], metric: null },
+      ],
+      edges: [],
+    });
+    // critic is empty (default beforeEach mock)
+    const out = await synthesizeWorkflows({ captures: swimlaneCaps, opportunities: [], roleLabels: ["Sales"], modelVersion: "m" });
+    expect(out.find((g) => g.kind === "swimlane")).toBeUndefined();
   });
 });
