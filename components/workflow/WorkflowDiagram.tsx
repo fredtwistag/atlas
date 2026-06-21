@@ -65,7 +65,8 @@ function Box({ box }: { box: LayoutBox }) {
 }
 
 /** Deterministic SVG renderer for a workflow graph. Pure: no hooks, no I/O. */
-export function WorkflowDiagram({ graph }: { graph: WorkflowGraph }) {
+export function WorkflowDiagram({ graph, instanceId }: { graph: WorkflowGraph; instanceId?: string }) {
+  const markerId = `wf-arrow-${(instanceId ?? "x").replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const layout = pickLayout(graph);
   if (!layout) return null;
   return (
@@ -79,7 +80,7 @@ export function WorkflowDiagram({ graph }: { graph: WorkflowGraph }) {
     >
       <title>{graph.title}</title>
       <defs>
-        <marker id="wf-arrow" viewBox="0 0 10 10" refX={8} refY={5} markerWidth={6} markerHeight={6} orient="auto-start-reverse">
+        <marker id={markerId} viewBox="0 0 10 10" refX={8} refY={5} markerWidth={6} markerHeight={6} orient="auto-start-reverse">
           <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
         </marker>
       </defs>
@@ -98,7 +99,7 @@ export function WorkflowDiagram({ graph }: { graph: WorkflowGraph }) {
       ))}
 
       {layout.edges.map((e) => (
-        <polyline key={e.id} points={e.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={e.tone === "red" ? "var(--red-700)" : "var(--text-3)"} strokeWidth={1.5} strokeDasharray={e.dashed ? "5 4" : undefined} markerEnd="url(#wf-arrow)" />
+        <polyline key={e.id} points={e.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={e.tone === "red" ? "var(--red-700)" : "var(--text-3)"} strokeWidth={1.5} strokeDasharray={e.dashed ? "5 4" : undefined} markerEnd={`url(#${markerId})`} />
       ))}
 
       {layout.boxes.map((b) => (

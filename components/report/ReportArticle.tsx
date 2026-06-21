@@ -198,7 +198,7 @@ export function ReportArticle({
                     {m.basedOnSessions === 1 ? "" : "s"}
                   </span>
                 </figcaption>
-                <WorkflowDiagram graph={m.graph} />
+                <WorkflowDiagram graph={m.graph} instanceId={m.id} />
                 {m.kind === "impact_effort" ? (
                   <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-2">
                     {m.graph.steps.map((s, i) => (
