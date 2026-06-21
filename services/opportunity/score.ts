@@ -8,6 +8,7 @@ import {
   type QuantifiedImpact,
 } from "@/services/llm/schemas";
 import type { Horizon } from "@/lib/types";
+import { type Currency } from "@/lib/format";
 
 /**
  * Plan 016 Step 3 — scoring.
@@ -63,19 +64,26 @@ export type ScoreCapture = {
 export type CostBasis = Record<string, number>;
 
 /**
- * Fallback loaded hourly rate (EUR) when a sprint has no cost basis and the
- * role isn't listed (EXT-2). A deliberately conservative mid-market blended
- * rate — the manager can override per role at sprint setup (EXT-2b).
+ * Fallback loaded hourly rate per currency when a sprint has no cost basis and
+ * the role isn't listed (EXT-2). Deliberately conservative mid-market blended
+ * rates — the manager can override per role at sprint setup (EXT-2b).
  */
-export const DEFAULT_LOADED_HOURLY_EUR = 75;
+export const DEFAULT_LOADED_HOURLY: Record<Currency, number> = {
+  EUR: 75,
+  USD: 80,
+  GBP: 65,
+};
+
+const CURRENCY_SYMBOL: Record<Currency, string> = { EUR: "€", USD: "$", GBP: "£" };
 
 /** Resolve the loaded hourly rate for a role from the cost basis, else the default. */
 export function rateForRole(
   role: string,
   costBasis: CostBasis | null | undefined,
+  currency: Currency,
 ): number {
   return (
-    costBasis?.[role] ?? costBasis?.["default"] ?? DEFAULT_LOADED_HOURLY_EUR
+    costBasis?.[role] ?? costBasis?.["default"] ?? DEFAULT_LOADED_HOURLY[currency]
   );
 }
 
@@ -160,24 +168,25 @@ function companyProfileLine(
   return bits.length ? `BUSINESS PROFILE: ${bits.join(", ")}` : "";
 }
 
-/** A short note telling the scorer how EUR figures were grounded (EXT-2). */
-function costBasisNote(costBasis: CostBasis | null | undefined): string {
+/** A short note telling the scorer how currency figures were grounded (EXT-2). */
+function costBasisNote(costBasis: CostBasis | null | undefined, currency: Currency): string {
+  const sym = CURRENCY_SYMBOL[currency];
   const hasRates = costBasis && Object.keys(costBasis).length > 0;
   const rates = hasRates
     ? Object.entries(costBasis)
-        .map(([role, rate]) => `${role} €${rate}/hr`)
+        .map(([role, rate]) => `${role} ${sym}${rate}/hr`)
         .join(", ")
-    : `none provided — assume €${DEFAULT_LOADED_HOURLY_EUR}/hr loaded`;
+    : `none provided — assume ${sym}${DEFAULT_LOADED_HOURLY[currency]}/hr loaded`;
   return [
-    "COST BASIS (loaded hourly rates, EUR): " + rates + ".",
-    "Where a capture shows `quantified` with an `implied annual ≈ €X`, that",
+    `COST BASIS (loaded hourly rates, ${currency}): ` + rates + ".",
+    `Where a capture shows \`quantified\` with an \`implied annual ≈ ${sym}X\`, that`,
     "figure was computed deterministically from the contributor's own numbers —",
     "anchor impactLow/impactHigh and the financial dimension to it, do not invent",
     "a different basis. Captures with no quantified line carry no measured figure.",
   ].join("\n");
 }
 
-function scoringSystem(): string {
+function scoringSystem(currency: Currency): string {
   return [
     "You score a single discovered operational opportunity for a sponsor who",
     "will decide whether to fund a Twistag FDE engagement. Apply the rubric",
@@ -189,7 +198,7 @@ function scoringSystem(): string {
     "- description: 1-3 sentences on the opportunity.",
     "- category: a short operational category (e.g. 'Pricing ops', 'Quote-to-cash').",
     "- departments: the affected departments (0-6).",
-    "- impactLow / impactHigh: estimated annual EUR impact range (integers,",
+    `- impactLow / impactHigh: estimated annual ${currency} impact range (integers,`,
     "  impactLow <= impactHigh). Anchor to the Financial-impact table.",
     "- timeToShipWeeksLow / timeToShipWeeksHigh: FDE v1 build weeks (low <= high).",
     "- confidenceScore: 1-5 evidence depth from the Confidence table.",
@@ -217,7 +226,9 @@ export type ScoreClusterOpts = {
   theme: string;
   captures: ScoreCapture[];
   tenantName: string;
-  /** Per-role loaded hourly rates (EUR). Null → benchmark default (EXT-2). */
+  /** The org's display and scoring currency. */
+  currency: Currency;
+  /** Per-role loaded hourly rates (in the org's currency). Null → benchmark default (EXT-2). */
   costBasis?: CostBasis | null;
   /** Company profile to ground financial baselines (CTX-4). Null when unknown. */
   companyProfile?: { industry: string | null; sizeBand: string | null } | null;
@@ -255,16 +266,17 @@ export async function scoreCluster(
       ];
       const q = c.quantifiedImpact;
       if (q) {
-        const rate = rateForRole(c.role, opts.costBasis);
+        const rate = rateForRole(c.role, opts.costBasis, opts.currency);
+        const sym = CURRENCY_SYMBOL[opts.currency];
         const parts: string[] = [];
         if (q.frequencyPerYear != null)
           parts.push(`~${q.frequencyPerYear}×/yr`);
         if (q.unitMinutes != null) parts.push(`${q.unitMinutes} min each`);
-        if (q.unitCostUsd != null) parts.push(`€${q.unitCostUsd}/occurrence`);
+        if (q.unitCostUsd != null) parts.push(`${sym}${q.unitCostUsd}/occurrence`);
         if (q.basis) parts.push(`basis: "${q.basis}"`);
         const annual = impliedAnnualUsd(q, rate);
         if (annual != null)
-          parts.push(`implied annual ≈ €${annual.toLocaleString("en-US")}`);
+          parts.push(`implied annual ≈ ${sym}${annual.toLocaleString("en-US")}`);
         if (parts.length) lines.push(`  quantified: ${parts.join(", ")}`);
       }
       return lines.join("\n");
@@ -272,7 +284,7 @@ export async function scoreCluster(
     .join("\n\n");
 
   const scoring = await completeStructured({
-    system: scoringSystem(),
+    system: scoringSystem(opts.currency),
     schema: opportunityScoring,
     maxTokens: 1536,
     messages: [
@@ -283,7 +295,7 @@ export async function scoreCluster(
           companyProfileLine(opts.companyProfile),
           `CANDIDATE THEME: ${opts.theme}`,
           "",
-          costBasisNote(opts.costBasis),
+          costBasisNote(opts.costBasis, opts.currency),
           "",
           "SUPPORTING CAPTURES (attribute by role only, never by name):",
           captureBlock,

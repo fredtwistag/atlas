@@ -17,7 +17,7 @@ import {
   computeHorizon,
   rateForRole,
   impliedAnnualUsd,
-  DEFAULT_LOADED_HOURLY_EUR,
+  DEFAULT_LOADED_HOURLY,
 } from "./score";
 import type { DimensionKey } from "@/services/llm/schemas";
 
@@ -144,12 +144,12 @@ describe("computeHorizon (Ticket D)", () => {
 describe("rateForRole (EXT-2)", () => {
   it("prefers the role-specific rate, then default, then the benchmark", () => {
     const basis = { "Account Executive": 65, default: 90 };
-    expect(rateForRole("Account Executive", basis)).toBe(65);
-    expect(rateForRole("Ops Lead", basis)).toBe(90); // default key
-    expect(rateForRole("Ops Lead", { "Account Executive": 65 })).toBe(
-      DEFAULT_LOADED_HOURLY_EUR,
+    expect(rateForRole("Account Executive", basis, "EUR")).toBe(65);
+    expect(rateForRole("Ops Lead", basis, "EUR")).toBe(90); // default key
+    expect(rateForRole("Ops Lead", { "Account Executive": 65 }, "EUR")).toBe(
+      DEFAULT_LOADED_HOURLY.EUR,
     );
-    expect(rateForRole("anyone", null)).toBe(DEFAULT_LOADED_HOURLY_EUR);
+    expect(rateForRole("anyone", null, "EUR")).toBe(DEFAULT_LOADED_HOURLY.EUR);
   });
 });
 
@@ -225,6 +225,7 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
       theme: "Pricing approval delay",
       tenantName: "Northwind",
       captures: [quantified, cap(ID.b)],
+      currency: "EUR",
       costBasis: { "Account Executive": 80 },
     });
 
@@ -241,6 +242,7 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
       theme: "T",
       tenantName: "Northwind",
       captures: [cap(ID.a), cap(ID.b)],
+      currency: "EUR",
       companyProfile: {
         industry: "Wholesale distribution",
         sizeBand: "200-500",
@@ -259,10 +261,11 @@ describe("scoreCluster — financial grounding (EXT-2)", () => {
       theme: "T",
       tenantName: "Northwind",
       captures: [cap(ID.a), cap(ID.b)],
+      currency: "EUR",
     });
     const content = completeStructured.mock.calls[0][0].messages[0]
       .content as string;
-    expect(content).toContain(`€${DEFAULT_LOADED_HOURLY_EUR}/hr`);
+    expect(content).toContain(`€${DEFAULT_LOADED_HOURLY.EUR}/hr`);
   });
 });
 
@@ -274,6 +277,7 @@ describe("scoreCluster", () => {
       theme: "Pricing approval delay",
       tenantName: "Northwind",
       captures: [cap(ID.a), cap(ID.b)],
+      currency: "EUR",
     });
 
     expect(out.composite).toBe(7.3);
@@ -290,6 +294,7 @@ describe("scoreCluster", () => {
       theme: "T",
       tenantName: "Northwind",
       captures: [cap(ID.a), cap(ID.b)],
+      currency: "EUR",
     });
 
     expect(out.scoring.evidenceCaptureIds).toEqual([ID.a]);
@@ -305,6 +310,7 @@ describe("scoreCluster", () => {
       theme: "T",
       tenantName: "Northwind",
       captures: [cap(ID.a), cap(ID.b)],
+      currency: "EUR",
     });
 
     expect(out.scoring.evidenceCaptureIds.sort()).toEqual([ID.a, ID.b].sort());
@@ -318,6 +324,7 @@ describe("scoreCluster", () => {
       theme: "T",
       tenantName: "Northwind",
       captures: [cap(ID.a)],
+      currency: "EUR",
     });
 
     for (const call of log.mock.calls) {

@@ -37,6 +37,7 @@ import {
   type ScoreCapture,
   type CostBasis,
 } from "./score";
+import { type Currency } from "@/lib/format";
 import { clusterCaptures } from "./cluster";
 import type { DimensionScore, Horizon, DeliveryPath } from "@/lib/types";
 import type { QuantifiedImpact } from "@/services/llm/schemas";
@@ -186,10 +187,11 @@ async function runRecompute(
   const day = sprintDay(sprint.startDate, now);
 
   const [tenant] = await tx
-    .select({ name: tenants.name })
+    .select({ name: tenants.name, currency: tenants.currency })
     .from(tenants)
     .where(eq(tenants.id, tenantId));
   const tenantName = tenant?.name ?? "your organization";
+  const currency = (tenant?.currency as Currency) ?? "EUR";
 
   // Company profile (CTX-4) grounds financial baselines. Only active context.
   const [ctx] = await tx
@@ -270,6 +272,7 @@ async function runRecompute(
       theme: cluster.theme,
       tenantName,
       captures: clusterCapturesData,
+      currency,
       costBasis: (sprint.costBasis as CostBasis | null) ?? null,
       companyProfile,
     });
