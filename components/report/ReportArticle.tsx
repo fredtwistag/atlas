@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
+import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
 import type {
   Sprint,
@@ -9,6 +10,7 @@ import type {
   Opportunity,
   SynthesisMemo,
 } from "@/lib/types";
+import type { WorkflowMapView } from "@/services/synthesis/workflows/types";
 
 /**
  * The discovery report body, shared by the manager/sponsor report and the
@@ -21,12 +23,14 @@ export function ReportArticle({
   progress: p,
   opps,
   memo,
+  workflowMaps,
   opportunityHref,
 }: {
   sprint: Sprint;
   progress: SprintProgress;
   opps: Opportunity[];
   memo?: SynthesisMemo | null;
+  workflowMaps?: WorkflowMapView[];
   opportunityHref?: (id: string) => string;
 }) {
   const topFive = opps.slice(0, 5);
@@ -175,6 +179,40 @@ export function ReportArticle({
           </div>
         )}
       </Section>
+
+      {/* How the work flows today (Plan 2) */}
+      {workflowMaps && workflowMaps.length > 0 ? (
+        <Section title="How the work flows today">
+          <p>
+            Synthesized from what contributors described — every step traces to
+            the captures it came from. Steps Atlas inferred to connect the flow
+            are shown dashed.
+          </p>
+          <div className="not-prose mt-4 space-y-8">
+            {workflowMaps.map((m) => (
+              <figure key={m.id} className="rounded-lg border border-border bg-surface p-4">
+                <figcaption className="mb-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-text">{m.title}</span>
+                  <span className="text-xs text-text-3">
+                    Based on {m.basedOnSessions} session
+                    {m.basedOnSessions === 1 ? "" : "s"}
+                  </span>
+                </figcaption>
+                <WorkflowDiagram graph={m.graph} />
+                {m.kind === "impact_effort" ? (
+                  <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-2">
+                    {m.graph.steps.map((s, i) => (
+                      <li key={s.id}>
+                        {i + 1}. {s.label}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </figure>
+            ))}
+          </div>
+        </Section>
+      ) : null}
 
       {/* Roadmap */}
       <Section title="Suggested roadmap">

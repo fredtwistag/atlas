@@ -20,10 +20,11 @@ export default async function FinalReport({
   const api = await getApi();
   const sprint = await api.sprint.get({ id }).catch(() => null);
   if (!sprint) notFound();
-  const [p, opps, memo] = await Promise.all([
+  const [p, opps, memo, workflowMaps] = await Promise.all([
     api.sprint.progress({ id }),
     api.opportunity.listForSprint({ sprintId: id }),
     api.sprint.synthesisMemo({ id }),
+    api.sprint.workflowMaps({ id }),
   ]);
 
   return (
@@ -53,6 +54,7 @@ export default async function FinalReport({
         progress={p}
         opps={opps}
         memo={memo}
+        workflowMaps={workflowMaps}
         opportunityHref={(oid) => `/sprint/${id}/opportunity/${oid}`}
       />
     </div>
