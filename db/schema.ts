@@ -450,6 +450,30 @@ export const systemInventoryEvidence = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.itemId, t.captureId] }) }),
 );
 
+// WORKFLOW MAPS (Plan 1) — synthesized diagram graphs, curated like
+// opportunities (provisional → surfaced → hidden). The graph is the full
+// WorkflowGraph payload (kind, lanes, steps, edges, confidence, modelVersion).
+export const workflowMaps = pgTable("workflow_maps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  sprintId: uuid("sprint_id")
+    .notNull()
+    .references(() => sprints.id),
+  kind: text("kind").notNull(),
+  graph: jsonb("graph").notNull(),
+  status: text("status").notNull().default("provisional"),
+  // Set only for kind = 'before_after' (Plan 3); null otherwise.
+  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 /**
  * Stakeholder map (Ticket B): role-level stakeholders per sprint + the
  * opportunities each gates. Role labels only (never names). Service-role
