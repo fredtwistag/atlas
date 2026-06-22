@@ -539,9 +539,6 @@ async function runRecompute(
   await buildOpportunityWorkflows(tx, {
     tenantId,
     sprintId,
-    opps: finalCandidates
-      .filter((c) => surfacedKeys.has(c.key) && idByKey.has(c.key))
-      .map((c) => ({ id: idByKey.get(c.key)!, title: c.title, captureIds: c.evidenceCaptureIds })),
     capturesById: wfCapturesById,
     roleLabels: [
       ...new Set(captureRows.map((c) => c.role).filter((r): r is string => Boolean(r))),
@@ -792,16 +789,18 @@ async function buildWorkflowMaps(
 }
 
 /**
- * Generate + persist one current-state diagram per SURFACED opportunity, from
- * that opportunity's own evidence captures (surfaced). Idempotent: replaces all
- * opportunity-scoped maps for the sprint. Best-effort per opportunity.
+ * Generate + persist one current-state diagram per opportunity — ANY status
+ * (surfaced, provisional, approved) — from that opportunity's own evidence
+ * captures. Reads the sprint's opportunities + their evidence directly so it
+ * also covers approved opps (which the current run doesn't re-cluster).
+ * Idempotent: replaces all opportunity-scoped maps for the sprint. Best-effort
+ * per opportunity; abstains (no row) when the evidence can't support a diagram.
  */
 async function buildOpportunityWorkflows(
   tx: Db,
   opts: {
     tenantId: string;
     sprintId: string;
-    opps: { id: string; title: string; captureIds: string[] }[];
     capturesById: Map<string, WorkflowCapture>;
     roleLabels: string[];
     modelVersion: string;
@@ -811,8 +810,28 @@ async function buildOpportunityWorkflows(
     .delete(workflowMaps)
     .where(and(eq(workflowMaps.sprintId, opts.sprintId), isNotNull(workflowMaps.opportunityId)));
 
-  for (const opp of opts.opps) {
-    const caps = opp.captureIds
+  const opps = await tx
+    .select({ id: opportunities.id, title: opportunities.title })
+    .from(opportunities)
+    .where(eq(opportunities.sprintId, opts.sprintId));
+  if (opps.length === 0) return;
+
+  const evidence = await tx
+    .select({
+      opportunityId: opportunityEvidence.opportunityId,
+      captureId: opportunityEvidence.captureId,
+    })
+    .from(opportunityEvidence)
+    .where(inArray(opportunityEvidence.opportunityId, opps.map((o) => o.id)));
+  const capIdsByOpp = new Map<string, string[]>();
+  for (const e of evidence) {
+    const arr = capIdsByOpp.get(e.opportunityId);
+    if (arr) arr.push(e.captureId);
+    else capIdsByOpp.set(e.opportunityId, [e.captureId]);
+  }
+
+  for (const opp of opps) {
+    const caps = (capIdsByOpp.get(opp.id) ?? [])
       .map((id) => opts.capturesById.get(id))
       .filter((c): c is WorkflowCapture => c !== undefined);
     if (caps.length === 0) continue;
