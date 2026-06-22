@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull, isNotNull } from "drizzle-orm";
 import { withServiceRole, type Db } from "@/db/client";
 import {
   sprints,
@@ -18,6 +18,7 @@ import {
   workflowMaps,
 } from "@/db/schema";
 import { synthesizeWorkflows } from "@/services/synthesis/workflows/synthesize";
+import { generateOpportunityDiagram } from "@/services/synthesis/workflows/opportunity-diagram";
 import type {
   OpportunityPoint,
   WorkflowCapture,
@@ -498,6 +499,33 @@ async function runRecompute(
     ],
   });
 
+  // --- per-opportunity workflow diagrams ------------------------------------
+  const wfCapturesById = new Map<string, WorkflowCapture>(
+    captureRows.map((c) => [
+      c.id,
+      {
+        id: c.id,
+        kind: c.kind,
+        summary: c.summary,
+        role: c.role ?? "",
+        department: c.department ?? null,
+        contributorId: c.userId,
+      },
+    ]),
+  );
+  await buildOpportunityWorkflows(tx, {
+    tenantId,
+    sprintId,
+    opps: finalCandidates
+      .filter((c) => surfacedKeys.has(c.key) && idByKey.has(c.key))
+      .map((c) => ({ id: idByKey.get(c.key)!, title: c.title, captureIds: c.evidenceCaptureIds })),
+    capturesById: wfCapturesById,
+    roleLabels: [
+      ...new Set(captureRows.map((c) => c.role).filter((r): r is string => Boolean(r))),
+    ],
+    modelVersion: `${process.env.ATLAS_LLM_MODEL ?? "claude-sonnet-4-6"}:wf-v1`,
+  });
+
   // --- sprint themes cache (EXT-1) -----------------------------------------
   // Privacy-safe theme labels (no names/quotes) injected into later sessions so
   // contributors corroborate/extend rather than restate. Capped + deduped.
@@ -663,15 +691,10 @@ async function buildWorkflowMaps(
     return; // best-effort
   }
 
-  // Replace provisional maps only; never clobber curated/surfaced rows.
+  // Replace the sprint-level map (the matrix); surfaced so the report shows it.
   await tx
     .delete(workflowMaps)
-    .where(
-      and(
-        eq(workflowMaps.sprintId, opts.sprintId),
-        eq(workflowMaps.status, "provisional"),
-      ),
-    );
+    .where(and(eq(workflowMaps.sprintId, opts.sprintId), isNull(workflowMaps.opportunityId)));
 
   for (const graph of graphs) {
     await tx.insert(workflowMaps).values({
@@ -679,8 +702,53 @@ async function buildWorkflowMaps(
       sprintId: opts.sprintId,
       kind: graph.kind,
       graph,
-      status: "provisional",
+      status: "surfaced",
       opportunityId: null,
+    });
+  }
+}
+
+/**
+ * Generate + persist one current-state diagram per SURFACED opportunity, from
+ * that opportunity's own evidence captures (surfaced). Idempotent: replaces all
+ * opportunity-scoped maps for the sprint. Best-effort per opportunity.
+ */
+async function buildOpportunityWorkflows(
+  tx: Db,
+  opts: {
+    tenantId: string;
+    sprintId: string;
+    opps: { id: string; title: string; captureIds: string[] }[];
+    capturesById: Map<string, WorkflowCapture>;
+    roleLabels: string[];
+    modelVersion: string;
+  },
+): Promise<void> {
+  await tx
+    .delete(workflowMaps)
+    .where(and(eq(workflowMaps.sprintId, opts.sprintId), isNotNull(workflowMaps.opportunityId)));
+
+  for (const opp of opts.opps) {
+    const caps = opp.captureIds
+      .map((id) => opts.capturesById.get(id))
+      .filter((c): c is WorkflowCapture => c !== undefined);
+    if (caps.length === 0) continue;
+
+    let graph;
+    try {
+      graph = await generateOpportunityDiagram({ title: opp.title }, caps, opts.roleLabels, opts.modelVersion);
+    } catch {
+      continue; // best-effort
+    }
+    if (!graph) continue;
+
+    await tx.insert(workflowMaps).values({
+      tenantId: opts.tenantId,
+      sprintId: opts.sprintId,
+      kind: graph.kind,
+      graph,
+      status: "surfaced",
+      opportunityId: opp.id,
     });
   }
 }
