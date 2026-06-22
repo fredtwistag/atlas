@@ -81,3 +81,13 @@ describe("critiqueGraph", () => {
     expect(content).not.toContain("SECRET-USER-ID");
   });
 });
+
+describe("generateGraph context", () => {
+  it("includes the opportunity title in the prompt when context is given", async () => {
+    completeStructured.mockResolvedValue({ kind: "swimlane", title: "t", lanes: [], steps: [], edges: [] });
+    await generateGraph("swimlane", [cap({})], ["Sales rep"], { opportunityTitle: "Automate CPCV generation" });
+    const content = completeStructured.mock.calls[0][0].messages[0].content as string;
+    expect(content).toContain("Automate CPCV generation");
+    expect(content.toLowerCase()).toContain("bottleneck");
+  });
+});

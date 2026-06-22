@@ -98,6 +98,7 @@ export async function generateGraph(
   kind: WorkflowKind,
   captures: WorkflowCapture[],
   roleLabels: string[],
+  context?: { opportunityTitle: string },
 ): Promise<WorkflowGraphDraft | null> {
   const config = KIND_PROMPTS[kind];
   if (!config) throw new Error(`No prompt config for workflow kind: ${kind}`);
@@ -105,23 +106,22 @@ export async function generateGraph(
   const relevant = captures.filter((c) => config.relevantKinds.has(c.kind));
   if (relevant.length === 0) return null;
 
+  const userLines = ["Build the workflow graph from these captures.", ""];
+  if (context) {
+    userLines.push(
+      `CONTEXT: this is the current-state workflow behind a specific improvement — "${context.opportunityTitle}". Draw only the slice relevant to it, and mark the single step or seam it removes as a bottleneck (stepKind 'bottleneck') or gap (edgeKind 'gap').`,
+      "",
+    );
+  }
+  userLines.push("CAPTURES (id [kind] (role) summary):", captureLines(relevant));
+
   const draft = await completeStructured({
     system: config.system(roleLabels),
     schema: workflowGraphDraft,
     // A rich swimlane over many captures can exceed a small budget and truncate
     // the JSON mid-string; give it room.
     maxTokens: 8192,
-    messages: [
-      {
-        role: "user",
-        content: [
-          "Build the workflow graph from these captures.",
-          "",
-          "CAPTURES (id [kind] (role) summary):",
-          captureLines(relevant),
-        ].join("\n"),
-      },
-    ],
+    messages: [{ role: "user", content: userLines.join("\n") }],
   });
 
   return { ...draft, kind };
