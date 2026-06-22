@@ -1,49 +1,44 @@
 import type { WorkflowGraph } from "@/services/synthesis/workflows/types";
-import type { Layout, LayoutBox, LayoutEdge, LayoutLane } from "./types";
-import { assignColumns, routeEdge, stepShape, stepTone } from "./shared";
+import type { Layout, LayoutBox, LayoutEdge } from "./types";
+import { assignColumns, routeEdgeVertical, stepTone } from "./shared";
 
-const LABEL_W = 110;
-const LANE_H = 76;
-const X0 = LABEL_W + 40;
-const STEP_W = 130;
-const STEP_H = 44;
-const GAP = 40;
-const TOP = 56;
+const WIDTH = 680;
+const CARD_W = 460;
+const CARD_H = 74;
+const CARD_X = (WIDTH - CARD_W) / 2; // 110
+const GAP = 22;
+const TOP = 20;
 
+/** Vertical card stack: one column of full-width cards, role chip per card, the
+ * step's evidence description as the subtitle. Lanes are not drawn as bands —
+ * the chip carries the role, so handoffs read as the chip changing. */
 export function layoutSwimlane(graph: WorkflowGraph): Layout {
-  const lanes =
-    graph.lanes.length > 0
-      ? graph.lanes
-      : [{ id: "_all", roleLabel: "Workflow", department: null }];
-  const laneIndex = new Map(lanes.map((l, i) => [l.id, i]));
-
+  const laneLabel = new Map(graph.lanes.map((l) => [l.id, l.roleLabel]));
   const col = assignColumns(graph.steps.map((s) => s.id), graph.edges);
   const ordered = [...graph.steps].sort(
     (a, b) => (col.get(a.id) as number) - (col.get(b.id) as number),
   );
 
-  const slotByLane = new Map<number, number>();
   const boxes: LayoutBox[] = [];
   const boxById = new Map<string, LayoutBox>();
-
+  let y = TOP;
   for (const step of ordered) {
-    const li = laneIndex.get(step.laneId ?? "") ?? 0;
-    const slot = slotByLane.get(li) ?? 0;
-    slotByLane.set(li, slot + 1);
     const box: LayoutBox = {
       id: step.id,
-      x: X0 + slot * (STEP_W + GAP),
-      y: TOP + li * LANE_H + (LANE_H - STEP_H) / 2,
-      w: STEP_W,
-      h: STEP_H,
+      x: CARD_X,
+      y,
+      w: CARD_W,
+      h: CARD_H,
       title: step.label,
-      subtitle: step.inferred ? "inferred" : null,
+      subtitle: step.inferred ? "inferred" : (step.detail ?? null),
+      chip: laneLabel.get(step.laneId ?? "") ?? null,
       tone: stepTone(step),
-      shape: stepShape(step),
+      shape: "rect",
       dashed: step.inferred,
     };
     boxes.push(box);
     boxById.set(step.id, box);
+    y += CARD_H + GAP;
   }
 
   const edges: LayoutEdge[] = [];
@@ -53,24 +48,16 @@ export function layoutSwimlane(graph: WorkflowGraph): Layout {
     if (!a || !b) continue;
     edges.push({
       id: e.id,
-      points: routeEdge(a, b),
+      points: routeEdgeVertical(a, b, GAP),
       dashed: e.inferred || e.edgeKind === "gap",
       tone: e.edgeKind === "gap" ? "red" : "gray",
     });
   }
 
-  const maxRight = boxes.reduce((m, b) => Math.max(m, b.x + b.w), X0);
-  const layoutLanes: LayoutLane[] = lanes.map((l, i) => ({
-    id: l.id,
-    label: l.roleLabel,
-    y: TOP + i * LANE_H,
-    h: LANE_H,
-  }));
-
   return {
-    width: Math.max(680, maxRight + 40),
-    height: TOP + lanes.length * LANE_H + 24,
-    lanes: layoutLanes,
+    width: WIDTH,
+    height: Math.max(TOP + 40, y - GAP + 24),
+    lanes: [],
     boxes,
     edges,
     lines: [],

@@ -55,3 +55,20 @@ export function routeEdge(a: LayoutBox, b: LayoutBox): { x: number; y: number }[
   const midX = (start.x + b.x) / 2;
   return [start, { x: midX, y: start.y }, { x: midX, y: end.y }, end];
 }
+
+/** Vertical connector from a's bottom-centre to b's top-centre. Straight when
+ * b is the next card down; otherwise routes around the right side (skip/back edges). */
+export function routeEdgeVertical(
+  a: LayoutBox,
+  b: LayoutBox,
+  gap: number,
+): { x: number; y: number }[] {
+  const start = { x: a.x + a.w / 2, y: a.y + a.h };
+  const end = { x: b.x + b.w / 2, y: b.y - 8 };
+  const adjacent = end.y > start.y && end.y - start.y <= gap + 12;
+  if (adjacent && Math.abs(start.x - end.x) < 1) return [start, end];
+  const sideX = Math.max(a.x + a.w, b.x + b.w) + 24;
+  const y1 = start.y + 8;
+  const y2 = end.y - 8;
+  return [start, { x: start.x, y: y1 }, { x: sideX, y: y1 }, { x: sideX, y: y2 }, { x: end.x, y: y2 }, end];
+}

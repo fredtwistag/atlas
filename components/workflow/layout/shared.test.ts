@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assignColumns, stepTone, stepShape, routeEdge } from "./shared";
+import { assignColumns, stepTone, stepShape, routeEdge, routeEdgeVertical } from "./shared";
 import type { WorkflowStep } from "@/services/llm/schemas";
 import type { LayoutBox } from "./types";
 
@@ -50,5 +50,19 @@ describe("routeEdge", () => {
   it("bends (≥3 points) when boxes are on different rows", () => {
     const b: LayoutBox = { ...a, id: "b", x: 200, y: 120 };
     expect(routeEdge(a, b).length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+const mk = (y: number) => ({ id: "x", x: 110, y, w: 460, h: 74, title: "", subtitle: null, tone: "blue" as const, shape: "rect" as const, dashed: false });
+
+describe("routeEdgeVertical", () => {
+  it("draws a straight connector between adjacent stacked cards", () => {
+    const pts = routeEdgeVertical(mk(20), mk(116), 22); // 116 = 20+74+22
+    expect(pts).toHaveLength(2);
+    expect(pts[0].x).toBe(pts[1].x); // same centre x
+  });
+  it("routes a skip/back edge around the side", () => {
+    const pts = routeEdgeVertical(mk(20), mk(300), 22);
+    expect(pts.length).toBeGreaterThan(2);
   });
 });
