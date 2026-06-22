@@ -41,9 +41,10 @@ export default async function TwistagOpportunity({
     <OpportunityDetail
       sprintId={sprintId}
       opp={data.opp}
+      workflow={data.workflow}
       readOnly
-      backHref={`/admin/clients/${tenantId}/sprint/${sprintId}/report`}
-      backLabel="Back to report"
+      backHref={`/admin/clients/${tenantId}/sprint/${sprintId}`}
+      backLabel="Back to sprint"
       currency="EUR"
       transcriptBaseHref={`/admin/clients/${tenantId}/sprint/${sprintId}/session`}
     />

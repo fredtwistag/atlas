@@ -199,7 +199,7 @@ export default async function ClientDetailPage({
                     <Tr key={s.id}>
                       <Td>
                         <Link
-                          href={`/admin/clients/${tenantId}/sprint/${s.id}/report`}
+                          href={`/admin/clients/${tenantId}/sprint/${s.id}`}
                           className="font-medium leading-tight hover:text-brand hover:underline"
                         >
                           {s.name}
@@ -273,7 +273,7 @@ export default async function ClientDetailPage({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link
-                        href={`/admin/clients/${tenantId}/sprint/${s.id}/report`}
+                        href={`/admin/clients/${tenantId}/sprint/${s.id}`}
                         className="font-medium leading-tight hover:text-brand hover:underline"
                       >
                         {s.name}

@@ -21,6 +21,7 @@ import {
   listSprintOpportunities,
   loadSynthesisMemo,
   loadOpportunityDetail,
+  loadOpportunityWorkflow,
   loadSowDraft,
   loadSessionTranscript,
 } from "@/lib/sprint-read";
@@ -325,7 +326,8 @@ export const twistagRouter = router({
             .where(eq(opportunities.id, input.opportunityId));
           if (!meta) throw new TRPCError({ code: "NOT_FOUND" });
           const opp = await loadOpportunityDetail(tx, input.opportunityId);
-          return { tenantId: meta.tenantId, sprintId: meta.sprintId, opp };
+          const workflow = await loadOpportunityWorkflow(tx, input.opportunityId);
+          return { tenantId: meta.tenantId, sprintId: meta.sprintId, opp, workflow };
         },
       ),
     ),
