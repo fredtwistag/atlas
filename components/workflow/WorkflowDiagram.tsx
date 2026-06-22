@@ -32,9 +32,34 @@ function truncate(s: string, n: number): string {
 
 function Box({ box }: { box: LayoutBox }) {
   const c = TONE[box.tone];
+  const dash = box.dashed ? "4 3" : undefined;
+
+  // Vertical card: role chip + left-aligned title + evidence description.
+  if (box.chip != null && box.chip !== "") {
+    const pad = 16;
+    const chipW = Math.min(box.w - 2 * pad, box.chip.length * 6.4 + 18);
+    return (
+      <g>
+        <title>{box.subtitle ? `${box.title} — ${box.subtitle}` : box.title}</title>
+        <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={10} fill={c.fill} stroke={c.stroke} strokeWidth={1} strokeDasharray={dash} />
+        <rect x={box.x + pad} y={box.y + 12} width={chipW} height={18} rx={9} fill="var(--surface)" stroke="var(--border)" strokeWidth={0.5} />
+        <text x={box.x + pad + 9} y={box.y + 21} dominantBaseline="central" fontSize={11} fontWeight={500} fill="var(--text-2)">
+          {truncate(box.chip, 30)}
+        </text>
+        <text x={box.x + pad} y={box.y + (box.subtitle ? 47 : 50)} fontSize={14} fontWeight={500} fill={c.text}>
+          {truncate(box.title, 54)}
+        </text>
+        {box.subtitle ? (
+          <text x={box.x + pad} y={box.y + 64} fontSize={11.5} fill={c.text} opacity={0.72}>
+            {truncate(box.subtitle, 66)}
+          </text>
+        ) : null}
+      </g>
+    );
+  }
+
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
-  const dash = box.dashed ? "4 3" : undefined;
   return (
     <g>
       {box.shape === "circle" ? (

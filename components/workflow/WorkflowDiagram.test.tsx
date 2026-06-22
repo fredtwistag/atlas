@@ -34,3 +34,34 @@ describe("WorkflowDiagram", () => {
     expect(container.querySelector("svg")).toBeNull();
   });
 });
+
+const verticalGraph: WorkflowGraph = {
+  kind: "swimlane",
+  title: "Current state",
+  lanes: [{ id: "L1", roleLabel: "Diretora Financeira", department: null }],
+  steps: [
+    {
+      id: "s1",
+      label: "Manually match transfers to contracts in full",
+      laneId: "L1",
+      stepKind: "bottleneck",
+      inferred: false,
+      captureIds: [],
+      metric: null,
+      detail: "About one full week per month for two people",
+    },
+  ],
+  edges: [],
+  confidence: { score: 1, coverage: 1, corroboratedCount: 0, disputedStepIds: [] },
+  modelVersion: "t",
+} as unknown as WorkflowGraph;
+
+describe("WorkflowDiagram vertical card", () => {
+  it("renders the role chip, the full (untruncated) title, and the description", () => {
+    const { container } = render(<WorkflowDiagram graph={verticalGraph} instanceId="t" />);
+    const text = container.textContent ?? "";
+    expect(text).toContain("Diretora Financeira");                     // chip
+    expect(text).toContain("Manually match transfers to contracts");   // title not cut at 20 chars
+    expect(text).toContain("About one full week per month");           // description
+  });
+});
