@@ -30,6 +30,28 @@ import type { WorkflowMapView } from "@/services/synthesis/workflows/types";
 
 type Tab = "evidence" | "workflow" | "patterns" | "discussion";
 
+/**
+ * Break a rationale blob into readable paragraphs: the "Recommended next step"
+ * sentence stands alone, and the lead-in is grouped ~2 sentences per paragraph
+ * so the "Why this surfaced" card breathes instead of being one wall of text.
+ */
+function toParagraphs(text: string): string[] {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return [];
+  const rec = trimmed.search(/\bRecommended next step:/i);
+  const segments =
+    rec > 0 ? [trimmed.slice(0, rec).trim(), trimmed.slice(rec).trim()] : [trimmed];
+  const paragraphs: string[] = [];
+  for (const seg of segments) {
+    const sentences = seg.match(/[^.!?]+[.!?]+(?:["')\]]+)?/g)?.map((s) => s.trim()) ?? [seg];
+    for (let i = 0; i < sentences.length; i += 2) {
+      const para = sentences.slice(i, i + 2).join(" ").trim();
+      if (para) paragraphs.push(para);
+    }
+  }
+  return paragraphs.length > 0 ? paragraphs : [trimmed];
+}
+
 export function OpportunityDetail({
   sprintId,
   opp,
@@ -177,9 +199,11 @@ export function OpportunityDetail({
             <h2 className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold">
               <Sparkles className="h-4 w-4 text-brand" /> Why this surfaced
             </h2>
-            <p className="text-md leading-relaxed text-text-2">
-              {opp.rationale}
-            </p>
+            <div className="space-y-3.5 text-md leading-relaxed text-text-2">
+              {toParagraphs(opp.rationale).map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
           </Card>
 
           {/* Tabs */}

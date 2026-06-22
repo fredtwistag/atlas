@@ -56,19 +56,35 @@ export function routeEdge(a: LayoutBox, b: LayoutBox): { x: number; y: number }[
   return [start, { x: midX, y: start.y }, { x: midX, y: end.y }, end];
 }
 
-/** Vertical connector from a's bottom-centre to b's top-centre. Straight when
- * b is the next card down; otherwise routes around the right side (skip/back edges). */
-export function routeEdgeVertical(
-  a: LayoutBox,
-  b: LayoutBox,
-  gap: number,
-): { x: number; y: number }[] {
-  const start = { x: a.x + a.w / 2, y: a.y + a.h };
-  const end = { x: b.x + b.w / 2, y: b.y - 8 };
-  const adjacent = end.y > start.y && end.y - start.y <= gap + 12;
-  if (adjacent && Math.abs(start.x - end.x) < 1) return [start, end];
-  const sideX = Math.max(a.x + a.w, b.x + b.w) + 24;
-  const y1 = start.y + 8;
-  const y2 = end.y - 8;
-  return [start, { x: start.x, y: y1 }, { x: sideX, y: y1 }, { x: sideX, y: y2 }, { x: end.x, y: y2 }, end];
+/**
+ * Greedy word-wrap into at most `maxLines` lines of ~`maxChars` each. If text
+ * remains after the last line it is ellipsized. Used to fit a card's evidence
+ * description across up to two lines instead of truncating it to one.
+ */
+export function wrapLines(text: string, maxChars: number, maxLines: number): string[] {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length <= maxChars || !cur) {
+      cur = next;
+    } else {
+      lines.push(cur);
+      cur = w;
+      if (lines.length >= maxLines) break;
+    }
+  }
+  if (lines.length < maxLines && cur) lines.push(cur);
+
+  // Ellipsize the last line if not every word made it in.
+  const consumed = lines.join(" ").replace(/\s+/g, " ").trim();
+  const full = words.join(" ");
+  if (consumed.length < full.length && lines.length > 0) {
+    const last = lines[lines.length - 1];
+    const cut = last.length > maxChars - 1 ? last.slice(0, maxChars - 1) : last;
+    lines[lines.length - 1] = `${cut.replace(/[\s.,;:]+$/, "")}…`;
+  }
+  return lines.slice(0, maxLines);
 }

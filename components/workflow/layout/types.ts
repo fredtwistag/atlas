@@ -19,9 +19,12 @@ export interface LayoutBox {
   shape: "rect" | "diamond" | "circle";
   dashed: boolean;
   /** Role label shown as a pill at the top of a vertical card. When set, the
-   * renderer draws the card (left-aligned chip + title + subtitle) instead of
+   * renderer draws the card (left-aligned chip + title + body lines) instead of
    * the centered box. null/undefined → the existing centered rendering. */
   chip?: string | null;
+  /** Pre-wrapped description lines for a vertical card (≤2). The box height is
+   * sized to fit them; the renderer draws one `<text>` per line. */
+  bodyLines?: string[] | null;
 }
 
 export interface LayoutEdge {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assignColumns, stepTone, stepShape, routeEdge, routeEdgeVertical } from "./shared";
+import { assignColumns, stepTone, stepShape, routeEdge, wrapLines } from "./shared";
 import type { WorkflowStep } from "@/services/llm/schemas";
 import type { LayoutBox } from "./types";
 
@@ -53,16 +53,21 @@ describe("routeEdge", () => {
   });
 });
 
-const mk = (y: number) => ({ id: "x", x: 110, y, w: 460, h: 74, title: "", subtitle: null, tone: "blue" as const, shape: "rect" as const, dashed: false });
-
-describe("routeEdgeVertical", () => {
-  it("draws a straight connector between adjacent stacked cards", () => {
-    const pts = routeEdgeVertical(mk(20), mk(116), 22); // 116 = 20+74+22
-    expect(pts).toHaveLength(2);
-    expect(pts[0].x).toBe(pts[1].x); // same centre x
+describe("wrapLines", () => {
+  it("keeps short text on one line", () => {
+    expect(wrapLines("a short line", 40, 2)).toEqual(["a short line"]);
   });
-  it("routes a skip/back edge around the side", () => {
-    const pts = routeEdgeVertical(mk(20), mk(300), 22);
-    expect(pts.length).toBeGreaterThan(2);
+  it("wraps long text across up to two lines", () => {
+    const lines = wrapLines("one two three four five six seven eight nine ten", 20, 2);
+    expect(lines.length).toBe(2);
+    lines.forEach((l) => expect(l.length).toBeLessThanOrEqual(21));
+  });
+  it("ellipsizes when text overflows the line budget", () => {
+    const lines = wrapLines("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda", 18, 2);
+    expect(lines).toHaveLength(2);
+    expect(lines[1].endsWith("…")).toBe(true);
+  });
+  it("returns [] for empty input", () => {
+    expect(wrapLines("   ", 40, 2)).toEqual([]);
   });
 });
