@@ -22,8 +22,11 @@ export interface LayoutBox {
    * renderer draws the card (left-aligned chip + title + body lines) instead of
    * the centered box. null/undefined → the existing centered rendering. */
   chip?: string | null;
+  /** Pre-wrapped title lines for a vertical card (≤2) so a long step label is
+   * shown in full instead of truncated. */
+  titleLines?: string[] | null;
   /** Pre-wrapped description lines for a vertical card (≤2). The box height is
-   * sized to fit them; the renderer draws one `<text>` per line. */
+   * sized to fit both title + body lines; the renderer draws one `<text>` per line. */
   bodyLines?: string[] | null;
 }
 

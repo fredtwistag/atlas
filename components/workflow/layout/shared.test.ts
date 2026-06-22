@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assignColumns, stepTone, stepShape, routeEdge, wrapLines } from "./shared";
+import { assignColumns, stepTone, stepShape, routeEdge, wrapLines, cardHeight } from "./shared";
 import type { WorkflowStep } from "@/services/llm/schemas";
 import type { LayoutBox } from "./types";
 
@@ -69,5 +69,14 @@ describe("wrapLines", () => {
   });
   it("returns [] for empty input", () => {
     expect(wrapLines("   ", 40, 2)).toEqual([]);
+  });
+});
+
+describe("cardHeight", () => {
+  it("grows with extra title and description lines", () => {
+    const base = cardHeight(1, 1);
+    expect(cardHeight(2, 1)).toBeGreaterThan(base); // extra title line is taller
+    expect(cardHeight(1, 2)).toBeGreaterThan(base); // extra body line is taller
+    expect(cardHeight(1, 0)).toBeLessThan(base);    // no description is shorter
   });
 });

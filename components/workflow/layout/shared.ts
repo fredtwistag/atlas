@@ -88,3 +88,29 @@ export function wrapLines(text: string, maxChars: number, maxLines: number): str
   }
   return lines.slice(0, maxLines);
 }
+
+/**
+ * Geometry for a vertical workflow card — shared by the layout (to size the box
+ * height) and the renderer (to place text baselines) so the two never drift.
+ * All offsets are from the box's top edge.
+ */
+export const CARD = {
+  pad: 16,
+  chipY: 12,
+  chipH: 18,
+  titleTop: 47, // first title baseline
+  titleLh: 19, // title line height (14px bold)
+  titleToDesc: 20, // last title baseline → first description baseline
+  descLh: 16, // description line height
+  bottomPad: 18, // breathing room under the last line
+} as const;
+
+/** Height of a card given how many title + description lines it holds. */
+export function cardHeight(titleLineCount: number, descLineCount: number): number {
+  const lastTitle = CARD.titleTop + Math.max(0, titleLineCount - 1) * CARD.titleLh;
+  if (descLineCount > 0) {
+    const lastDesc = lastTitle + CARD.titleToDesc + (descLineCount - 1) * CARD.descLh;
+    return lastDesc + CARD.bottomPad;
+  }
+  return lastTitle + CARD.bottomPad;
+}

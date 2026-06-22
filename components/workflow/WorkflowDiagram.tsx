@@ -1,5 +1,6 @@
 import type { WorkflowGraph } from "@/services/synthesis/workflows/types";
 import type { Layout, LayoutBox, Tone } from "./layout/types";
+import { CARD } from "./layout/shared";
 import { layoutSwimlane } from "./layout/swimlane";
 import { layoutTopology } from "./layout/topology";
 import { layoutMatrix } from "./layout/matrix";
@@ -34,24 +35,28 @@ function Box({ box }: { box: LayoutBox }) {
   const c = TONE[box.tone];
   const dash = box.dashed ? "4 3" : undefined;
 
-  // Vertical card: role chip + left-aligned title + wrapped evidence description.
+  // Vertical card: role chip + wrapped title + wrapped evidence description.
   if (box.chip != null && box.chip !== "") {
-    const pad = 16;
+    const { pad, chipY, chipH, titleTop, titleLh, titleToDesc, descLh } = CARD;
     const chipW = Math.min(box.w - 2 * pad, box.chip.length * 6.4 + 18);
-    const lines = box.bodyLines ?? (box.subtitle ? [box.subtitle] : []);
+    const titleLines = box.titleLines ?? [box.title];
+    const bodyLines = box.bodyLines ?? (box.subtitle ? [box.subtitle] : []);
+    const lastTitleBaseline = titleTop + (titleLines.length - 1) * titleLh;
     return (
       <g>
         <title>{box.subtitle ? `${box.title} — ${box.subtitle}` : box.title}</title>
         <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={10} fill={c.fill} stroke={c.stroke} strokeWidth={1} strokeDasharray={dash} />
-        <rect x={box.x + pad} y={box.y + 12} width={chipW} height={18} rx={9} fill="var(--surface)" stroke="var(--border)" strokeWidth={0.5} />
-        <text x={box.x + pad + 9} y={box.y + 21} dominantBaseline="central" fontSize={11} fontWeight={500} fill="var(--text-2)">
+        <rect x={box.x + pad} y={box.y + chipY} width={chipW} height={chipH} rx={9} fill="var(--surface)" stroke="var(--border)" strokeWidth={0.5} />
+        <text x={box.x + pad + 9} y={box.y + chipY + chipH / 2} dominantBaseline="central" fontSize={11} fontWeight={500} fill="var(--text-2)">
           {truncate(box.chip, 32)}
         </text>
-        <text x={box.x + pad} y={box.y + 46} fontSize={14} fontWeight={500} fill={c.text}>
-          {truncate(box.title, 56)}
-        </text>
-        {lines.map((ln, i) => (
-          <text key={i} x={box.x + pad} y={box.y + 64 + i * 16} fontSize={11.5} fill={c.text} opacity={0.72}>
+        {titleLines.map((tl, i) => (
+          <text key={i} x={box.x + pad} y={box.y + titleTop + i * titleLh} fontSize={14} fontWeight={500} fill={c.text}>
+            {tl}
+          </text>
+        ))}
+        {bodyLines.map((ln, j) => (
+          <text key={j} x={box.x + pad} y={box.y + lastTitleBaseline + titleToDesc + j * descLh} fontSize={11.5} fill={c.text} opacity={0.72}>
             {ln}
           </text>
         ))}

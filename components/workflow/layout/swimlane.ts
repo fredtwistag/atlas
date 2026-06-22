@@ -1,15 +1,14 @@
 import type { WorkflowGraph } from "@/services/synthesis/workflows/types";
 import type { Layout, LayoutBox, LayoutEdge } from "./types";
-import { assignColumns, stepTone, wrapLines } from "./shared";
+import { assignColumns, stepTone, wrapLines, cardHeight } from "./shared";
 
 const WIDTH = 680;
 const CARD_W = 460;
 const CARD_X = (WIDTH - CARD_W) / 2; // 110
 const GAP = 20;
 const TOP = 20;
-const TITLE_BLOCK = 50; // chip + title region above the description
-const LINE_H = 16; // description line height
-const BOTTOM_PAD = 16; // breathing room under the last line
+const TITLE_MAX_CHARS = 52; // ~width of the card at 14px bold
+const TITLE_MAX_LINES = 2;
 const DESC_MAX_CHARS = 66;
 const DESC_MAX_LINES = 2;
 
@@ -32,12 +31,13 @@ export function layoutSwimlane(graph: WorkflowGraph): Layout {
   let y = TOP;
   for (const step of ordered) {
     const desc = step.inferred ? "inferred" : (step.detail ?? null);
+    const titleLines = wrapLines(step.label, TITLE_MAX_CHARS, TITLE_MAX_LINES);
     const bodyLines = step.inferred
       ? ["inferred"]
       : desc
         ? wrapLines(desc, DESC_MAX_CHARS, DESC_MAX_LINES)
         : [];
-    const h = TITLE_BLOCK + bodyLines.length * LINE_H + BOTTOM_PAD;
+    const h = cardHeight(titleLines.length, bodyLines.length);
     boxes.push({
       id: step.id,
       x: CARD_X,
@@ -46,6 +46,7 @@ export function layoutSwimlane(graph: WorkflowGraph): Layout {
       h,
       title: step.label,
       subtitle: desc,
+      titleLines,
       bodyLines,
       chip: laneLabel.get(step.laneId ?? "") ?? null,
       tone: stepTone(step),
@@ -73,7 +74,7 @@ export function layoutSwimlane(graph: WorkflowGraph): Layout {
 
   return {
     width: WIDTH,
-    height: Math.max(TOP + 40, y - GAP + BOTTOM_PAD),
+    height: Math.max(TOP + 40, y - GAP + 16),
     lanes: [],
     boxes,
     edges,

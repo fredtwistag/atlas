@@ -24,10 +24,10 @@ describe("layoutSwimlane (vertical cards)", () => {
     expect(ys).toEqual([...ys].sort((a, b) => a - b));     // increasing y
     expect(l.boxes[0].w).toBeGreaterThan(400);             // wide
   });
-  it("sets the role chip + wrapped body lines per card", () => {
+  it("sets the role chip + wrapped title + body lines per card", () => {
     const s2 = l.boxes.find((b) => b.id === "s2")!;
     expect(s2.chip).toBe("Comercial");
-    expect(s2.subtitle).toBe("Merges edits from many email threads");
+    expect(s2.titleLines).toEqual(["Reconcile conflicting versions"]); // short → 1 line
     expect(s2.bodyLines).toEqual(["Merges edits from many email threads"]);
     expect(s2.tone).toBe("red");                           // bottleneck
     const s1 = l.boxes.find((b) => b.id === "s1")!;
@@ -35,9 +35,15 @@ describe("layoutSwimlane (vertical cards)", () => {
     expect(s1.bodyLines).toEqual(["inferred"]);
     expect(s1.dashed).toBe(true);
   });
-  it("gives each card real height with bottom padding", () => {
-    // 1-line description card: TITLE_BLOCK(50) + 1*LINE_H(16) + BOTTOM_PAD(16)
-    expect(l.boxes.find((b) => b.id === "s2")!.h).toBe(82);
+  it("grows tall enough to fit a long, two-line title", () => {
+    const long = layoutSwimlane({
+      ...graph,
+      steps: [{ id: "x", label: "Manually transcribe quantity map into the internal budgeting template", laneId: "L1", stepKind: "bottleneck", inferred: false, captureIds: [], metric: null, detail: "Takes 2 to 3 days per project" }],
+      edges: [],
+    } as unknown as WorkflowGraph);
+    const box = long.boxes[0];
+    expect(box.titleLines!.length).toBe(2);                // title wrapped, not truncated
+    expect(box.h).toBeGreaterThan(l.boxes.find((b) => b.id === "s2")!.h); // taller than a 1-line title card
   });
   it("connects consecutive cards with sequential gray down-arrows", () => {
     expect(l.edges).toHaveLength(l.boxes.length - 1);      // n-1 sequential
