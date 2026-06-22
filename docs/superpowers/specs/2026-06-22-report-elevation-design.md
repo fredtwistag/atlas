@@ -27,6 +27,8 @@ Sponsor and manager **equally**. Sponsor = decision-maker who approves and forwa
 
 - **Matrix: keep + fix.** Retain one portfolio visual but make it legible and accessible, and make it tell the same story as the roadmap.
 - **ROI: one honest anchor line.** Add a single editorial sentence anchoring recurring impact with a confidence band tied to corroboration. **Do not** fabricate engagement cost / payback / multiple we can't stand behind. No finance dashboard.
+- **High-impact definition: impact-magnitude band.** "High-impact" = estimated annual impact at or above a money threshold (≈ €75K/yr on the high estimate), not a composite-score cutoff and not a relative top-quartile. Anchors to money the sponsor recognizes, falls out of scoring rather than vanity, and never leads with a zero in a real portfolio. The exact cutoff is validated against 2–3 real sprints during the build.
+- **Bucket taxonomy: keep the roadmap's words.** One vocabulary across matrix and roadmap: **Quick wins / Solid bets / Strategic bets** (maps 1:1 to the existing `horizon` field). The matrix drops its BCG-style "Big bets / Deprioritize" labels and groups points by these same three.
 
 ---
 
@@ -65,8 +67,8 @@ Sponsor and manager **equally**. Sponsor = decision-maker who approves and forwa
 
 ### Tier 0 — Truth in numbers *(cheapest, highest credibility ROI)*
 
-**0.1 — Never lead with a zero.** The `compositeScore >= 7.5` high-impact threshold (`lib/dashboard-map.ts:38`) is absolute, so a portfolio whose top opp is 6.9 always reports "0 high-impact" in the lead sentence. Recalibrate to a portfolio-aware definition (e.g. top-quartile composite, or impact-magnitude based, or a lower fixed bar validated against real sprints). If the honest count is genuinely 0, the exec-summary lead reframes around the strength of the #1 opportunity rather than the absence of high-impact ones.
-- *Acceptance:* The exec summary never renders "0 ... high-impact" as a lead clause; `highImpactCount` reflects a defensible, documented definition; existing dashboard/report consumers of `highImpactCount` stay consistent.
+**0.1 — Never lead with a zero.** The `compositeScore >= 7.5` high-impact threshold (`lib/dashboard-map.ts:38`) is absolute, so a portfolio whose top opp is 6.9 always reports "0 high-impact" in the lead sentence. **Decision:** redefine high-impact as an **impact-magnitude band** — estimated annual impact ≥ ≈€75K/yr (on the high estimate; exact cutoff validated against 2–3 real sprints during the build). The exec-summary lead then reads e.g. "9 opportunities, 3 of them estimated at €75K+/yr each." On Vizta this surfaces #1 (€56–90K), #2 (€56–75K), and #5 (€30–80K) — the last of which the composite score had buried. If the honest count is still 0, the lead reframes around the strength of the #1 opportunity rather than the absence of high-impact ones.
+- *Acceptance:* The exec summary never renders "0 ... high-impact" as a lead clause; `highImpactCount` reflects the documented impact-magnitude definition; existing dashboard/report consumers of `highImpactCount` stay consistent.
 
 **0.2 — Honest participation.** Replace the standalone "100% Participation" stat (misleading at n=3) with calibrated framing, e.g. `3 of 3 invited · 6 directorates · 46 captures`. Drop the vanity percent from the stat grid; keep depth signals (captures, directorates).
 - *Acceptance:* No bare "100%" participation figure; the summary states the real n and coverage; reads as depth, not breadth.
@@ -90,8 +92,8 @@ Sponsor and manager **equally**. Sponsor = decision-maker who approves and forwa
 
 ### Tier 2 — Information design *(craft)*
 
-**2.1 — Fix the portfolio visual (keep + fix).** Make the impact/effort matrix legible: label points directly (drop the numbered lookup-legend cross-reference), add an accessible table equivalent, and reconcile its vocabulary and story with the roadmap. The matrix quadrants currently read "Quick wins / Big bets / Deprioritize" while the roadmap columns read "Quick wins / Solid bets / Strategic bets" — unify to one taxonomy. Ensure the matrix's point cluster doesn't contradict a roadmap that promises "Quick wins."
-- *Acceptance:* No legend cross-referencing required to read the matrix; a screen-reader table equivalent exists; one shared taxonomy across matrix + roadmap; the two visuals tell the same story.
+**2.1 — Fix the portfolio visual (keep + fix).** Make the impact/effort matrix legible: label points directly (drop the numbered lookup-legend cross-reference), add an accessible table equivalent, and reconcile its vocabulary and story with the roadmap. **Decision:** one taxonomy everywhere — **Quick wins / Solid bets / Strategic bets** (the roadmap's existing words, mapping to the `horizon` field). The matrix drops "Big bets / Deprioritize" and groups/labels points by those same three buckets. Ensure the matrix's point cluster doesn't contradict a roadmap that promises "Quick wins."
+- *Acceptance:* No legend cross-referencing required to read the matrix; a screen-reader table equivalent exists; matrix + roadmap use the single Quick wins / Solid bets / Strategic bets taxonomy; the two visuals tell the same story.
 
 **2.2 — Declutter opportunity cards.** Cards currently show five badges (€, wks, category, horizon, delivery). Establish a primary pair (impact + time-to-ship) with visual emphasis; demote/consolidate horizon, delivery, category. Anchor or relabel the bare composite score ("6.9" → labeled scale or clearer signal).
 - *Acceptance:* Primary metrics are visually dominant; the score is interpretable without prior knowledge; cards scan in <2s.
@@ -129,7 +131,7 @@ Sponsor and manager **equally**. Sponsor = decision-maker who approves and forwa
 - Print/PDF verification.
 - a11y spot-check (contrast, keyboard, SR table for the matrix).
 
-## Open questions
+## Decisions (previously open)
 
-- **0.1:** Preferred high-impact definition — top-quartile composite, impact-magnitude band, or a recalibrated fixed bar? (Recommend: documented impact-magnitude band, validated against real sprints; falls out of scoring, not vanity.)
-- **2.1:** Final unified taxonomy label set for matrix + roadmap (Quick wins / Solid bets / Strategic bets vs. Quick wins / Big bets / Deprioritize).
+- **0.1 — high-impact definition:** impact-magnitude band (≈€75K/yr on the high estimate). Exact cutoff validated against 2–3 real sprints during the build. *(Resolved 2026-06-22.)*
+- **2.1 — taxonomy:** Quick wins / Solid bets / Strategic bets, used by both the matrix and the roadmap. *(Resolved 2026-06-22.)*
