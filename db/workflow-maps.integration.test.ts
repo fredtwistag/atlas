@@ -9,8 +9,8 @@ import {
   TENANT_A,
   TENANT_B,
 } from "./test/helpers";
-import { sprints, workflowMaps, users, captures } from "./schema";
-import { loadWorkflowMaps } from "@/lib/sprint-read";
+import { sprints, workflowMaps, users, captures, opportunities } from "./schema";
+import { loadWorkflowMaps, loadOpportunityWorkflow } from "@/lib/sprint-read";
 import { withTwistagContext } from "./client";
 
 const SPRINT_A = "00000000-0000-0000-0000-0000000005a1";
@@ -223,5 +223,31 @@ describe("loadWorkflowMaps", () => {
     expect(maps[0].evidence).toHaveLength(1);
     expect(maps[0].evidence[0].contributorName).toBe("Dana Rep");
     expect(maps[0].evidence[0].contributorRole).toBe("Sales rep");
+  });
+});
+
+describe("loadOpportunityWorkflow", () => {
+  const OPP = "00000000-0000-0000-0000-0000000007f1";
+  it("returns the surfaced per-opportunity diagram with name+role evidence", async () => {
+    await seedRow((tx) =>
+      tx.insert(opportunities).values({
+        id: OPP, tenantId: TENANT_A, sprintId: SPRINT_A, title: "Automate re-keying", description: "d", category: "Ops",
+        impactLow: 1, impactHigh: 2, timeToShipWeeksLow: 1, timeToShipWeeksHigh: 2, confidenceScore: 4,
+        compositeScore: "6.0", dimensionScores: [], rationale: "r", status: "surfaced",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(workflowMaps).values({
+        tenantId: TENANT_A, sprintId: SPRINT_A, kind: "swimlane", status: "surfaced", opportunityId: OPP,
+        graph: { ...sampleGraph, title: "Current state" },
+      }),
+    );
+    const view = await asUser({ tenantId: TENANT_A }, (tx) => loadOpportunityWorkflow(tx, OPP));
+    expect(view).not.toBeNull();
+    expect(view!.title).toBe("Current state");
+  });
+  it("returns null when the opportunity has no surfaced diagram", async () => {
+    const view = await asUser({ tenantId: TENANT_A }, (tx) => loadOpportunityWorkflow(tx, "00000000-0000-0000-0000-0000000007f2"));
+    expect(view).toBeNull();
   });
 });

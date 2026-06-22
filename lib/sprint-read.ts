@@ -534,3 +534,63 @@ export async function loadWorkflowMaps(
     };
   });
 }
+
+/**
+ * The current-state workflow diagram for one opportunity, or null. Under a
+ * tenant context RLS returns it only when surfaced. Evidence resolved to
+ * name + role (de-anonymized 2026-06-20); removed captures excluded.
+ */
+export async function loadOpportunityWorkflow(
+  tx: Db,
+  opportunityId: string,
+): Promise<WorkflowMapView | null> {
+  const [row] = await tx
+    .select({ id: workflowMaps.id, kind: workflowMaps.kind, graph: workflowMaps.graph })
+    .from(workflowMaps)
+    .where(eq(workflowMaps.opportunityId, opportunityId))
+    .limit(1);
+  if (!row) return null;
+
+  const g = row.graph as WorkflowGraph;
+  const ids = new Set<string>();
+  for (const s of g.steps) for (const id of s.captureIds) ids.add(id);
+  for (const e of g.edges) for (const id of e.captureIds) ids.add(id);
+
+  const evRows = ids.size
+    ? await tx
+        .select({
+          id: captures.id, kind: captures.kind, summary: captures.summary,
+          sourceQuote: captures.sourceQuote, sessionId: captures.sessionId,
+          tags: captures.tags, isEdited: captures.isEdited, isRemoved: captures.isRemoved,
+          name: users.name, role: users.title,
+        })
+        .from(captures)
+        .innerJoin(users, eq(captures.userId, users.id))
+        .where(and(inArray(captures.id, [...ids]), eq(captures.isRemoved, false)))
+    : [];
+
+  const evidence: Capture[] = [];
+  const seen = new Set<string>();
+  const sessions = new Set<string>();
+  for (const e of evRows) {
+    if (e.sessionId) sessions.add(e.sessionId);
+    const key = e.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    evidence.push({
+      id: e.id, kind: e.kind as Capture["kind"], summary: e.summary, sourceQuote: e.sourceQuote,
+      contributorName: e.name, contributorRole: e.role ?? "Contributor", sessionId: e.sessionId,
+      tags: e.tags, isEdited: e.isEdited, isRemoved: e.isRemoved,
+    });
+  }
+
+  return {
+    id: row.id,
+    kind: g.kind,
+    title: g.title,
+    graph: g,
+    confidence: g.confidence,
+    basedOnSessions: sessions.size,
+    evidence,
+  };
+}

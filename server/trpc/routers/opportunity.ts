@@ -8,6 +8,7 @@ import { toOpportunity, type OpportunityRow } from "@/lib/dashboard-map";
 import {
   listSprintOpportunities,
   loadOpportunityDetail,
+  loadOpportunityWorkflow,
 } from "@/lib/sprint-read";
 import { buildSowDraft } from "@/lib/sow";
 import type { SowDraft } from "@/lib/types";
@@ -27,6 +28,12 @@ export const opportunityRouter = router({
       withTenantContext(ctx.session, (tx) =>
         loadOpportunityDetail(tx, input.id),
       ),
+    ),
+
+  workflow: tenantProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) => loadOpportunityWorkflow(tx, input.id)),
     ),
 
   approve: managerProcedure
