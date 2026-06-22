@@ -165,6 +165,45 @@ function mockClusterAndScore(confidence = 4) {
   });
 }
 
+/**
+ * Same captures + theme as mockClusterAndScore, but with a caller-chosen
+ * opportunity title — models non-deterministic clustering producing a different
+ * title (and therefore a different cluster key) on a later run.
+ */
+function mockClusterAndScoreTitled(title: string, confidence = 4) {
+  completeStructured.mockImplementation(async (opts: { system: string }) => {
+    if (/cluster/i.test(opts.system)) {
+      return {
+        clusters: [
+          { theme: "Pricing approval delay", captureIds: [CAP1, CAP2, CAP3] },
+        ],
+      };
+    }
+    return {
+      title,
+      description:
+        "Custom enterprise pricing waits days for VP sign-off; AEs ship list price.",
+      category: "Pricing ops",
+      departments: ["Sales", "Finance"],
+      impactLow: 200_000,
+      impactHigh: 500_000,
+      timeToShipWeeksLow: 3,
+      timeToShipWeeksHigh: 4,
+      confidenceScore: confidence,
+      dimensionScores: [
+        { key: "financial", score: 8, reasoning: "x" },
+        { key: "time_to_ship", score: 7, reasoning: "x" },
+        { key: "ai_suitability", score: 6, reasoning: "x" },
+        { key: "change_mgmt", score: 7, reasoning: "x" },
+        { key: "dependency", score: 8, reasoning: "x" },
+      ],
+      rationale:
+        "VP Sales gates custom pricing; quotes wait days. An Account Executive and an Ops Lead corroborate. Recommended next step: Approve for FDE.",
+      evidenceCaptureIds: [CAP1, CAP2, CAP3],
+    };
+  });
+}
+
 beforeEach(async () => {
   completeStructured.mockReset();
   await resetDb();
@@ -296,6 +335,67 @@ describe("recompute — idempotency + approved immutability", () => {
     );
     expect(approved).toHaveLength(1);
     expect(approved[0].title).toBe("Approved — do not touch");
+  });
+});
+
+describe("recompute — pruning stale opportunities", () => {
+  it("deletes a stale surfaced opp + its evidence when the next run re-clusters the same captures under a new title", async () => {
+    // Run 1: the model titles the cluster one way; it surfaces on day 9.
+    mockClusterAndScoreTitled("Automate pricing pre-approval", 4);
+    await recompute(SPRINT, ACTOR, { now: NOW });
+    const [first] = await withServiceRoleRaw((tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.sprintId, SPRINT)),
+    );
+    expect(first.status).toBe("surfaced");
+
+    // Run 2: SAME captures, different title (non-deterministic clustering) →
+    // different cluster key. The old row must NOT linger as a stale duplicate.
+    mockClusterAndScoreTitled("Streamline pricing sign-off", 4);
+    const res = await recompute(SPRINT, ACTOR, { now: NOW });
+    expect(res.inserted).toBe(1);
+    expect(res.pruned).toBe(1);
+
+    const rows = await withServiceRoleRaw((tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.sprintId, SPRINT)),
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].title).toBe("Streamline pricing sign-off");
+    expect(rows[0].status).toBe("surfaced");
+
+    // The stale opp's evidence is gone too — no orphaned child rows.
+    const orphanEv = await withServiceRoleRaw((tx) =>
+      tx
+        .select()
+        .from(opportunityEvidence)
+        .where(eq(opportunityEvidence.opportunityId, first.id)),
+    );
+    expect(orphanEv).toHaveLength(0);
+  });
+
+  it("never deletes an approved opp, even when the run no longer produces it", async () => {
+    mockClusterAndScoreTitled("Automate pricing pre-approval", 4);
+    await recompute(SPRINT, ACTOR, { now: NOW });
+    const [created] = await withServiceRoleRaw((tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.sprintId, SPRINT)),
+    );
+    await withServiceRoleRaw((tx) =>
+      tx
+        .update(opportunities)
+        .set({ status: "approved" })
+        .where(eq(opportunities.id, created.id)),
+    );
+
+    // Run 2 clusters the same captures under a brand-new title.
+    mockClusterAndScoreTitled("Streamline pricing sign-off", 4);
+    const res = await recompute(SPRINT, ACTOR, { now: NOW });
+    expect(res.skippedApproved).toBe(1);
+    expect(res.pruned).toBe(0); // approved rows are never pruned
+
+    const survived = await withServiceRoleRaw((tx) =>
+      tx.select().from(opportunities).where(eq(opportunities.id, created.id)),
+    );
+    expect(survived).toHaveLength(1);
+    expect(survived[0].status).toBe("approved");
   });
 });
 

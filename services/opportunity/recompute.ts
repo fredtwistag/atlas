@@ -1,4 +1,4 @@
-import { eq, and, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, inArray } from "drizzle-orm";
 import { withServiceRole, type Db } from "@/db/client";
 import {
   sprints,
@@ -16,6 +16,7 @@ import {
   stakeholders,
   stakeholderOpportunity,
   workflowMaps,
+  sowDrafts,
 } from "@/db/schema";
 import { synthesizeWorkflows } from "@/services/synthesis/workflows/synthesize";
 import { generateOpportunityDiagram } from "@/services/synthesis/workflows/opportunity-diagram";
@@ -98,6 +99,10 @@ function toQuantifiedImpact(c: {
  * - Idempotent: the stable cluster key is the lowercase title, so recompute
  *   twice yields no duplicates (an existing non-approved row with the same key
  *   is updated in place; evidence links are replaced).
+ * - Pruning: existing non-approved rows the current run did NOT reproduce are
+ *   hard-deleted (with their child rows — no FK cascade on opportunity_id), so
+ *   non-deterministic clustering can't accumulate stale `surfaced` duplicates
+ *   that leak into the client report. `approved` rows are exempt.
  *
  * Privacy (CLAUDE.md): contributor names never enter scoring (role/department
  * only) and never enter rationale — the capture join selects users.title and
@@ -129,6 +134,8 @@ export type RecomputeResult = {
   updated: number;
   surfaced: number;
   skippedApproved: number;
+  /** Stale non-approved rows the current run no longer produced, hard-deleted. */
+  pruned: number;
 };
 
 export type RecomputeOpts = {
@@ -244,6 +251,7 @@ async function runRecompute(
     updated: 0,
     surfaced: 0,
     skippedApproved: 0,
+    pruned: 0,
   };
   if (captureRows.length < 2) {
     // Still recompute surfacing on whatever already exists (e.g. approved rows
@@ -371,6 +379,8 @@ async function runRecompute(
   let updated = 0;
   // Persisted opportunity id per candidate key — feeds the portfolio (Ticket A).
   const idByKey = new Map<string, string>();
+  // Existing (non-approved) rows this run reproduced; the rest are pruned below.
+  const keptIds = new Set<string>();
   for (const c of finalCandidates) {
     const status = surfacedKeys.has(c.key) ? "surfaced" : "provisional";
     const prior = existingByKey.get(c.key);
@@ -405,6 +415,7 @@ async function runRecompute(
         );
       await replaceEvidence(tx, tenantId, prior.id, c.evidenceCaptureIds);
       idByKey.set(c.key, prior.id);
+      keptIds.add(prior.id);
       updated++;
     } else {
       const [row] = await tx
@@ -436,6 +447,18 @@ async function runRecompute(
       inserted++;
     }
   }
+
+  // --- prune stale opportunities -------------------------------------------
+  // Existing non-approved rows the current run did NOT reproduce (LLM clustering
+  // is non-deterministic, so titles/keys drift run to run). Left in place they
+  // keep their old `surfaced` status forever and leak into the client report.
+  // Hard-delete them (and their child rows — no FK cascade on opportunity_id),
+  // before rebuilding the derived artifacts below. `approved` rows are never in
+  // `existing`-non-approved scope, so they are exempt by construction.
+  const staleIds = existing
+    .filter((row) => row.status !== "approved" && !keptIds.has(row.id))
+    .map((row) => row.id);
+  await pruneOpportunities(tx, tenantId, staleIds);
 
   // --- pilot portfolio (Ticket A) ------------------------------------------
   // Select a balanced 3-5 set from the surfaced opportunities and persist it
@@ -561,7 +584,67 @@ async function runRecompute(
     updated,
     surfaced: surfacedKeys.size,
     skippedApproved,
+    pruned: staleIds.length,
   };
+}
+
+/**
+ * Hard-delete stale opportunities and every child row that references them.
+ * `opportunity_id` has no FK cascade (see schema.ts), so each child table is
+ * cleared explicitly, parents last. Caller guarantees `ids` excludes approved
+ * rows. No-op for an empty list.
+ */
+async function pruneOpportunities(
+  tx: Db,
+  tenantId: string,
+  ids: string[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  await tx
+    .delete(opportunityEvidence)
+    .where(
+      and(
+        inArray(opportunityEvidence.opportunityId, ids),
+        eq(opportunityEvidence.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(portfolioItems)
+    .where(
+      and(
+        inArray(portfolioItems.opportunityId, ids),
+        eq(portfolioItems.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(stakeholderOpportunity)
+    .where(
+      and(
+        inArray(stakeholderOpportunity.opportunityId, ids),
+        eq(stakeholderOpportunity.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(workflowMaps)
+    .where(
+      and(
+        inArray(workflowMaps.opportunityId, ids),
+        eq(workflowMaps.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(sowDrafts)
+    .where(
+      and(
+        inArray(sowDrafts.opportunityId, ids),
+        eq(sowDrafts.tenantId, tenantId),
+      ),
+    );
+  await tx
+    .delete(opportunities)
+    .where(
+      and(inArray(opportunities.id, ids), eq(opportunities.tenantId, tenantId)),
+    );
 }
 
 /**
