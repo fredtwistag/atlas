@@ -23,8 +23,10 @@ import { cn } from "@/lib/cn";
 import { moneyRange, moneyShort, type Currency } from "@/lib/format";
 import { pluralize } from "@/lib/text";
 import type { Opportunity, SowDraft } from "@/lib/types";
+import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
+import type { WorkflowMapView } from "@/services/synthesis/workflows/types";
 
-type Tab = "evidence" | "patterns" | "discussion";
+type Tab = "evidence" | "workflow" | "patterns" | "discussion";
 
 export function OpportunityDetail({
   sprintId,
@@ -36,6 +38,7 @@ export function OpportunityDetail({
   backHref,
   backLabel,
   currency,
+  workflow,
 }: {
   sprintId: string;
   opp: Opportunity;
@@ -49,13 +52,17 @@ export function OpportunityDetail({
   backHref?: string;
   backLabel?: string;
   currency: Currency;
+  /** This opportunity's current-state diagram, when one was surfaced. */
+  workflow?: WorkflowMapView | null;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [approved, setApproved] = useState(opp.status === "approved");
   const [approving, setApproving] = useState(false);
 
-  const tabKeys: Tab[] = ["evidence", "patterns", "discussion"];
+  const tabKeys: Tab[] = workflow
+    ? ["evidence", "workflow", "patterns", "discussion"]
+    : ["evidence", "patterns", "discussion"];
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
   const tabId = (key: Tab) => `${baseId}-tab-${key}`;
@@ -176,6 +183,9 @@ export function OpportunityDetail({
             {(
               [
                 ["evidence", `Evidence · ${opp.evidence.length}`],
+                ...(workflow
+                  ? ([["workflow", "Workflow"]] as [Tab, string][])
+                  : []),
                 ["patterns", "Patterns"],
                 ["discussion", "Discussion"],
               ] as [Tab, string][]
@@ -243,6 +253,23 @@ export function OpportunityDetail({
                 know who to follow up with. Contributors can still edit or remove
                 anything they said for 7 days after their session.
               </p>
+            </div>
+          )}
+
+          {tab === "workflow" && workflow && (
+            <div
+              role="tabpanel"
+              id={panelId("workflow")}
+              aria-labelledby={tabId("workflow")}
+              tabIndex={0}
+            >
+              <p className="mb-3 text-[13px] text-text-3">
+                Current state, synthesized from this opportunity&apos;s evidence.
+                The highlighted step is what this opportunity removes.
+              </p>
+              <div className="overflow-x-auto rounded-lg border border-border bg-surface p-3">
+                <WorkflowDiagram graph={workflow.graph} instanceId={workflow.id} />
+              </div>
             </div>
           )}
 

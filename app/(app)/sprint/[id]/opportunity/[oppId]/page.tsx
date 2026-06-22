@@ -29,9 +29,10 @@ export default async function OpportunityPage({
   const { id, oppId } = await params;
   const session = await requireManagerOrSponsor();
   const api = await getApi();
-  const [opp, sprint] = await Promise.all([
+  const [opp, sprint, workflow] = await Promise.all([
     api.opportunity.get({ id: oppId }).catch(() => null),
     api.sprint.get({ id }).catch(() => null),
+    api.opportunity.workflow({ id: oppId }).catch(() => null),
   ]);
   if (!opp) notFound();
 
@@ -43,6 +44,7 @@ export default async function OpportunityPage({
       approverRole={session.role}
       onApprove={approveOpportunity}
       currency={sprint?.tenantCurrency ?? "EUR"}
+      workflow={workflow}
     />
   );
 }

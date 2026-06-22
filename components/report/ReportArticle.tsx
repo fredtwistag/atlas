@@ -180,23 +180,26 @@ export function ReportArticle({
         )}
       </Section>
 
-      {/* How the work flows today (Plan 2) */}
+      {/* Impact vs. effort — the portfolio matrix (per-opportunity flow
+          diagrams now live inside each opportunity). */}
       {workflowMaps && workflowMaps.length > 0 ? (
-        <Section title="How the work flows today">
+        <Section title="Impact vs. effort">
           <p>
-            Synthesized from what contributors described — every step traces to
-            the captures it came from. Steps Atlas inferred to connect the flow
-            are shown dashed.
+            Every surfaced opportunity placed by estimated impact against the
+            effort to ship it — the upper-left quadrant is where to start. Each
+            opportunity&apos;s own workflow diagram lives on its detail page.
           </p>
           <div className="not-prose mt-4 space-y-8">
             {workflowMaps.map((m) => (
               <figure key={m.id} className="rounded-lg border border-border bg-surface p-4">
                 <figcaption className="mb-3 flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-text">{m.title}</span>
-                  <span className="text-xs text-text-3">
-                    Based on {m.basedOnSessions} session
-                    {m.basedOnSessions === 1 ? "" : "s"}
-                  </span>
+                  {m.basedOnSessions > 0 ? (
+                    <span className="text-xs text-text-3">
+                      Based on {m.basedOnSessions} session
+                      {m.basedOnSessions === 1 ? "" : "s"}
+                    </span>
+                  ) : null}
                 </figcaption>
                 <WorkflowDiagram graph={m.graph} instanceId={m.id} />
                 {m.kind === "impact_effort" ? (
