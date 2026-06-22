@@ -26,7 +26,7 @@ beforeEach(() => completeStructured.mockReset());
 
 describe("generateGraph", () => {
   it("returns null without an LLM call when no relevant captures", async () => {
-    const out = await generateGraph("swimlane", [cap({ kind: "frustration" })], ["Sales rep"]);
+    const out = await generateGraph("swimlane", [cap({ kind: "tooling" })], ["Sales rep"]);
     expect(out).toBeNull();
     expect(completeStructured).not.toHaveBeenCalled();
   });

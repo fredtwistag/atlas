@@ -63,7 +63,10 @@ const topologySystem = (roleLabels: string[]): string =>
 
 export const KIND_PROMPTS: Partial<Record<WorkflowKind, KindPromptConfig>> = {
   swimlane: {
-    relevantKinds: new Set(["handoff", "sop", "decision", "bottleneck", "workaround"]),
+    // frustration captures mark where process pain lives — they belong in a
+    // current-state process map (and supply flow context a sparse opportunity
+    // otherwise lacks). See per-opp diagram calibration, 2026-06-22.
+    relevantKinds: new Set(["handoff", "sop", "decision", "bottleneck", "workaround", "frustration"]),
     system: swimlaneSystem,
   },
   systems_topology: {
