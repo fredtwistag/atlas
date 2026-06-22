@@ -72,6 +72,16 @@ export const KIND_PROMPTS: Partial<Record<WorkflowKind, KindPromptConfig>> = {
   },
 };
 
+/**
+ * The capture kinds a given diagram kind draws from. Used to scope the
+ * confidence coverage to the captures the map could actually have used (so a
+ * tight, accurate topology that only touches tooling/workaround isn't penalised
+ * against the whole sprint's captures).
+ */
+export function relevantKindsFor(kind: WorkflowKind): Set<string> {
+  return KIND_PROMPTS[kind]?.relevantKinds ?? new Set<string>();
+}
+
 /** Capture lines sent to the model — id, kind, role, summary. NEVER contributorId/name. */
 function captureLines(captures: WorkflowCapture[]): string {
   return captures
@@ -98,7 +108,9 @@ export async function generateGraph(
   const draft = await completeStructured({
     system: config.system(roleLabels),
     schema: workflowGraphDraft,
-    maxTokens: 3072,
+    // A rich swimlane over many captures can exceed a small budget and truncate
+    // the JSON mid-string; give it room.
+    maxTokens: 8192,
     messages: [
       {
         role: "user",
