@@ -56,4 +56,18 @@ describe("generateOpportunityDiagram", () => {
     generateGraph.mockResolvedValue({ kind: "swimlane", title: "t", lanes: [], steps: [{ id: "s1", label: "ghost", laneId: null, stepKind: "step", inferred: false, captureIds: ["bad"], metric: null }], edges: [] });
     expect(await generateOpportunityDiagram({ title: "x" }, [ev(C1, "u1")], [], "m")).toBeNull();
   });
+  it("retries past a dud generation and returns the next good graph", async () => {
+    const good = {
+      kind: "swimlane", title: "Current state", lanes: [],
+      steps: [
+        { id: "s1", label: "Log deal", laneId: null, stepKind: "step", inferred: false, captureIds: [C1], metric: null },
+        { id: "s2", label: "Re-key", laneId: null, stepKind: "bottleneck", inferred: false, captureIds: [C2], metric: null },
+      ],
+      edges: [{ id: "e1", from: "s1", to: "s2", edgeKind: "flow", label: null, inferred: false, captureIds: [C1, C2] }],
+    };
+    generateGraph.mockResolvedValueOnce(null).mockResolvedValueOnce(good); // dud, then good
+    const out = await generateOpportunityDiagram({ title: "Automate re-keying" }, [ev(C1, "u1"), ev(C2, "u2")], ["Ops"], "m");
+    expect(out).not.toBeNull();
+    expect(generateGraph).toHaveBeenCalledTimes(2);
+  });
 });
