@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -31,10 +32,16 @@ const CURATION_STATUSES = ["provisional", "surfaced", "hidden"] as const;
  */
 export function OpportunityCurationCard({
   opp,
+  detailHref,
+  sowHref,
   onUpdate,
   onSetStatus,
 }: {
   opp: CurationOpportunity;
+  /** Opens the read-only opportunity detail (evidence + conversations). */
+  detailHref: string;
+  /** Opens the read-only SOW view; null when no SOW draft exists yet. */
+  sowHref: string | null;
   onUpdate: (
     opportunityId: string,
     patch: {
@@ -109,12 +116,25 @@ export function OpportunityCurationCard({
       <div className="flex items-start gap-3">
         <ScoreBadge score={opp.compositeScore} />
         <div className="min-w-0 flex-1">
-          <div className="font-medium leading-tight">{opp.title}</div>
+          <Link
+            href={detailHref}
+            className="font-medium leading-tight hover:text-brand hover:underline"
+          >
+            {opp.title}
+          </Link>
           <div className="text-xs text-text-3">{opp.sprintName}</div>
         </div>
         <Badge tone={meta.tone}>{meta.label}</Badge>
         {opp.sowStatus ? (
-          <Badge tone="outline">SOW · {opp.sowStatus}</Badge>
+          sowHref ? (
+            <Link href={sowHref} aria-label={`Open SOW · ${opp.sowStatus}`}>
+              <Badge tone="outline" className="hover:border-brand">
+                SOW · {opp.sowStatus}
+              </Badge>
+            </Link>
+          ) : (
+            <Badge tone="outline">SOW · {opp.sowStatus}</Badge>
+          )
         ) : null}
       </div>
 

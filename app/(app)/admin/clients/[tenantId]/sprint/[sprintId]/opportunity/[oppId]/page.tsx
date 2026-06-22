@@ -45,6 +45,7 @@ export default async function TwistagOpportunity({
       backHref={`/admin/clients/${tenantId}/sprint/${sprintId}/report`}
       backLabel="Back to report"
       currency="EUR"
+      transcriptBaseHref={`/admin/clients/${tenantId}/sprint/${sprintId}/session`}
     />
   );
 }

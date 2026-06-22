@@ -18,11 +18,13 @@ import {
   topics,
   sprintParticipants,
   sessions,
+  sessionMessages,
   users,
   tenants,
   opportunities,
   opportunityEvidence,
   captures,
+  sowDrafts,
   portfolios,
   portfolioItems,
   systemInventoryItems,
@@ -42,6 +44,8 @@ import type {
   SprintProgress,
   Opportunity,
   Capture,
+  SowDetail,
+  SessionTranscript,
   SprintPortfolio,
   PortfolioEntry,
   SystemInventoryEntry,
@@ -270,6 +274,7 @@ export async function loadOpportunityDetail(
       kind: captures.kind,
       summary: captures.summary,
       sourceQuote: captures.sourceQuote,
+      sessionId: captures.sessionId,
       tags: captures.tags,
       isEdited: captures.isEdited,
       isRemoved: captures.isRemoved,
@@ -295,6 +300,7 @@ export async function loadOpportunityDetail(
     sourceQuote: e.sourceQuote,
     contributorName: e.name,
     contributorRole: e.role ?? "Contributor",
+    sessionId: e.sessionId,
     tags: e.tags,
     isEdited: e.isEdited,
     isRemoved: e.isRemoved,
@@ -309,6 +315,102 @@ export async function loadOpportunityDetail(
   });
 
   return toOpportunity(row as OpportunityRow, dedupedEvidence);
+}
+
+/**
+ * The latest SOW draft for an opportunity (drafts can be regenerated), or null
+ * if none has been generated yet. Shared by the admin read-only SOW view.
+ */
+export async function loadSowDraft(
+  tx: Db,
+  opportunityId: string,
+): Promise<SowDetail | null> {
+  const [row] = await tx
+    .select()
+    .from(sowDrafts)
+    .where(eq(sowDrafts.opportunityId, opportunityId))
+    .orderBy(desc(sowDrafts.createdAt))
+    .limit(1);
+  if (!row) return null;
+  return {
+    title: row.title,
+    scope: row.scope,
+    inclusions: row.inclusions,
+    exclusions: row.exclusions,
+    team: row.team as SowDetail["team"],
+    durationWeeks: row.durationWeeks,
+    priceUsd: row.priceUsd,
+    successMetrics: row.successMetrics,
+    status: row.status,
+  };
+}
+
+/**
+ * One session's full conversation transcript + meta (topic, contributor, status).
+ * Admin-only in practice: `session_messages` is owner-gated for tenant contexts,
+ * so only a Twistag cross-tenant read surfaces another person's transcript —
+ * which is why name + role are exposed here ("Twistag debugging", CLAUDE.md).
+ */
+export async function loadSessionTranscript(
+  tx: Db,
+  sessionId: string,
+): Promise<SessionTranscript> {
+  const [s] = await tx
+    .select({
+      topicId: sessions.topicId,
+      userId: sessions.userId,
+      status: sessions.status,
+      completedAt: sessions.completedAt,
+    })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId));
+  if (!s) throw new TRPCError({ code: "NOT_FOUND" });
+
+  const [contributor] = await tx
+    .select({ name: users.name, role: users.title })
+    .from(users)
+    .where(eq(users.id, s.userId));
+
+  let topicTitle = "Discovery session";
+  if (s.topicId) {
+    const [t] = await tx
+      .select({ title: topics.title })
+      .from(topics)
+      .where(eq(topics.id, s.topicId));
+    if (t) topicTitle = t.title;
+  }
+
+  const msgs = await tx
+    .select({
+      id: sessionMessages.id,
+      role: sessionMessages.role,
+      content: sessionMessages.content,
+      arc: sessionMessages.arc,
+    })
+    .from(sessionMessages)
+    .where(eq(sessionMessages.sessionId, sessionId))
+    .orderBy(sessionMessages.createdAt);
+
+  return {
+    topicTitle,
+    contributorName: contributor?.name ?? "Contributor",
+    contributorRole: contributor?.role ?? "Contributor",
+    status: s.status,
+    completedAt: s.completedAt
+      ? s.completedAt.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "UTC",
+        })
+      : null,
+    messages: msgs.map((m) => ({
+      id: m.id,
+      role: m.role as "assistant" | "user",
+      content: m.content,
+      arc: m.arc,
+    })),
+  };
 }
 
 /** The pilot portfolio for a sprint (Ticket A), or null if none generated yet. */

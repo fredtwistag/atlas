@@ -408,6 +408,12 @@ export default async function ClientDetailPage({
                   sprintName: sprintName(o.sprintId),
                   sowStatus: o.sowStatus,
                 }}
+                detailHref={`/admin/clients/${tenantId}/sprint/${o.sprintId}/opportunity/${o.id}`}
+                sowHref={
+                  o.sowStatus
+                    ? `/admin/clients/${tenantId}/sprint/${o.sprintId}/opportunity/${o.id}/sow`
+                    : null
+                }
                 onUpdate={onUpdateOpp}
                 onSetStatus={onSetOppStatus}
               />

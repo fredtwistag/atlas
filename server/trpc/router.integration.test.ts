@@ -630,6 +630,12 @@ describe("twistag admin procedures", () => {
     await expect(
       api.twistag.sprintClose({ sprintId: SPRINT_A }),
     ).rejects.toThrow();
+    await expect(
+      api.twistag.sowView({ opportunityId: SPRINT_A }),
+    ).rejects.toThrow();
+    await expect(
+      api.twistag.sessionTranscriptView({ sessionId: SPRINT_A }),
+    ).rejects.toThrow();
   });
 
   it.each(["twistag_admin", "twistag_lead"])(

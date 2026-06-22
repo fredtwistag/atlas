@@ -14,7 +14,12 @@ describe("OpportunityDetail approve flow", () => {
   it("opens the SOW sheet and confirms approval", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        sow={sow}
+        currency="EUR"
+      />,
     );
 
     await userEvent.click(
@@ -61,11 +66,58 @@ describe("OpportunityDetail read-only (Twistag admin view)", () => {
   });
 });
 
+describe("OpportunityDetail conversation link (admin)", () => {
+  it("links each evidence quote to its conversation when transcriptHref is set", async () => {
+    const { opp } = await getFixtures();
+    const withSession = {
+      ...opp,
+      evidence: opp.evidence.map((e, i) =>
+        i === 0 ? { ...e, sessionId: "ses-xyz" } : e,
+      ),
+    };
+    render(
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={withSession}
+        readOnly
+        currency="EUR"
+        transcriptBaseHref="/admin/session"
+      />,
+    );
+    const link = screen.getByRole("link", { name: /view conversation/i });
+    expect(link).toHaveAttribute("href", "/admin/session/ses-xyz");
+  });
+
+  it("shows no conversation link in the default (sponsor) view", async () => {
+    const { opp, sow } = await getFixtures();
+    const withSession = {
+      ...opp,
+      evidence: opp.evidence.map((e) => ({ ...e, sessionId: "ses-xyz" })),
+    };
+    render(
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={withSession}
+        sow={sow}
+        currency="EUR"
+      />,
+    );
+    expect(
+      screen.queryByRole("link", { name: /view conversation/i }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("OpportunityDetail tabs (a11y)", () => {
   it("exposes a tablist with the active tab selected", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        sow={sow}
+        currency="EUR"
+      />,
     );
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
@@ -83,7 +135,12 @@ describe("OpportunityDetail tabs (a11y)", () => {
   it("moves selection with the right arrow key (roving focus)", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        sow={sow}
+        currency="EUR"
+      />,
     );
 
     const evidence = screen.getByRole("tab", { name: /evidence/i });
@@ -102,7 +159,12 @@ describe("OpportunityDetail tabs (a11y)", () => {
   it("wraps from the first tab to the last with the left arrow key", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        sow={sow}
+        currency="EUR"
+      />,
     );
 
     const evidence = screen.getByRole("tab", { name: /evidence/i });
@@ -118,7 +180,12 @@ describe("OpportunityDetail evidence attribution", () => {
   it("shows the contributor's name and role on each evidence quote", async () => {
     const { opp, sow } = await getFixtures();
     render(
-      <OpportunityDetail sprintId="spr-northwind-q2" opp={opp} sow={sow} currency="EUR" />,
+      <OpportunityDetail
+        sprintId="spr-northwind-q2"
+        opp={opp}
+        sow={sow}
+        currency="EUR"
+      />,
     );
 
     // The Evidence tab is selected by default. Every capture's name + role

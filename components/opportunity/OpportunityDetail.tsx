@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +19,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Sheet } from "@/components/ui/Sheet";
+import { Field, ListField } from "@/components/ui/DetailField";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/cn";
 import { moneyRange, moneyShort, type Currency } from "@/lib/format";
@@ -39,6 +41,7 @@ export function OpportunityDetail({
   backLabel,
   currency,
   workflow,
+  transcriptBaseHref,
 }: {
   sprintId: string;
   opp: Opportunity;
@@ -54,6 +57,11 @@ export function OpportunityDetail({
   currency: Currency;
   /** This opportunity's current-state diagram, when one was surfaced. */
   workflow?: WorkflowMapView | null;
+  /** Base path for transcript links (e.g. `/admin/.../session`); the session id
+   * is appended. When set, each evidence quote with a source session links to
+   * its conversation. Admin-only (managers/sponsors can't read others'). A
+   * string (not a fn) so it crosses the server→client boundary. */
+  transcriptBaseHref?: string;
 }) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -234,7 +242,10 @@ export function OpportunityDetail({
                       title={`${c.contributorName} · ${c.contributorRole}`}
                     >
                       {c.contributorName}
-                      <span className="text-text-3"> · {c.contributorRole}</span>
+                      <span className="text-text-3">
+                        {" "}
+                        · {c.contributorRole}
+                      </span>
                     </span>
                   </div>
                   <p className="mb-2.5 text-md font-medium leading-snug">
@@ -246,12 +257,20 @@ export function OpportunityDetail({
                       “{c.sourceQuote}”
                     </p>
                   </div>
+                  {transcriptBaseHref && c.sessionId ? (
+                    <Link
+                      href={`${transcriptBaseHref}/${c.sessionId}`}
+                      className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-medium text-brand hover:underline"
+                    >
+                      View conversation <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
+                  ) : null}
                 </Card>
               ))}
               <p className="px-1 text-xs leading-relaxed text-text-3">
-                Quotes are attributed to each contributor by name and role so you
-                know who to follow up with. Contributors can still edit or remove
-                anything they said for 7 days after their session.
+                Quotes are attributed to each contributor by name and role so
+                you know who to follow up with. Contributors can still edit or
+                remove anything they said for 7 days after their session.
               </p>
             </div>
           )}
@@ -452,67 +471,5 @@ export function OpportunityDetail({
         </Sheet>
       ) : null}
     </PageContainer>
-  );
-}
-
-function Field({
-  label,
-  value,
-  multiline,
-}: {
-  label: string;
-  value: string;
-  multiline?: boolean;
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-        {label}
-      </div>
-      <div
-        className={cn(
-          "rounded border border-border bg-bg px-3 py-2 text-sm leading-relaxed text-text",
-          multiline && "min-h-[80px]",
-        )}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function ListField({
-  label,
-  items,
-  tone,
-}: {
-  label: string;
-  items: string[];
-  tone: "success" | "neutral" | "brand";
-}) {
-  if (items.length === 0) return null;
-  return (
-    <div>
-      <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-text-3">
-        {label}
-      </div>
-      <ul className="space-y-1">
-        {items.map((it) => (
-          <li key={it} className="flex items-start gap-2 text-sm text-text-2">
-            <Check
-              className={cn(
-                "mt-0.5 h-3.5 w-3.5 shrink-0",
-                tone === "success"
-                  ? "text-success"
-                  : tone === "brand"
-                    ? "text-brand"
-                    : "text-text-3",
-              )}
-            />
-            {it}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   tenants,
   sprints,
   sprintParticipants,
+  sessions,
   opportunities,
   users,
   invitations,
@@ -20,7 +21,10 @@ import {
   listSprintOpportunities,
   loadSynthesisMemo,
   loadOpportunityDetail,
+  loadSowDraft,
+  loadSessionTranscript,
 } from "@/lib/sprint-read";
+import type { Currency } from "@/lib/format";
 import {
   updateOpportunity,
   setOpportunityStatus,
@@ -322,6 +326,81 @@ export const twistagRouter = router({
           if (!meta) throw new TRPCError({ code: "NOT_FOUND" });
           const opp = await loadOpportunityDetail(tx, input.opportunityId);
           return { tenantId: meta.tenantId, sprintId: meta.sprintId, opp };
+        },
+      ),
+    ),
+
+  /**
+   * Read-only SOW view for the admin. Keyed by opportunity (the latest draft).
+   * Returns `tenantId`/`sprintId` for the route guard and the tenant currency
+   * so the price renders correctly. `sow` is null when none exists yet.
+   */
+  sowView: twistagProcedure
+    .input(z.object({ opportunityId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTwistagContext(
+        {
+          twistagRole: ctx.session.twistagRole,
+          actor: ctx.session.userId,
+          targetId: input.opportunityId,
+        },
+        async (tx) => {
+          const [meta] = await tx
+            .select({
+              tenantId: opportunities.tenantId,
+              sprintId: opportunities.sprintId,
+              title: opportunities.title,
+            })
+            .from(opportunities)
+            .where(eq(opportunities.id, input.opportunityId));
+          if (!meta) throw new TRPCError({ code: "NOT_FOUND" });
+          const [t] = await tx
+            .select({ currency: tenants.currency })
+            .from(tenants)
+            .where(eq(tenants.id, meta.tenantId));
+          const sow = await loadSowDraft(tx, input.opportunityId);
+          return {
+            tenantId: meta.tenantId,
+            sprintId: meta.sprintId,
+            opportunityId: input.opportunityId,
+            opportunityTitle: meta.title,
+            currency: (t?.currency ?? "EUR") as Currency,
+            sow,
+          };
+        },
+      ),
+    ),
+
+  /**
+   * Read-only session transcript for the admin — the full Atlas↔contributor
+   * conversation behind an opportunity's evidence. `session_messages` is
+   * owner-gated for tenants, so this cross-tenant read is admin-only. Returns
+   * `tenantId`/`sprintId` for the route guard.
+   */
+  sessionTranscriptView: twistagProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTwistagContext(
+        {
+          twistagRole: ctx.session.twistagRole,
+          actor: ctx.session.userId,
+          targetId: input.sessionId,
+        },
+        async (tx) => {
+          const [meta] = await tx
+            .select({
+              tenantId: sessions.tenantId,
+              sprintId: sessions.sprintId,
+            })
+            .from(sessions)
+            .where(eq(sessions.id, input.sessionId));
+          if (!meta) throw new TRPCError({ code: "NOT_FOUND" });
+          const transcript = await loadSessionTranscript(tx, input.sessionId);
+          return {
+            tenantId: meta.tenantId,
+            sprintId: meta.sprintId,
+            transcript,
+          };
         },
       ),
     ),

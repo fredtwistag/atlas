@@ -100,6 +100,9 @@ export interface Capture {
   contributorName: string;
   /** Contributor's role/title, shown alongside the name. */
   contributorRole: string;
+  /** The session this capture came from — lets the admin open the full
+   * conversation behind it. Null for captures with no source session. */
+  sessionId?: string | null;
   tags: string[];
   isEdited?: boolean;
   isRemoved?: boolean;
@@ -109,6 +112,31 @@ export interface SessionMessage {
   id: string;
   role: "assistant" | "user";
   content: string;
+}
+
+/** A SOW draft plus its lifecycle status, for the admin read-only SOW view. */
+export interface SowDetail extends SowDraft {
+  status: string;
+}
+
+/** One transcript turn for the admin read-only conversation view. */
+export interface TranscriptMessage {
+  id: string;
+  role: "assistant" | "user";
+  content: string;
+  arc: string;
+}
+
+/** A full session transcript + meta, powering the admin conversation view. */
+export interface SessionTranscript {
+  topicTitle: string;
+  /** Name + role — this is a Twistag-admin-only view (RLS owner-gated for
+   * tenants); contributor identity is allowed here for "Twistag debugging". */
+  contributorName: string;
+  contributorRole: string;
+  status: string;
+  completedAt: string | null;
+  messages: TranscriptMessage[];
 }
 
 export interface Session {

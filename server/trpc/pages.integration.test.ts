@@ -9,6 +9,7 @@ import {
   topics,
   sprintParticipants,
   sessions,
+  sessionMessages,
   invitations,
   sowDrafts,
 } from "@/db/schema";
@@ -394,5 +395,176 @@ describe("/admin/clients/[tenantId] contract — twistag.clientDetail", () => {
         opportunityId: "abababab-abab-4bab-8bab-abababab9999",
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("admin SOW + conversation contracts — twistag.sowView / sessionTranscriptView", () => {
+  const T = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0001";
+  const S = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0002";
+  const U = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0003";
+  const OPP_WITH_SOW = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0004";
+  const OPP_NO_SOW = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0005";
+  const SES = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0006";
+  const TOPIC = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcd0007";
+
+  function oppRow(id: string, title: string) {
+    return {
+      id,
+      tenantId: T,
+      sprintId: S,
+      title,
+      description: "d",
+      category: "c",
+      impactLow: 100_000,
+      impactHigh: 200_000,
+      timeToShipWeeksLow: 2,
+      timeToShipWeeksHigh: 4,
+      confidenceScore: 5,
+      compositeScore: "8.0",
+      dimensionScores: [],
+      rationale: "r",
+      status: "surfaced",
+    };
+  }
+
+  beforeEach(async () => {
+    await seedRow((tx) =>
+      tx.insert(tenants).values({
+        id: T,
+        slug: "sow-co",
+        name: "SOW Co",
+        segment: "Mid-market",
+        status: "active",
+        currency: "GBP",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sprints).values({
+        id: S,
+        tenantId: T,
+        name: "Ops Discovery",
+        primaryFocus: "Quote-to-cash",
+        startDate: "2026-05-18",
+        endDate: "2026-06-12",
+        cadence: "weekly",
+        status: "active",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: U,
+        tenantId: T,
+        email: "cara@sow.example",
+        name: "Cara Stone",
+        role: "ic",
+        title: "AR Specialist",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(topics).values({
+        id: TOPIC,
+        tenantId: T,
+        sprintId: S,
+        title: "When things break",
+        description: "Where it stalls.",
+        orderIdx: 1,
+        questionCount: 4,
+        estMinutes: 5,
+      }),
+    );
+    await seedRow((tx) =>
+      tx
+        .insert(opportunities)
+        .values([
+          oppRow(OPP_WITH_SOW, "Has SOW"),
+          oppRow(OPP_NO_SOW, "No SOW"),
+        ]),
+    );
+    await seedRow((tx) =>
+      tx.insert(sowDrafts).values({
+        tenantId: T,
+        opportunityId: OPP_WITH_SOW,
+        sprintId: S,
+        title: "Engagement",
+        scope: "Do the thing",
+        inclusions: ["a"],
+        exclusions: ["b"],
+        team: [{ role: "FDE", allocation: "Full-time" }],
+        durationWeeks: 6,
+        priceUsd: 60_000,
+        successMetrics: ["m"],
+        status: "draft",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessions).values({
+        id: SES,
+        tenantId: T,
+        sprintId: S,
+        topicId: TOPIC,
+        userId: U,
+        status: "completed",
+        completedAt: new Date("2026-05-22T10:00:00Z"),
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(sessionMessages).values([
+        {
+          tenantId: T,
+          sessionId: SES,
+          userId: U,
+          role: "assistant",
+          content: "How does a credit hold get cleared?",
+          arc: "ARC_1",
+          createdAt: new Date("2026-05-22T10:00:00Z"),
+        },
+        {
+          tenantId: T,
+          sessionId: SES,
+          userId: U,
+          role: "user",
+          content: "Someone in finance clears it once a day.",
+          arc: "ARC_1",
+          createdAt: new Date("2026-05-22T10:01:00Z"),
+        },
+      ]),
+    );
+  });
+
+  it("sowView returns the SOW + tenant/sprint ids + currency", async () => {
+    const data = await asTwistag().twistag.sowView({
+      opportunityId: OPP_WITH_SOW,
+    });
+    expect(data.tenantId).toBe(T);
+    expect(data.sprintId).toBe(S);
+    expect(data.opportunityTitle).toBe("Has SOW");
+    expect(data.currency).toBe("GBP");
+    expect(data.sow?.status).toBe("draft");
+    expect(data.sow?.title).toBe("Engagement");
+    expect(data.sow?.team).toEqual([{ role: "FDE", allocation: "Full-time" }]);
+  });
+
+  it("sowView returns null sow when no draft exists", async () => {
+    const data = await asTwistag().twistag.sowView({
+      opportunityId: OPP_NO_SOW,
+    });
+    expect(data.sow).toBeNull();
+  });
+
+  it("sessionTranscriptView returns ordered messages + name/role meta", async () => {
+    const data = await asTwistag().twistag.sessionTranscriptView({
+      sessionId: SES,
+    });
+    expect(data.tenantId).toBe(T);
+    expect(data.sprintId).toBe(S);
+    expect(data.transcript.topicTitle).toBe("When things break");
+    expect(data.transcript.contributorName).toBe("Cara Stone");
+    expect(data.transcript.contributorRole).toBe("AR Specialist");
+    // Ordered by createdAt: assistant prompt then the contributor's reply.
+    expect(data.transcript.messages.map((m) => m.role)).toEqual([
+      "assistant",
+      "user",
+    ]);
+    expect(data.transcript.messages[1].content).toContain("finance");
   });
 });
