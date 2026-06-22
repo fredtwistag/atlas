@@ -18,6 +18,10 @@ export interface LayoutBox {
   tone: Tone;
   shape: "rect" | "diamond" | "circle";
   dashed: boolean;
+  /** Role label shown as a pill at the top of a vertical card. When set, the
+   * renderer draws the card (left-aligned chip + title + subtitle) instead of
+   * the centered box. null/undefined → the existing centered rendering. */
+  chip?: string | null;
 }
 
 export interface LayoutEdge {

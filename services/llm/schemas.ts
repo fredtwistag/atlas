@@ -392,6 +392,10 @@ export const workflowStep = z.object({
     .object({ x: z.number(), y: z.number() })
     .nullable()
     .default(null),
+  // Render-only: a one-line description attached at read time from the step's
+  // evidence (see loadOpportunityWorkflow). The LLM never sets this — it's not
+  // in any generation prompt; the read layer always overwrites it.
+  detail: z.string().nullable().optional(),
 });
 
 export const workflowEdge = z.object({
