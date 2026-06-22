@@ -250,4 +250,60 @@ describe("loadOpportunityWorkflow", () => {
     const view = await asUser({ tenantId: TENANT_A }, (tx) => loadOpportunityWorkflow(tx, "00000000-0000-0000-0000-0000000007f2"));
     expect(view).toBeNull();
   });
+
+  it("attaches a deduped evidence description to each step", async () => {
+    const OPP = "00000000-0000-0000-0000-0000000007f3";
+    const CAP_A = CAP_1; // seeded in loadWorkflowMaps suite; summary = "Sales emails the deal to ops"
+    // Seed the user + capture so CAP_A is available in this test
+    await seedRow((tx) =>
+      tx.insert(users).values({
+        id: USER_A1,
+        tenantId: TENANT_A,
+        email: "rep@a.test",
+        name: "Dana Rep",
+        role: "ic",
+        title: "Sales rep",
+        department: "Sales",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(captures).values({
+        id: CAP_A,
+        tenantId: TENANT_A,
+        userId: USER_A1,
+        kind: "handoff",
+        summary: "Sales emails the deal to ops",
+        sourceQuote: "I just email it over",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(opportunities).values({
+        id: OPP, tenantId: TENANT_A, sprintId: SPRINT_A, title: "Automate re-keying", description: "d", category: "Ops",
+        impactLow: 1, impactHigh: 2, timeToShipWeeksLow: 1, timeToShipWeeksHigh: 2, confidenceScore: 4,
+        compositeScore: "6.0", dimensionScores: [], rationale: "r", status: "surfaced",
+      }),
+    );
+    await seedRow((tx) =>
+      tx.insert(workflowMaps).values({
+        tenantId: TENANT_A, sprintId: SPRINT_A, kind: "swimlane", status: "surfaced", opportunityId: OPP,
+        graph: {
+          kind: "swimlane", title: "t",
+          lanes: [{ id: "L1", roleLabel: "Ops", department: null }],
+          steps: [
+            { id: "s1", label: "Start", laneId: "L1", stepKind: "start", inferred: true, captureIds: [], metric: null },
+            { id: "s2", label: "Reconcile", laneId: "L1", stepKind: "bottleneck", inferred: false, captureIds: [CAP_A], metric: null },
+            { id: "s3", label: "Re-enter", laneId: "L1", stepKind: "bottleneck", inferred: false, captureIds: [CAP_A], metric: null },
+          ],
+          edges: [],
+          confidence: { score: 0.6, coverage: 0.6, corroboratedCount: 1, disputedStepIds: [] },
+          modelVersion: "test",
+        },
+      }),
+    );
+    const view = await asUser({ tenantId: TENANT_A }, (tx) => loadOpportunityWorkflow(tx, OPP));
+    const byId = new Map(view!.graph.steps.map((s) => [s.id, s.detail]));
+    expect(byId.get("s1")).toBeNull();                 // inferred → no description
+    expect(byId.get("s2")).toBeTruthy();               // first cite → the summary
+    expect(byId.get("s3")).toBeNull();                 // same capture as s2 → deduped
+  });
 });

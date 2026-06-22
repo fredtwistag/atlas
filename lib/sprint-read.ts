@@ -686,6 +686,27 @@ export async function loadOpportunityWorkflow(
     });
   }
 
+  // Render-only enrichment: give each step a one-line description from its
+  // primary evidence. Dedupe so a repeated citation doesn't echo down the
+  // column, and never repeat the step's own label. Inferred steps stay null.
+  const summaryById = new Map(evRows.map((e) => [e.id, e.summary] as const));
+  const norm = (x: string) => x.toLowerCase().replace(/\s+/g, " ").trim();
+  let prevDetail = "";
+  for (const s of g.steps) {
+    let detail: string | null = null;
+    if (!s.inferred) {
+      for (const cid of s.captureIds) {
+        const sum = summaryById.get(cid);
+        if (sum) { detail = sum; break; }
+      }
+    }
+    if (detail && (norm(detail) === norm(s.label) || norm(detail) === prevDetail)) {
+      detail = null;
+    }
+    s.detail = detail;
+    if (detail) prevDetail = norm(detail);
+  }
+
   return {
     id: row.id,
     kind: g.kind,
