@@ -177,25 +177,6 @@ export function ReportArticle({
         </div>
       </Section>
 
-      {/* Methodology */}
-      <Section title="How we got here">
-        <p>
-          Atlas runs discovery as conversation, not workshops. Each participant
-          completed up to four short sessions on their own schedule, covering
-          how work flows, where it breaks, the tools involved, and the one
-          change they&apos;d make. An extraction pass lifted concrete moments —
-          bottlenecks, workarounds, handoffs — from each reply, attributed to
-          the contributor by name and role.
-        </p>
-        <p>
-          Captures were clustered by similarity and scored across five
-          dimensions: financial impact, implementation feasibility, time to
-          value, strategic alignment, and evidence confidence. Each opportunity
-          links back to the verbatim captures that drove its score, attributed
-          to the contributor by name and role.
-        </p>
-      </Section>
-
       {/* Ranked opportunities */}
       <Section title="Opportunities, ranked">
         {opps.length === 0 ? (
@@ -278,6 +259,20 @@ export function ReportArticle({
             empty="No strategic bets yet — larger, higher-impact plays land here."
           />
         </div>
+      </Section>
+
+      {/* Methodology — moved below the payoff; condensed to one paragraph. */}
+      <Section title="How we got here">
+        <p>
+          Atlas runs discovery as conversation, not workshops: each participant
+          completed up to four short sessions on their own schedule. An
+          extraction pass lifted concrete moments — bottlenecks, workarounds,
+          handoffs — attributed to the contributor by name and role, then
+          clustered and scored across five dimensions (financial impact,
+          feasibility, time to value, strategic alignment, evidence
+          confidence). Only opportunities corroborated by more than one
+          contributor are shown; each links back to its verbatim captures.
+        </p>
       </Section>
 
       {/* Closing */}
