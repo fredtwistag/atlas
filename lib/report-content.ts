@@ -71,12 +71,11 @@ export function narrativeFallback(args: {
   const { opps, currency } = args;
   if (opps.length === 0) return "";
   const top = opps[0];
+  const contributors = `${args.participantCount} contributor${args.participantCount === 1 ? "" : "s"}`;
+  const opportunities = `${args.opportunitiesCount} opportunit${args.opportunitiesCount === 1 ? "y" : "ies"}`;
   return (
-    `Across ${args.scopeDepartment}, ${args.participantCount} contributor` +
-    `${args.participantCount === 1 ? "" : "s"} surfaced ${args.opportunitiesCount} ` +
-    `opportunit${args.opportunitiesCount === 1 ? "y" : "ies"}. The strongest — ` +
-    `${top.title} — is estimated at ${moneyRange(top.impactLow, top.impactHigh, currency)}/yr; ` +
-    `together the top five represent ${moneyRange(args.totalLow, args.totalHigh, currency)}/yr ` +
-    `in recurring impact.`
+    `Across ${args.scopeDepartment}, ${contributors} surfaced ${opportunities}. ` +
+    `The strongest — ${top.title} — is estimated at ${moneyRange(top.impactLow, top.impactHigh, currency)}/yr; ` +
+    `together the top five represent ${moneyRange(args.totalLow, args.totalHigh, currency)}/yr in recurring impact.`
   );
 }

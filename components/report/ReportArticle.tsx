@@ -99,8 +99,8 @@ export function ReportArticle({
             ) : null}
           </>
         ) : (
-          <p>
-            {narrativeFallback({
+          (() => {
+            const fallback = narrativeFallback({
               scopeDepartment: sprint.scopeDepartment,
               participantCount: p.participantCount,
               opportunitiesCount: p.opportunitiesCount,
@@ -108,8 +108,9 @@ export function ReportArticle({
               totalLow,
               totalHigh,
               currency,
-            })}
-          </p>
+            });
+            return fallback ? <p>{fallback}</p> : null;
+          })()
         )}
       </Section>
 
