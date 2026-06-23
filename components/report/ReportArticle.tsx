@@ -4,6 +4,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
+import { highImpactLead, corroborationLine } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -100,12 +101,12 @@ export function ReportArticle({
       {/* Executive summary */}
       <Section title="Executive summary">
         <p>
-          Over {sprint.dayTotal} days, {p.participantCount} people across{" "}
-          {sprint.scopeDepartment} had short, structured conversations with
-          Atlas — {p.sessionsCompleted} sessions in total, producing{" "}
-          {p.capturesCount} discrete captures. From those, Atlas surfaced{" "}
-          <strong>{p.opportunitiesCount} opportunities</strong>,{" "}
-          {p.highImpactCount} of them high-impact.
+          Over {sprint.dayTotal} days, Atlas held short, structured
+          conversations with {p.participantCount} contributor
+          {p.participantCount === 1 ? "" : "s"} across {sprint.scopeDepartment} —{" "}
+          {p.sessionsCompleted} sessions producing {p.capturesCount} discrete
+          captures. From those, Atlas surfaced{" "}
+          <strong>{highImpactLead(p.opportunitiesCount, p.highImpactCount, currency)}</strong>.
         </p>
         <p>
           The combined estimated annual impact of the top five is{" "}
@@ -115,17 +116,18 @@ export function ReportArticle({
           .{" "}
           {topFive[0] ? (
             <>
-              The highest-ranked opportunity — <strong>{topFive[0].title}</strong>{" "}
-              — is estimated at {moneyShort(topFive[0].impactLow, currency)}–
+              The highest-ranked — <strong>{topFive[0].title}</strong> — is
+              estimated at {moneyShort(topFive[0].impactLow, currency)}–
               {moneyShort(topFive[0].impactHigh, currency)}/yr.
             </>
-          ) : null}
+          ) : null}{" "}
+          {corroborationLine(opps)}
         </p>
-        <div className="my-6 grid grid-cols-3 gap-3">
+        <div className="my-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
-            [`${p.completionPct}%`, "Participation"],
-            [`${p.opportunitiesCount}`, "Opportunities"],
             [`${moneyShort(totalLow, currency)}+`, "Est. impact, top 5"],
+            [`${p.opportunitiesCount}`, "Opportunities"],
+            [`${p.capturesCount}`, "Captures"],
           ].map(([v, l]) => (
             <div
               key={l}
