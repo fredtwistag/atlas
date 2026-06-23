@@ -7,6 +7,7 @@ import {
   corroborationLine,
   bucketLabel,
   narrativeFallback,
+  selectPullQuotes,
 } from "./report-content";
 import type { Opportunity } from "./types";
 
@@ -104,5 +105,28 @@ describe("narrativeFallback", () => {
         opps: [], totalLow: 0, totalHigh: 0, currency: "EUR",
       }),
     ).toBe("");
+  });
+});
+
+describe("selectPullQuotes", () => {
+  const cap = (q: string, removed = false, edited = false) => ({
+    id: q, kind: "bottleneck" as const, summary: "s", sourceQuote: q,
+    contributorName: "Ana", contributorRole: "Controller",
+    tags: [], isRemoved: removed, isEdited: edited,
+  });
+  it("takes verbatim, attributed quotes from the top opps, skipping removed/edited", () => {
+    const opps = [
+      opp({ title: "A", contributorCount: 4, evidence: [cap("real quote here")] }),
+      opp({ title: "B", contributorCount: 2, evidence: [cap("removed", true), cap("edited", false, true)] }),
+    ];
+    const out = selectPullQuotes(opps, 2);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      quote: "real quote here", name: "Ana", role: "Controller",
+      oppTitle: "A", corroboration: 4,
+    });
+  });
+  it("returns [] when nothing qualifies", () => {
+    expect(selectPullQuotes([opp({ evidence: [] })], 2)).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
-import { highImpactLead, corroborationLine, narrativeFallback } from "@/lib/report-content";
+import { highImpactLead, corroborationLine, narrativeFallback, selectPullQuotes } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -175,6 +175,22 @@ export function ReportArticle({
             </div>
           ))}
         </div>
+        {(() => {
+          const [pq] = selectPullQuotes(opps, 1);
+          return pq ? (
+            <figure className="my-6 border-l-2 border-brand pl-4">
+              <blockquote className="text-lg italic leading-relaxed text-text">
+                &ldquo;{pq.quote}&rdquo;
+              </blockquote>
+              <figcaption className="mt-2 text-sm text-text-3">
+                {pq.name}, {pq.role}
+                {pq.corroboration > 1
+                  ? ` · echoed by ${pq.corroboration - 1} other${pq.corroboration - 1 === 1 ? "" : "s"}`
+                  : ""}
+              </figcaption>
+            </figure>
+          ) : null;
+        })()}
       </Section>
 
       {/* Ranked opportunities */}
