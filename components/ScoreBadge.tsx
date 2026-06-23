@@ -22,6 +22,8 @@ export function ScoreBadge({
         tone,
         size === "lg" ? "h-16 w-16" : "h-11 w-11",
       )}
+      title={`Composite score ${score.toFixed(1)} of 10`}
+      aria-label={`Composite score ${score.toFixed(1)} of 10`}
     >
       <span className={size === "lg" ? "text-2xl" : "text-lg"}>
         {score.toFixed(1)}

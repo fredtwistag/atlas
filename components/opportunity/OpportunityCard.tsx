@@ -57,22 +57,14 @@ export function OpportunityCard({
             <Badge tone="outline">
               {opp.timeToShipWeeksLow}–{opp.timeToShipWeeksHigh} wks
             </Badge>
-            <Badge tone="neutral">
-              {meta === "category"
-                ? opp.category
-                : `${opp.contributorCount} voices`}
-            </Badge>
-            {horizonMeta[opp.horizon] ? (
-              <Badge tone={horizonMeta[opp.horizon]!.tone}>
-                {horizonMeta[opp.horizon]!.label}
-              </Badge>
-            ) : null}
-            {deliveryMeta[opp.delivery] ? (
-              <Badge tone={deliveryMeta[opp.delivery]!.tone}>
-                {deliveryMeta[opp.delivery]!.label}
-              </Badge>
-            ) : null}
           </div>
+          <p className="mt-1.5 text-xs text-text-3">
+            {meta === "category"
+              ? `${opp.category} · corroborated by ${opp.contributorCount} ${opp.contributorCount === 1 ? "voice" : "voices"}`
+              : `${opp.contributorCount} voices`}
+            {horizonMeta[opp.horizon] ? ` · ${horizonMeta[opp.horizon]!.label}` : ""}
+            {deliveryMeta[opp.delivery] ? ` · ${deliveryMeta[opp.delivery]!.label}` : ""}
+          </p>
         </div>
       </div>
     </Card>
