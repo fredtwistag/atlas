@@ -19,6 +19,7 @@ import {
   loadSprint,
   loadSprintProgress,
   listSprintOpportunities,
+  listSprintOpportunitiesWithEvidence,
   loadSynthesisMemo,
   loadOpportunityDetail,
   loadOpportunityWorkflow,
@@ -287,7 +288,7 @@ export const twistagRouter = router({
           const [sprint, progress, opportunities, memo] = await Promise.all([
             loadSprint(tx, input.sprintId),
             loadSprintProgress(tx, input.sprintId),
-            listSprintOpportunities(tx, input.sprintId),
+            listSprintOpportunitiesWithEvidence(tx, input.sprintId),
             loadSynthesisMemo(tx, input.sprintId),
           ]);
           return {

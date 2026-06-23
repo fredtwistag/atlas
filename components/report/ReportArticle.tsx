@@ -4,7 +4,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
-import { highImpactLead, corroborationLine, narrativeFallback, selectPullQuotes, bucketLabel } from "@/lib/report-content";
+import { highImpactLead, participationLine, corroborationLine, narrativeFallback, selectPullQuotes, bucketLabel } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -86,7 +86,7 @@ export function ReportArticle({
             : `Discovery findings for ${sprint.scopeDepartment}.`}
         </p>
         <p className="mt-3 text-xs text-text-3">
-          Generated {sprint.endDate} · Built by Twistag
+          Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })} · Built by Twistag
         </p>
       </header>
 
@@ -101,7 +101,7 @@ export function ReportArticle({
             {topFive[1] ? (
               <> and <strong>{topFive[1].title}</strong></>
             ) : null}
-            . The top five represent{" "}
+            . The top {topFive.length === 1 ? "opportunity" : topFive.length} represent{topFive.length === 1 ? "s" : ""}{" "}
             <strong>
               {moneyShort(totalLow, currency)}–{moneyShort(totalHigh, currency)}/yr
             </strong>{" "}
@@ -146,15 +146,14 @@ export function ReportArticle({
       {/* Executive summary */}
       <Section title="Executive summary" index={2}>
         <p>
-          Over {sprint.dayTotal} days, Atlas held short, structured
-          conversations with {p.participantCount} contributor
-          {p.participantCount === 1 ? "" : "s"} across {sprint.scopeDepartment} —{" "}
-          {p.sessionsCompleted} sessions producing {p.capturesCount} discrete
-          captures. From those, Atlas surfaced{" "}
+          Over {sprint.dayTotal} days,{" "}
+          {participationLine(p.participantCount, sprint.scopeDepartment, p.capturesCount)},
+          gathered across {p.sessionsCompleted} short session
+          {p.sessionsCompleted === 1 ? "" : "s"}. From those, Atlas surfaced{" "}
           <strong>{highImpactLead(p.opportunitiesCount, p.highImpactCount, currency)}</strong>.
         </p>
         <p>
-          The combined estimated annual impact of the top five is{" "}
+          The combined estimated annual impact of the top {topFive.length === 1 ? "opportunity" : topFive.length} is{" "}
           <strong>
             {moneyShort(totalLow, currency)}–{moneyShort(totalHigh, currency)}
           </strong>

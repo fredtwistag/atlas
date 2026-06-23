@@ -73,7 +73,7 @@ export function selectPullQuotes(opps: Opportunity[], n: number): PullQuote[] {
     for (const c of o.evidence) {
       if (out.length >= n) return out;
       if (c.isRemoved || c.isEdited) continue;
-      const q = (c.sourceQuote ?? "").trim();
+      const q = c.sourceQuote.trim();
       if (!q || !c.contributorName || seen.has(q)) continue;
       seen.add(q);
       out.push({
@@ -111,6 +111,9 @@ export function narrativeFallback(args: {
   return (
     `Across ${args.scopeDepartment}, ${contributors} surfaced ${opportunities}. ` +
     `The strongest — ${top.title} — is estimated at ${moneyRange(top.impactLow, top.impactHigh, currency)}/yr; ` +
-    `together the top five represent ${moneyRange(args.totalLow, args.totalHigh, currency)}/yr in recurring impact.`
+    (() => {
+      const n = Math.min(args.opps.length, 5);
+      return `together the top ${n === 1 ? "opportunity represents" : `${n} represent`} ${moneyRange(args.totalLow, args.totalHigh, currency)}/yr in recurring impact.`;
+    })()
   );
 }
