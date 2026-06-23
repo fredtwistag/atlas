@@ -56,14 +56,29 @@
 }
 
 @media print {
-  /* Hide app chrome and anything opted out of print, so the saved PDF is just
-     the report article. */
   [data-app-chrome],
   [data-print-hide] {
     display: none !important;
   }
-  main {
+  main,
+  article {
     max-width: none !important;
+  }
+  @page {
+    margin: 18mm 16mm;
+  }
+  /* Keep figures, cards, and the matrix from splitting across pages. */
+  figure,
+  table,
+  .not-prose > * {
+    break-inside: avoid;
+  }
+  h1, h2, h3 {
+    break-after: avoid;
+  }
+  /* The cover starts its own page; sections flow after. */
+  header {
+    break-after: page;
   }
 }
 
