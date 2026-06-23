@@ -80,6 +80,14 @@ export function ReportArticle({
             {sprint.sponsor.name}, {sprint.sponsor.title}
           </span>
         </div>
+        <p className="mt-6 max-w-prose text-lg leading-relaxed text-text">
+          {topFive[0]
+            ? `The fastest path to recurring savings in ${sprint.scopeDepartment}: ${p.opportunitiesCount} ranked opportunities, evidenced by your own team.`
+            : `Discovery findings for ${sprint.scopeDepartment}.`}
+        </p>
+        <p className="mt-3 text-xs text-text-3">
+          Generated {sprint.endDate} · Built by Twistag
+        </p>
       </header>
 
       {/* Bottom line — the answer first. What to approve, the return, the ask. */}
@@ -105,7 +113,7 @@ export function ReportArticle({
 
       {/* Synthesis — the board-ready spine. Uses the generated memo when
           present, else a deterministic fallback so it never silently vanishes. */}
-      <Section title="Synthesis">
+      <Section title="Synthesis" index={1}>
         {memo && memo.openingNarrative ? (
           <>
             <p>{memo.openingNarrative}</p>
@@ -136,7 +144,7 @@ export function ReportArticle({
       </Section>
 
       {/* Executive summary */}
-      <Section title="Executive summary">
+      <Section title="Executive summary" index={2}>
         <p>
           Over {sprint.dayTotal} days, Atlas held short, structured
           conversations with {p.participantCount} contributor
@@ -194,7 +202,7 @@ export function ReportArticle({
       </Section>
 
       {/* Ranked opportunities */}
-      <Section title="Opportunities, ranked">
+      <Section title="Opportunities, ranked" index={3}>
         {opps.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-surface px-4 py-6 text-center text-sm text-text-3">
             No opportunities surfaced yet. They appear here as Atlas extracts
@@ -219,7 +227,7 @@ export function ReportArticle({
       {/* Impact vs. effort — the portfolio matrix (per-opportunity flow
           diagrams now live inside each opportunity). */}
       {workflowMaps && workflowMaps.length > 0 ? (
-        <Section title="Impact vs. effort">
+        <Section title="Impact vs. effort" index={4}>
           <p>
             Every surfaced opportunity placed by estimated impact against the
             effort to ship it — the upper-left quadrant is where to start. Each
@@ -268,7 +276,7 @@ export function ReportArticle({
       ) : null}
 
       {/* Roadmap */}
-      <Section title="Suggested roadmap">
+      <Section title="Suggested roadmap" index={5}>
         <div className="not-prose grid gap-4 sm:grid-cols-3">
           <RoadmapColumn
             title="Quick wins"
@@ -292,7 +300,7 @@ export function ReportArticle({
       </Section>
 
       {/* Methodology — moved below the payoff; condensed to one paragraph. */}
-      <Section title="How we got here">
+      <Section title="How we got here" index={6}>
         <p>
           Atlas runs discovery as conversation, not workshops: each participant
           completed up to four short sessions on their own schedule. An
@@ -306,7 +314,7 @@ export function ReportArticle({
       </Section>
 
       {/* Closing */}
-      <Section title="What happens next">
+      <Section title="What happens next" index={7}>
         <p>
           Each opportunity above links to its full evidence and a pre-drafted
           SOW. Approve one and the Twistag engagement team aligns scope within
@@ -325,14 +333,21 @@ export function ReportArticle({
 
 function Section({
   title,
+  index,
   children,
 }: {
   title: string;
+  index?: number;
   children: React.ReactNode;
 }) {
   return (
     <section className="mb-10">
-      <h2 className="mb-3 text-2xl font-semibold tracking-tight">{title}</h2>
+      <h2 className="mb-3 text-2xl font-semibold tracking-tight">
+        {index != null ? (
+          <span className="mr-2 text-text-3">{String(index).padStart(2, "0")}</span>
+        ) : null}
+        {title}
+      </h2>
       <div className="space-y-3 text-md leading-relaxed text-text-2 [&_strong]:font-semibold [&_strong]:text-text">
         {children}
       </div>
