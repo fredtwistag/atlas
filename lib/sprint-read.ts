@@ -252,6 +252,85 @@ export async function listSprintOpportunities(
 }
 
 /**
+ * Report variant of `listSprintOpportunities` — ranked opportunities with
+ * name+role-attributed evidence so pull-quotes render in the report view.
+ *
+ * Privacy: identical rules to `loadOpportunityDetail` — contributor name +
+ * role only, never email or internal userId; removed captures (isRemoved=true)
+ * are excluded; per-opportunity dedup by normalised sourceQuote.
+ *
+ * Performance: ONE evidence query for all opportunity ids (inArray), not N+1.
+ * RLS: operates under the caller's tenant context — evidence rows are gated by
+ * the opportunityEvidence → opportunities → tenant_id chain.
+ */
+export async function listSprintOpportunitiesWithEvidence(
+  tx: Db,
+  sprintId: string,
+): Promise<Opportunity[]> {
+  const rows = await tx
+    .select()
+    .from(opportunities)
+    .where(eq(opportunities.sprintId, sprintId))
+    .orderBy(desc(opportunities.compositeScore));
+  if (rows.length === 0) return [];
+
+  const oppIds = rows.map((r) => r.id);
+
+  const evRows = await tx
+    .select({
+      opportunityId: opportunityEvidence.opportunityId,
+      id: captures.id,
+      kind: captures.kind,
+      summary: captures.summary,
+      sourceQuote: captures.sourceQuote,
+      sessionId: captures.sessionId,
+      tags: captures.tags,
+      isEdited: captures.isEdited,
+      isRemoved: captures.isRemoved,
+      name: users.name,
+      role: users.title,
+    })
+    .from(opportunityEvidence)
+    .innerJoin(captures, eq(opportunityEvidence.captureId, captures.id))
+    .innerJoin(users, eq(captures.userId, users.id))
+    // Removed captures (IC exercised the 7-day edit window) must never render
+    // as evidence — plan 017.
+    .where(
+      and(
+        inArray(opportunityEvidence.opportunityId, oppIds),
+        eq(captures.isRemoved, false),
+      ),
+    );
+
+  // Group evidence rows by opportunityId, map to Capture, dedupe per-opp.
+  const evidenceByOpp = new Map<string, Capture[]>();
+  for (const e of evRows) {
+    const existing = evidenceByOpp.get(e.opportunityId) ?? [];
+    evidenceByOpp.set(e.opportunityId, existing);
+    const key = e.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim();
+    const alreadySeen = existing.some(
+      (c) => c.sourceQuote.toLowerCase().replace(/\s+/g, " ").trim() === key,
+    );
+    if (!alreadySeen) {
+      existing.push({
+        id: e.id,
+        kind: e.kind as Capture["kind"],
+        summary: e.summary,
+        sourceQuote: e.sourceQuote,
+        contributorName: e.name,
+        contributorRole: e.role ?? "Contributor",
+        sessionId: e.sessionId,
+        tags: e.tags,
+        isEdited: e.isEdited,
+        isRemoved: e.isRemoved,
+      });
+    }
+  }
+
+  return rows.map((r) => toOpportunity(r as OpportunityRow, evidenceByOpp.get(r.id) ?? []));
+}
+
+/**
  * One opportunity with its full, render-ready detail: name+role-attributed
  * evidence quotes (removed captures excluded, deduped by quote), scores, and
  * rationale.

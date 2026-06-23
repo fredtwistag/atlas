@@ -1,5 +1,5 @@
 import { moneyShort, moneyRange, type Currency } from "./format";
-import type { Capture, Horizon, Opportunity } from "./types";
+import type { Horizon, Opportunity } from "./types";
 
 /** High-impact = estimated annual impact at/above this band (on the high
  *  estimate). Single source of truth for the high-impact threshold. */
@@ -70,7 +70,7 @@ export function selectPullQuotes(opps: Opportunity[], n: number): PullQuote[] {
   const out: PullQuote[] = [];
   const seen = new Set<string>();
   for (const o of opps) {
-    for (const c of o.evidence as Capture[]) {
+    for (const c of o.evidence) {
       if (out.length >= n) return out;
       if (c.isRemoved || c.isEdited) continue;
       const q = (c.sourceQuote ?? "").trim();

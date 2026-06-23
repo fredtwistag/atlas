@@ -22,7 +22,7 @@ export default async function FinalReport({
   if (!sprint) notFound();
   const [p, opps, memo, workflowMaps] = await Promise.all([
     api.sprint.progress({ id }),
-    api.opportunity.listForSprint({ sprintId: id }),
+    api.opportunity.listForSprintWithEvidence({ sprintId: id }),
     api.sprint.synthesisMemo({ id }),
     api.sprint.workflowMaps({ id }),
   ]);

@@ -7,6 +7,7 @@ import { opportunities, tenants, sowDrafts } from "@/db/schema";
 import { toOpportunity, type OpportunityRow } from "@/lib/dashboard-map";
 import {
   listSprintOpportunities,
+  listSprintOpportunitiesWithEvidence,
   loadOpportunityDetail,
   loadOpportunityWorkflow,
 } from "@/lib/sprint-read";
@@ -19,6 +20,14 @@ export const opportunityRouter = router({
     .query(({ ctx, input }) =>
       withTenantContext(ctx.session, (tx) =>
         listSprintOpportunities(tx, input.sprintId),
+      ),
+    ),
+
+  listForSprintWithEvidence: tenantProcedure
+    .input(z.object({ sprintId: z.string().uuid() }))
+    .query(({ ctx, input }) =>
+      withTenantContext(ctx.session, (tx) =>
+        listSprintOpportunitiesWithEvidence(tx, input.sprintId),
       ),
     ),
 
