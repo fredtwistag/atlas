@@ -9,7 +9,10 @@ describe("computeProgress", () => {
         { sessionsCompleted: 2, sessionsTotal: 4, status: "in_progress" },
         { sessionsCompleted: 0, sessionsTotal: 4, status: "not_started" },
       ],
-      opportunities: [{ compositeScore: 8.7 }, { compositeScore: 6.1 }],
+      opportunities: [
+        { compositeScore: 8.7, impactHigh: 90_000 },
+        { compositeScore: 6.1, impactHigh: 40_000 },
+      ],
       capturesCount: 12,
       signalQuality: 4.6,
     });
@@ -19,7 +22,7 @@ describe("computeProgress", () => {
     expect(p.weeklyActiveContributors).toBe(2);
     expect(p.participantCount).toBe(3);
     expect(p.opportunitiesCount).toBe(2);
-    expect(p.highImpactCount).toBe(1);
+    expect(p.highImpactCount).toBe(1); // only the €90K opp clears the €75K band
     expect(p.capturesCount).toBe(12);
     expect(p.signalQuality).toBe(4.6);
   });

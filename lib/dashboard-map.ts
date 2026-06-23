@@ -4,6 +4,7 @@ import type {
   Capture,
   DimensionScore,
 } from "./types";
+import { HIGH_IMPACT_EUR } from "./report-content";
 
 /** Compute the dashboard stat strip from assembled rows. */
 export function computeProgress(args: {
@@ -12,7 +13,7 @@ export function computeProgress(args: {
     sessionsTotal: number;
     status: string;
   }[];
-  opportunities: { compositeScore: number }[];
+  opportunities: { compositeScore: number; impactHigh: number }[];
   capturesCount: number;
   signalQuality: number;
 }): SprintProgress {
@@ -35,8 +36,9 @@ export function computeProgress(args: {
     sessionsCompleted,
     sessionsTotal,
     opportunitiesCount: args.opportunities.length,
-    highImpactCount: args.opportunities.filter((o) => o.compositeScore >= 7.5)
-      .length,
+    highImpactCount: args.opportunities.filter(
+      (o) => o.impactHigh >= HIGH_IMPACT_EUR,
+    ).length,
     capturesCount: args.capturesCount,
     signalQuality: args.signalQuality,
   };

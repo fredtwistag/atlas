@@ -216,7 +216,10 @@ export const loadSprintProgress = cache(async function loadSprintProgress(
     .from(sprintParticipants)
     .where(eq(sprintParticipants.sprintId, id));
   const opps = await tx
-    .select({ compositeScore: opportunities.compositeScore })
+    .select({
+      compositeScore: opportunities.compositeScore,
+      impactHigh: opportunities.impactHigh,
+    })
     .from(opportunities)
     .where(eq(opportunities.sprintId, id));
   const caps = await tx
@@ -228,6 +231,7 @@ export const loadSprintProgress = cache(async function loadSprintProgress(
     participants: parts,
     opportunities: opps.map((o) => ({
       compositeScore: Number(o.compositeScore),
+      impactHigh: Number(o.impactHigh),
     })),
     capturesCount: caps.length,
     signalQuality: 4.6,
