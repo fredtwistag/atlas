@@ -6,6 +6,7 @@ import {
   participationLine,
   corroborationLine,
   bucketLabel,
+  narrativeFallback,
 } from "./report-content";
 import type { Opportunity } from "./types";
 
@@ -71,5 +72,34 @@ describe("bucketLabel", () => {
     expect(bucketLabel("quick_win")).toBe("Quick wins");
     expect(bucketLabel("standard")).toBe("Solid bets");
     expect(bucketLabel("strategic_bet")).toBe("Strategic bets");
+  });
+});
+
+describe("narrativeFallback", () => {
+  it("builds a 2-sentence spine from the top opportunities", () => {
+    const opps = [
+      opp({ title: "Automate takeoff", impactLow: 56_000, impactHigh: 90_000 }),
+      opp({ title: "Map ingestion", impactLow: 56_000, impactHigh: 75_000 }),
+    ];
+    const text = narrativeFallback({
+      scopeDepartment: "Transversal",
+      participantCount: 3,
+      opportunitiesCount: 9,
+      opps,
+      totalLow: 178_000,
+      totalHigh: 317_000,
+      currency: "EUR",
+    });
+    expect(text).toContain("9 opportunities");
+    expect(text).toContain("Automate takeoff");
+    expect(text).toContain("€178K–€317K");
+  });
+  it("returns empty string when there are no opportunities", () => {
+    expect(
+      narrativeFallback({
+        scopeDepartment: "X", participantCount: 0, opportunitiesCount: 0,
+        opps: [], totalLow: 0, totalHigh: 0, currency: "EUR",
+      }),
+    ).toBe("");
   });
 });

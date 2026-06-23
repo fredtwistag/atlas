@@ -1,4 +1,4 @@
-import { moneyShort, type Currency } from "./format";
+import { moneyShort, moneyRange, type Currency } from "./format";
 import type { Horizon, Opportunity } from "./types";
 
 /** High-impact = estimated annual impact at/above this band (on the high
@@ -51,4 +51,32 @@ const BUCKET: Record<Horizon, string> = {
 /** Unified bucket taxonomy used by both the roadmap and the matrix table. */
 export function bucketLabel(horizon: Horizon): string {
   return BUCKET[horizon];
+}
+
+/**
+ * Deterministic narrative fallback for sprints whose synthesis memo hasn't
+ * been generated yet. Builds a two-sentence spine from the top opportunity
+ * and the aggregate impact of the top five.
+ * Returns empty string when there are no opportunities.
+ */
+export function narrativeFallback(args: {
+  scopeDepartment: string;
+  participantCount: number;
+  opportunitiesCount: number;
+  opps: Opportunity[];
+  totalLow: number;
+  totalHigh: number;
+  currency: Currency;
+}): string {
+  const { opps, currency } = args;
+  if (opps.length === 0) return "";
+  const top = opps[0];
+  return (
+    `Across ${args.scopeDepartment}, ${args.participantCount} contributor` +
+    `${args.participantCount === 1 ? "" : "s"} surfaced ${args.opportunitiesCount} ` +
+    `opportunit${args.opportunitiesCount === 1 ? "y" : "ies"}. The strongest — ` +
+    `${top.title} — is estimated at ${moneyRange(top.impactLow, top.impactHigh, currency)}/yr; ` +
+    `together the top five represent ${moneyRange(args.totalLow, args.totalHigh, currency)}/yr ` +
+    `in recurring impact.`
+  );
 }

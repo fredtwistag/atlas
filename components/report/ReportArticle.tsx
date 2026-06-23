@@ -4,7 +4,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
-import { highImpactLead, corroborationLine } from "@/lib/report-content";
+import { highImpactLead, corroborationLine, narrativeFallback } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -82,21 +82,36 @@ export function ReportArticle({
         </div>
       </header>
 
-      {/* Synthesis memo (Ticket G) — the board-ready narrative, when generated. */}
-      {memo && memo.openingNarrative ? (
-        <Section title="Synthesis">
-          <p>{memo.openingNarrative}</p>
-          {memo.portfolioStory ? <p>{memo.portfolioStory}</p> : null}
-          {memo.sequencingLogic ? <p>{memo.sequencingLogic}</p> : null}
-          {memo.riskNarrative ? <p>{memo.riskNarrative}</p> : null}
-          {memo.recommendedNextStep ? (
-            <p>
-              <strong>Recommended next step. </strong>
-              {memo.recommendedNextStep}
-            </p>
-          ) : null}
-        </Section>
-      ) : null}
+      {/* Synthesis — the board-ready spine. Uses the generated memo when
+          present, else a deterministic fallback so it never silently vanishes. */}
+      <Section title="Synthesis">
+        {memo && memo.openingNarrative ? (
+          <>
+            <p>{memo.openingNarrative}</p>
+            {memo.portfolioStory ? <p>{memo.portfolioStory}</p> : null}
+            {memo.sequencingLogic ? <p>{memo.sequencingLogic}</p> : null}
+            {memo.riskNarrative ? <p>{memo.riskNarrative}</p> : null}
+            {memo.recommendedNextStep ? (
+              <p>
+                <strong>Recommended next step. </strong>
+                {memo.recommendedNextStep}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p>
+            {narrativeFallback({
+              scopeDepartment: sprint.scopeDepartment,
+              participantCount: p.participantCount,
+              opportunitiesCount: p.opportunitiesCount,
+              opps,
+              totalLow,
+              totalHigh,
+              currency,
+            })}
+          </p>
+        )}
+      </Section>
 
       {/* Executive summary */}
       <Section title="Executive summary">
