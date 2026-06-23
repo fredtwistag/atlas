@@ -4,7 +4,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
-import { highImpactLead, corroborationLine, narrativeFallback, selectPullQuotes } from "@/lib/report-content";
+import { highImpactLead, corroborationLine, narrativeFallback, selectPullQuotes, bucketLabel } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -239,13 +239,27 @@ export function ReportArticle({
                 </figcaption>
                 <WorkflowDiagram graph={m.graph} instanceId={m.id} />
                 {m.kind === "impact_effort" ? (
-                  <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-2">
-                    {m.graph.steps.map((s, i) => (
-                      <li key={s.id}>
-                        {i + 1}. {s.label}
-                      </li>
-                    ))}
-                  </ol>
+                  <table className="mt-4 w-full text-left text-sm">
+                    <caption className="sr-only">
+                      Opportunities by estimated impact, effort, and bucket
+                    </caption>
+                    <thead>
+                      <tr className="text-xs text-text-3">
+                        <th scope="col" className="py-1 pr-3 font-medium">#</th>
+                        <th scope="col" className="py-1 pr-3 font-medium">Opportunity</th>
+                        <th scope="col" className="py-1 pr-3 font-medium">Bucket</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {opps.map((o, i) => (
+                        <tr key={o.id} className="border-t border-border">
+                          <td className="py-1.5 pr-3 text-text-3">{i + 1}</td>
+                          <td className="py-1.5 pr-3 text-text-2">{o.title}</td>
+                          <td className="py-1.5 pr-3 text-text-2">{bucketLabel(o.horizon)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : null}
               </figure>
             ))}

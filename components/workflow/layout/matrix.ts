@@ -59,9 +59,6 @@ export function layoutMatrix(graph: WorkflowGraph): Layout {
   const texts: LayoutText[] = [
     { x: PLOT_X0, y: PLOT_Y0 - 12, text: "Higher impact", anchor: "start", muted: true },
     { x: PLOT_X1, y: PLOT_Y1 + 24, text: "Higher effort", anchor: "end", muted: true },
-    { x: PLOT_X0 + 10, y: PLOT_Y0 + 14, text: "Quick wins", anchor: "start", muted: true },
-    { x: PLOT_X1 - 10, y: PLOT_Y0 + 14, text: "Big bets", anchor: "end", muted: true },
-    { x: PLOT_X1 - 10, y: PLOT_Y1 - 8, text: "Deprioritize", anchor: "end", muted: true },
   ];
 
   return { width: 680, height: 360, lanes: [], boxes, edges: [], lines, texts };
