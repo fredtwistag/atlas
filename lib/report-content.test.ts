@@ -29,6 +29,9 @@ describe("countHighImpact", () => {
   it("includes opportunities exactly at the band", () => {
     expect(countHighImpact([opp({ impactHigh: 75_000 })])).toBe(1);
   });
+  it("uses the €75K high-impact band", () => {
+    expect(HIGH_IMPACT_EUR).toBe(75_000);
+  });
 });
 
 describe("highImpactLead", () => {
