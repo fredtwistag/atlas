@@ -130,3 +130,13 @@ describe("selectPullQuotes", () => {
     expect(selectPullQuotes([opp({ evidence: [] })], 2)).toEqual([]);
   });
 });
+
+describe("content-rule guards", () => {
+  it("the lead never emits a bare '0 high-impact' clause", () => {
+    expect(highImpactLead(9, 0, "EUR")).not.toContain("0 of them");
+    expect(highImpactLead(9, 0, "EUR")).not.toContain("high-impact");
+  });
+  it("participation framing never emits a vanity 100%", () => {
+    expect(participationLine(3, "Transversal", 46)).not.toContain("%");
+  });
+});
