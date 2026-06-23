@@ -82,6 +82,27 @@ export function ReportArticle({
         </div>
       </header>
 
+      {/* Bottom line — the answer first. What to approve, the return, the ask. */}
+      {topFive.length > 0 ? (
+        <div className="mb-12 rounded-xl border border-brand/30 bg-surface p-6">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-brand">
+            Bottom line
+          </div>
+          <p className="text-lg leading-relaxed text-text">
+            Start with <strong>{topFive[0].title}</strong>
+            {topFive[1] ? (
+              <> and <strong>{topFive[1].title}</strong></>
+            ) : null}
+            . The top five represent{" "}
+            <strong>
+              {moneyShort(totalLow, currency)}–{moneyShort(totalHigh, currency)}/yr
+            </strong>{" "}
+            in estimated recurring impact. Approve one and Twistag aligns scope
+            within 48 hours.
+          </p>
+        </div>
+      ) : null}
+
       {/* Synthesis — the board-ready spine. Uses the generated memo when
           present, else a deterministic fallback so it never silently vanishes. */}
       <Section title="Synthesis">
