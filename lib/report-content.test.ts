@@ -25,6 +25,9 @@ describe("countHighImpact", () => {
     const opps = [opp({ impactHigh: 90_000 }), opp({ impactHigh: 75_000 }), opp({ impactHigh: 60_000 })];
     expect(countHighImpact(opps)).toBe(2);
   });
+  it("includes opportunities exactly at the band", () => {
+    expect(countHighImpact([opp({ impactHigh: 75_000 })])).toBe(1);
+  });
 });
 
 describe("highImpactLead", () => {

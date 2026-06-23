@@ -2,7 +2,7 @@ import { moneyShort, type Currency } from "./format";
 import type { Horizon, Opportunity } from "./types";
 
 /** High-impact = estimated annual impact at/above this band (on the high
- *  estimate). Single source of truth, imported by dashboard-map's progress. */
+ *  estimate). Single source of truth for the high-impact threshold. */
 export const HIGH_IMPACT_EUR = 75_000;
 
 /** How many opportunities clear the impact band. */
@@ -23,8 +23,8 @@ export function highImpactLead(
   const opps = `${opportunitiesCount} opportunit${opportunitiesCount === 1 ? "y" : "ies"}`;
   if (highImpactCount <= 0) return opps;
   const band = moneyShort(HIGH_IMPACT_EUR, currency);
-  const each = highImpactCount === 1 ? "" : " each";
-  return `${opps}, ${highImpactCount} of them estimated at ${band}+/yr${each}`;
+  const eachSuffix = highImpactCount === 1 ? "" : " each";
+  return `${opps}, ${highImpactCount} of them estimated at ${band}+/yr${eachSuffix}`;
 }
 
 /** Honest participation framing — real n + coverage, no vanity percentage. */
