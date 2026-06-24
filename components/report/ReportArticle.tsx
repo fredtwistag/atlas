@@ -56,15 +56,16 @@ export function ReportArticle({
         <div className="mb-3 text-sm font-semibold uppercase tracking-[0.1em] text-brand">
           Atlas discovery report
         </div>
-        <CompanyLogo
-          domain={sprint.tenantDomain}
-          name={sprint.tenantName}
-          size="lg"
-          className="mb-4"
-        />
-        <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight">
-          {sprint.tenantName}
-        </h1>
+        <div className="flex items-center gap-4">
+          <CompanyLogo
+            domain={sprint.tenantDomain}
+            name={sprint.tenantName}
+            size="lg"
+          />
+          <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight">
+            {sprint.tenantName}
+          </h1>
+        </div>
         <p className="mt-3 text-lg text-text-2">{sprint.name}</p>
         <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-text-2">
           <span>
