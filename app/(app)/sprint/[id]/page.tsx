@@ -221,7 +221,7 @@ export default async function ManagerDashboard({
               ranked by composite score
             </span>
           </div>
-          <div className="space-y-2.5">
+          <div className="space-y-4">
             {opps.length === 0 ? (
               <Card className="border-dashed p-6 text-center">
                 <p className="text-sm font-medium text-text">

@@ -70,5 +70,11 @@ export function OpportunityCard({
     </Card>
   );
 
-  return href ? <Link href={href}>{body}</Link> : body;
+  return href ? (
+    <Link href={href} className="block">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
 }
