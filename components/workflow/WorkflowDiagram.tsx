@@ -43,7 +43,7 @@ function Box({ box }: { box: LayoutBox }) {
     const bodyLines = box.bodyLines ?? (box.subtitle ? [box.subtitle] : []);
     const lastTitleBaseline = titleTop + (titleLines.length - 1) * titleLh;
     return (
-      <g>
+      <g data-step-id={box.id}>
         <title>{box.subtitle ? `${box.title} — ${box.subtitle}` : box.title}</title>
         <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={10} fill={c.fill} stroke={c.stroke} strokeWidth={1} strokeDasharray={dash} />
         <rect x={box.x + pad} y={box.y + chipY} width={chipW} height={chipH} rx={9} fill="var(--surface)" stroke="var(--border)" strokeWidth={0.5} />
@@ -67,7 +67,7 @@ function Box({ box }: { box: LayoutBox }) {
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
   return (
-    <g>
+    <g data-step-id={box.id}>
       {box.shape === "circle" ? (
         <circle cx={cx} cy={cy} r={box.w / 2} fill={c.fill} stroke={c.stroke} strokeWidth={1} strokeDasharray={dash} />
       ) : box.shape === "diamond" ? (

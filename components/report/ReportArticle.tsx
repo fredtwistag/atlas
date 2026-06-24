@@ -2,9 +2,10 @@ import { Check } from "lucide-react";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { ReportExplainer } from "@/components/report/ReportExplainer";
+import { ImpactEffortFigure } from "@/components/report/ImpactEffortFigure";
 import { WorkflowDiagram } from "@/components/workflow/WorkflowDiagram";
 import { moneyShort } from "@/lib/format";
-import { highImpactLead, participationLine, corroborationLine, narrativeFallback, selectPullQuotes, bucketLabel } from "@/lib/report-content";
+import { highImpactLead, participationLine, corroborationLine, narrativeFallback, selectPullQuotes } from "@/lib/report-content";
 import type {
   Sprint,
   SprintProgress,
@@ -209,7 +210,7 @@ export function ReportArticle({
             and scores captures from completed sessions.
           </p>
         ) : (
-          <div className="not-prose space-y-3">
+          <div className="not-prose space-y-4">
             {opps.map((o, i) => (
               <OpportunityCard
                 key={o.id}
@@ -245,30 +246,15 @@ export function ReportArticle({
                     </span>
                   ) : null}
                 </figcaption>
-                <WorkflowDiagram graph={m.graph} instanceId={m.id} />
                 {m.kind === "impact_effort" ? (
-                  <table className="mt-4 w-full text-left text-sm">
-                    <caption className="sr-only">
-                      Opportunities by estimated impact, effort, and bucket
-                    </caption>
-                    <thead>
-                      <tr className="text-xs text-text-3">
-                        <th scope="col" className="py-1 pr-3 font-medium">#</th>
-                        <th scope="col" className="py-1 pr-3 font-medium">Opportunity</th>
-                        <th scope="col" className="py-1 pr-3 font-medium">Bucket</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {opps.map((o, i) => (
-                        <tr key={o.id} className="border-t border-border">
-                          <td className="py-1.5 pr-3 text-text-3">{i + 1}</td>
-                          <td className="py-1.5 pr-3 text-text-2">{o.title}</td>
-                          <td className="py-1.5 pr-3 text-text-2">{bucketLabel(o.horizon)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : null}
+                  <ImpactEffortFigure
+                    graph={m.graph}
+                    instanceId={m.id}
+                    opps={opps}
+                  />
+                ) : (
+                  <WorkflowDiagram graph={m.graph} instanceId={m.id} />
+                )}
               </figure>
             ))}
           </div>
